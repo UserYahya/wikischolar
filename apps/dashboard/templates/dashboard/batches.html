@@ -1,0 +1,37 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Messages</h1>
+  <a class="btn primary" href="{% url 'dashboard:students' %}">Choose recipients</a></header>
+<p class="lede">To send a message, filter the student list to the group you want, then choose “Message this group”. Every send is a
+  named batch linked to each recipient’s WikiScholar ID. Open a batch to see who got it and which messages were not delivered.</p>
+<form method="get" class="toolbar" role="search">
+  <label for="bq" class="visually-hidden">Search batches</label>
+  <input id="bq" name="q" value="{{ f.q }}" placeholder="Batch name, code or subject">
+  <label for="bch" class="visually-hidden">Channel</label>
+  <select id="bch" name="channel"><option value="">Email and SMS</option>
+    {% for v, l in channels %}<option value="{{ v }}" {% if v == f.channel %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <label class="inline"><input type="checkbox" name="problems" value="1" {% if f.problems %}checked{% endif %}> Only batches with undelivered messages</label>
+  <button class="btn">Filter</button>{% if f.q or f.channel or f.problems %}<a class="link" href="{% url 'dashboard:batches' %}">Clear</a>{% endif %}
+</form>
+{% if batches %}
+<div class="scroll"><table class="data">
+  <thead><tr><th>Batch name</th><th>Code</th><th>Channel</th><th>Subject / text</th><th class="num">Recipients</th>
+    <th class="num">Delivered</th><th class="num">Not delivered</th><th class="num">Queued</th><th>Status</th><th>Sent by</th><th>Created</th></tr></thead>
+  <tbody>{% for b in batches %}<tr>
+    <td><a href="{% url 'dashboard:batch' b.batch_code %}">{{ b.name|default:"(unnamed)" }}</a></td>
+    <td><a class="wsid" href="{% url 'dashboard:batch' b.batch_code %}">{{ b.batch_code }}</a></td>
+    <td>{% if b.channel == "email" %}Email{% else %}SMS{% endif %}</td>
+    <td>{% if b.channel == "email" %}{{ b.subject|truncatechars:50 }}{% else %}{{ b.body|truncatechars:50 }}{% endif %}</td>
+    <td class="num">{{ b.recipient_count }}</td>
+    <td class="num">{{ b.n_delivered }}</td>
+    <td class="num">{% if b.n_not_delivered %}<a href="{% url 'dashboard:batch' b.batch_code %}?status=not_delivered">{{ b.n_not_delivered }}</a>{% else %}0{% endif %}</td>
+    <td class="num">{{ b.n_queued }}</td>
+    <td>{{ b.get_status_display }}</td>
+    <td>{{ b.created_by.email }}</td><td class="nowrap">{{ b.created_at|date:"j M Y H:i" }}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+<p class="hint">“Delivered” needs delivery reports from the provider (Brevo webhook; see the project guide). Without them, messages the
+  provider accepted stay “Sent”. “Not delivered” = rejected when sending, or bounced.</p>
+{% else %}<p class="empty">{% if f.q or f.channel or f.problems %}No batches match. <a href="{% url 'dashboard:batches' %}">Show all</a>{% else %}No batches sent yet.{% endif %}</p>{% endif %}
+{% endblock %}

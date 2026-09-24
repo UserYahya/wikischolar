@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.env
+staticfiles/
+.venv/
+*.sqlite3
+.pgsql/
+.pgdata/
+dist/
+.env.bak
+*.env.local
+*.zip
+*.log
+.claude/

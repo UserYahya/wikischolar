@@ -1,0 +1,43 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Overview</h1></header>
+{% if not email.delivers %}
+<p class="error-box" role="status"><strong>Emails are not being delivered.</strong> OTP codes and confirmations are only printed
+  in the server console ({{ email.via }}), so students receive nothing.
+  {% if can_set_email %}<a href="{% url 'dashboard:email_settings' %}">Set up Brevo or Google Mail</a>{% else %}Ask a Super Admin to set up email.{% endif %}</p>
+{% endif %}
+<section class="figures">
+  <div><p class="fig">{{ total }}</p><p>registered students</p></div>
+  <div><p class="fig">{{ today }}</p><p>registered today</p></div>
+  <div><p class="fig">{{ week }}</p><p>in the last 7 days</p></div>
+  <div><p class="fig"><a href="{% url 'dashboard:schools' %}?status=pending">{{ pending_schools }}</a></p><p>schools awaiting review</p></div>
+</section>
+{% if unassigned_districts %}
+<p class="notice">{{ unassigned_districts }} district{{ unassigned_districts|pluralize }} {{ unassigned_districts|pluralize:"has,have" }} no region. Registrants from {{ unassigned_districts|pluralize:"it,them" }} will see “no region assigned”. <a href="{% url 'dashboard:locations' %}">Assign regions</a></p>
+{% endif %}
+<div class="cols">
+  <section>
+    <h2>Registrations, last 14 days</h2>
+    <ol class="spark" aria-label="Daily registrations">
+      {% for d, n, pct in days %}<li title="{{ d|date:'j M' }}: {{ n }}"><span style="--h: {{ pct }}%"></span><small>{{ d|date:"j" }}</small></li>{% endfor %}
+    </ol>
+  </section>
+  <section>
+    <h2>By region</h2>
+    <table class="bars">
+      {% for r, pct in by_region %}<tr><th><a href="{% url 'dashboard:students' %}?region={{ r.pk }}">{{ r.name }}</a></th><td><span style="--w: {{ pct }}%"></span></td><td class="num">{{ r.n }}</td></tr>{% endfor %}
+      {% if unassigned %}<tr><th>No region</th><td><span style="--w: {{ unassigned_pct }}%"></span></td><td class="num">{{ unassigned }}</td></tr>{% endif %}
+    </table>
+  </section>
+</div>
+<section>
+  <h2>Top districts</h2>
+  {% if top_districts %}
+  <table class="data">
+    <thead><tr><th>District</th><th>Region</th><th class="num">Students</th></tr></thead>
+    <tbody>{% for d in top_districts %}<tr><td><a href="{% url 'dashboard:students' %}?district={{ d.pk }}">{{ d.name }}</a> <span class="muted">{{ d.name_bn }}</span></td><td>{{ d.region.name|default:"—" }}</td><td class="num">{{ d.n }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% else %}<p class="empty">No registrations yet. Share the registration link: <a href="/">{{ request.scheme }}://{{ request.get_host }}/</a></p>{% endif %}
+</section>
+{% endblock %}

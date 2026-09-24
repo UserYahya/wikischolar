@@ -1,0 +1,134 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Students{% endblock %}
+{% block content %}
+<header class="page-head">
+  <h1>Students <span class="count">{{ count }}</span>{% if p.batch %} <small class="muted">batch {{ p.batch }} of {{ batches|length }}</small>{% endif %}</h1>
+  <div class="row">
+    {% if can_export %}<a class="btn" href="{% url 'dashboard:students_export' %}?{{ qstring }}">Export CSV</a>{% endif %}
+    {% if can_message and count %}<a class="btn primary" href="{% url 'dashboard:compose' %}?{{ qstring }}">Message this group</a>{% endif %}
+  </div>
+</header>
+<div class="with-filters">
+  <form class="filters" method="get" id="filters">
+    <label for="q">Search</label>
+    <input id="q" name="q" value="{{ p.q }}" placeholder="Name, WS ID, phone, email">
+
+    <fieldset>
+      <legend>Region &amp; district</legend>
+      <p class="hint">Tick several districts to build a group.</p>
+      {% for r in regions %}
+      <details {% if r.pk|stringformat:"s" in p.region %}open{% endif %}>
+        <summary><label class="inline"><input type="checkbox" name="region" value="{{ r.pk }}" {% if r.pk|stringformat:"s" in p.region %}checked{% endif %}> {{ r.name }}</label></summary>
+        <div class="checks">
+          {% for d in r.districts.all %}<label class="inline"><input type="checkbox" name="district" value="{{ d.pk }}" {% if d.pk|stringformat:"s" in p.district %}checked{% endif %}> {{ d.name }}</label>{% endfor %}
+        </div>
+      </details>
+      {% endfor %}
+      {% if unassigned_districts %}
+      <details><summary>No region</summary><div class="checks">
+        {% for d in unassigned_districts %}<label class="inline"><input type="checkbox" name="district" value="{{ d.pk }}" {% if d.pk|stringformat:"s" in p.district %}checked{% endif %}> {{ d.name }}</label>{% endfor %}
+      </div></details>
+      {% endif %}
+    </fieldset>
+
+    {% if upazilas %}
+    <label for="upazila">Upazila</label>
+    <select id="upazila" name="upazila"><option value="">All upazilas</option>
+      {% for u in upazilas %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == p.upazila %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+    </select>
+    {% else %}<p class="hint">Pick exactly one district to filter by upazila.</p>{% endif %}
+    {% if schools %}
+    <label for="school">School</label>
+    <select id="school" name="school"><option value="">All schools</option>
+      {% for s in schools %}<option value="{{ s.pk }}" {% if s.pk|stringformat:"s" == p.school %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+
+    <fieldset>
+      <legend>Class</legend>
+      <div class="checks cols3">{% for v, l in classes %}<label class="inline"><input type="checkbox" name="class" value="{{ v }}" {% if v in p.class %}checked{% endif %}> {{ v }}</label>{% endfor %}</div>
+    </fieldset>
+    <fieldset>
+      <legend>Gender</legend>
+      <div class="checks">{% for v, l in genders %}<label class="inline"><input type="checkbox" name="gender" value="{{ v }}" {% if v in p.gender %}checked{% endif %}> {{ l }}</label>{% endfor %}</div>
+    </fieldset>
+    <fieldset>
+      <legend>Registered between</legend>
+      <div class="row2"><input type="date" name="from" value="{{ p.from }}" aria-label="From"><input type="date" name="to" value="{{ p.to }}" aria-label="To"></div>
+    </fieldset>
+    <label class="inline"><input type="checkbox" name="opt_in" value="1" {% if p.opt_in == "1" %}checked{% endif %}> Opted in to email updates</label>
+    <label for="filled_by">Form filled in by</label>
+    <select id="filled_by" name="filled_by"><option value="">Anyone</option>
+      {% for v, l in filled_by_choices %}<option value="{{ v }}" {% if v == p.filled_by %}selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
+    <fieldset>
+      <legend>Message history</legend>
+      <label for="msg_batch" class="hint">Message batch</label>
+      <select id="msg_batch" name="msg_batch"><option value="">Any (no filter)</option>
+        {% for code, label in msg_batches %}<option value="{{ code }}" {% if code == p.msg_batch %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <label for="msg_batch_mode" class="hint">Students who…</label>
+      <select id="msg_batch_mode" name="msg_batch_mode">
+        {% for v, l in msg_batch_modes.items %}<option value="{{ v }}" {% if v == p.msg_batch_mode %}selected{% endif %}>{% if v == "sent" %}received it{% elif v == "not_sent" %}were not sent it yet{% else %}did not get it (failed / bounced){% endif %}</option>{% endfor %}
+      </select>
+      <p class="hint">Pick “were not sent it yet”, then “Message this group”, to reach only the students a batch missed.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Split into batches</legend>
+      <label for="batch_size" class="hint">Students per batch</label>
+      <input id="batch_size" name="batch_size" type="number" min="1" max="100000" inputmode="numeric" value="{{ p.batch_size }}" placeholder="e.g. 50">
+      <p class="hint">Splits the filtered students in sort order. Oldest-first (the default here) keeps batches stable as new students register.</p>
+    </fieldset>
+    <label for="sort">Sort by</label>
+    <select id="sort" name="sort">{% for k in sorts %}<option value="{{ k }}" {% if k == p.sort %}selected{% endif %}>{{ k|capfirst }}</option>{% endfor %}</select>
+    <div class="row"><button class="btn primary">Apply filters</button><a class="link" href="{% url 'dashboard:students' %}">Clear</a></div>
+  </form>
+
+  <section class="results">
+    {% if batches %}
+    <section class="batches" aria-labelledby="batchesHead">
+      <h2 id="batchesHead">{{ batches|length }} batch{{ batches|length|pluralize:"es" }} of up to {{ p.batch_size }} <small class="muted">· {{ batch_total }} students, sorted by {{ p.sort }}</small></h2>
+      <div class="scroll"><table class="data">
+        <thead><tr><th>Batch</th><th>Students</th><th class="num">Count</th><th></th></tr></thead>
+        <tbody>
+        <tr {% if not p.batch %}aria-current="true"{% endif %}><td><a href="?{{ all_qstring }}">All</a></td><td>1–{{ batch_total }}</td><td class="num">{{ batch_total }}</td><td></td></tr>
+        {% for b in batches %}
+        <tr {% if b.number|stringformat:"s" == p.batch %}aria-current="true"{% endif %}>
+          <td><a href="?{{ b.qstring }}">Batch {{ b.number }}</a></td>
+          <td>{{ b.first }}–{{ b.last }}</td><td class="num">{{ b.count }}</td>
+          <td class="nowrap">
+            {% if can_export %}<a class="btn small" href="{% url 'dashboard:students_export' %}?{{ b.qstring }}">CSV</a>{% endif %}
+            {% if can_message %}<a class="btn small" href="{% url 'dashboard:compose' %}?{{ b.qstring }}">Message</a>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </section>
+    {% endif %}
+    {% if page.object_list %}
+    <div class="scroll">
+    <table class="data">
+      <thead><tr><th>WikiScholar ID</th><th>Name</th><th>Class</th><th>School</th><th>District</th><th>Region</th><th>Registered</th></tr></thead>
+      <tbody>
+      {% for s in page %}
+        <tr>
+          <td><a class="wsid" href="{% url 'dashboard:student' s.wikischolar_id %}">{{ s.wikischolar_id }}</a></td>
+          <td>{{ s.student_name }}</td>
+          <td class="num">{{ s.current_class }}</td>
+          <td>{{ s.school.name }}{% if s.school.verification_status == "pending" %} <span class="tag">pending</span>{% endif %}</td>
+          <td>{{ s.district.name }}<br><small class="muted">{{ s.upazila.name }}</small></td>
+          <td>{{ s.district.region.name|default:"—" }}</td>
+          <td><time datetime="{{ s.created_at|date:'c' }}">{{ s.created_at|date:"j M Y" }}</time></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% include "dashboard/_pagination.html" %}
+    {% else %}
+    <p class="empty">No students match these filters. <a href="{% url 'dashboard:students' %}">Clear filters</a> to see everyone.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

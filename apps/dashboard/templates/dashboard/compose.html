@@ -1,0 +1,83 @@
+{% extends "dashboard/base.html" %}
+{% block title %}New message{% endblock %}
+{% block content %}
+<header class="page-head"><div>
+  <p class="crumb"><a href="{% url 'dashboard:students' %}?{% for k, v in hidden %}{{ k }}={{ v|urlencode }}&{% endfor %}">Back to filtered list</a></p>
+  <h1>New message</h1></div></header>
+<section class="recipients">
+  <p class="fig">{{ count }}</p>
+  <p>recipient{{ count|pluralize }}{% if channel == "email" and opted %} (opted-in only, of {{ total_in_filter }} in this group){% endif %}</p>
+  {% if filter_summary %}<p class="muted">{% for label, text in filter_summary %}{{ label }}: {{ text }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+  {% else %}<p class="muted">No filter: this is every active student.</p>{% endif %}
+</section>
+{% if not count %}
+<p class="error-box" role="status">
+  {% if channel == "email" and opted and total_in_filter %}None of the {{ total_in_filter }} student{{ total_in_filter|pluralize }} in this group
+    opted in to email updates. Untick <strong>“Only students who opted in”</strong> below to send to all of them
+    (use that only for essential messages about their registration or activities).
+  {% else %}No students match this filter. <a href="{% url 'dashboard:students' %}">Change the filter</a> first.{% endif %}
+</p>
+{% endif %}
+<form method="post" class="edit-form" id="compose">
+  {% csrf_token %}
+  {% for k, v in hidden %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  <input type="hidden" name="confirm_count" value="{{ count }}">
+  {% if form.errors %}<p class="error-box">Fix the highlighted fields.</p>{% endif %}
+  <div><label for="id_name">Batch name</label>{{ form.name }}{{ form.name.errors }}
+    <p class="hint">Required, in English. Use it to find this send on the Messages page and to see who received it
+      (Students → filter “Message history”).</p></div>
+  <fieldset><legend>Channel</legend>
+    <p class="hint">Choose the channel first: switching it recounts recipients and reloads this page.</p>
+    <label class="inline"><input type="radio" name="channel" value="email" {% if channel == "email" %}checked{% endif %}> Email</label>
+    <label class="inline"><input type="radio" name="channel" value="sms" {% if channel == "sms" %}checked{% endif %}> SMS</label>
+  </fieldset>
+  <label class="inline" id="optRow"><input type="checkbox" name="opted_in_only" {% if opted %}checked{% endif %}> Only students who opted in to email updates</label>
+  <div id="subjectRow"><label for="id_subject">Subject</label>{{ form.subject }}{{ form.subject.errors }}</div>
+  <label for="id_body">Message</label>{{ form.body }}{{ form.body.errors }}
+  <p class="hint">Use {name} and {wikischolar_id} to personalise. Providers receive only the address or number and this text.</p>
+  <p class="hint" id="smsCount" hidden></p>
+  <div class="row"><button class="btn primary" {% if not count %}disabled{% endif %}>Send to {{ count }} recipient{{ count|pluralize }}</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const f = document.getElementById("compose");
+  const sync = () => {
+    const sms = f.channel.value === "sms";
+    document.getElementById("subjectRow").hidden = sms;
+    document.getElementById("optRow").hidden = sms;
+    const body = document.getElementById("id_body").value;
+    const unicode = /[^\x00-\x7F]/.test(body);
+    const per = unicode ? 70 : 160;
+    const c = document.getElementById("smsCount");
+    c.hidden = !sms;
+    c.textContent = `${body.length} characters, about ${Math.max(1, Math.ceil(body.length / per))} SMS part(s) each${unicode ? " (Bangla uses 70 characters per part)" : ""}.`;
+  };
+  f.addEventListener("input", sync);
+  // Keep what was typed when switching channel / opt-in reloads the page.
+  const DRAFT = "ws_compose_draft";
+  const fields = ["name", "subject", "body"].map((n) => f.elements[n]).filter(Boolean);
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(DRAFT) || "{}");
+    fields.forEach((el) => { if (!el.value && saved[el.name]) el.value = saved[el.name]; });
+  } catch (_) { /* storage unavailable */ }
+  const keep = () => {
+    try { sessionStorage.setItem(DRAFT, JSON.stringify(Object.fromEntries(fields.map((el) => [el.name, el.value])))); }
+    catch (_) { /* storage unavailable */ }
+  };
+  f.addEventListener("input", keep);
+  f.addEventListener("submit", () => { try { sessionStorage.removeItem(DRAFT); } catch (_) { /* ignore */ } });
+  f.querySelectorAll("[name=channel],[name=opted_in_only]").forEach((el) => el.addEventListener("change", () => {
+    const u = new URL(location.pathname, location.origin);
+    f.querySelectorAll("input[type=hidden]").forEach((h) => {
+      if (!["csrfmiddlewaretoken", "confirm_count"].includes(h.name)) u.searchParams.append(h.name, h.value);
+    });
+    u.searchParams.set("channel", f.channel.value);
+    u.searchParams.set("opted_in_only", f.opted_in_only.checked ? "1" : "0");
+    location.href = u.toString();
+  }));
+  sync();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Edit {{ s.wikischolar_id }}{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <p class="crumb"><a href="{% url 'dashboard:student' s.wikischolar_id %}">{{ s.wikischolar_id }}</a></p>
+    <h1>Edit {{ s.student_name }}</h1>
+  </div>
+</header>
+<form method="post" class="edit-form" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<p class="error-box">{{ form.non_field_errors|join:" " }}</p>{% endif %}
+  <div class="form-grid">
+    <div><label for="id_student_name">Student name</label>{{ form.student_name }}{{ form.student_name.errors }}</div>
+    <div><label for="id_date_of_birth">Date of birth</label><input type="date" name="date_of_birth" id="id_date_of_birth" value="{% if form.is_bound %}{{ form.data.date_of_birth }}{% else %}{{ form.initial.date_of_birth|date:'Y-m-d' }}{% endif %}">{{ form.date_of_birth.errors }}</div>
+    <div><label for="id_gender">Gender</label>{{ form.gender }}{{ form.gender.errors }}</div>
+    <div><label for="id_guardian_name">Guardian name</label>{{ form.guardian_name }}{{ form.guardian_name.errors }}</div>
+    <div><label for="id_guardian_relation">Guardian relation</label>{{ form.guardian_relation }}{{ form.guardian_relation.errors }}</div>
+    <div id="relationOtherRow"><label for="id_guardian_relation_other">Relation (if "other")</label>{{ form.guardian_relation_other }}{{ form.guardian_relation_other.errors }}</div>
+    <div><label for="id_current_class">Class</label>{{ form.current_class }}{{ form.current_class.errors }}</div>
+    <div><label for="id_district">District</label>
+      <select name="district" id="id_district" data-cascade="district">{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == form.district.value|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>{{ form.district.errors }}</div>
+    <div><label for="id_upazila">Upazila</label>
+      <select name="upazila" id="id_upazila" data-cascade="upazila">{% for u in upazilas %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == form.upazila.value|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>{% endfor %}</select>{{ form.upazila.errors }}</div>
+    <div class="span2"><label for="id_school">School</label>
+      <select name="school" id="id_school" data-cascade="school">{% for sc in schools %}<option value="{{ sc.pk }}" {% if sc.pk|stringformat:"s" == form.school.value|stringformat:"s" %}selected{% endif %}>{{ sc.name }}{% if sc.verification_status == "pending" %} (pending){% endif %}</option>{% endfor %}</select>{{ form.school.errors }}
+      <p class="hint">Only schools in the selected upazila are listed. Add a missing school from the Schools page.</p></div>
+    <div><label for="id_class_roll">Class roll</label>{{ form.class_roll }}{{ form.class_roll.errors }}</div>
+    <div><label for="id_student_id_sid">Student ID (SID)</label>{{ form.student_id_sid }}{{ form.student_id_sid.errors }}</div>
+    <div><label for="id_phone">Phone</label>{{ form.phone }}{{ form.phone.errors }}</div>
+    <div><label for="id_email">Email</label>{{ form.email }}{{ form.email.errors }}</div>
+    <div class="span2"><label class="inline">{{ form.updates_opt_in }} Opted in to email updates</label></div>
+    <div class="span2"><label for="id_reason">Reason for change</label>{{ form.reason }}<p class="hint">Stored with each changed field in the edit history.</p></div>
+  </div>
+  <div class="row"><button class="btn primary">Save changes</button><a class="link" href="{% url 'dashboard:student' s.wikischolar_id %}">Cancel</a></div>
+</form>
+{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/cascade.js' %}" defer></script>
+<script>
+(() => {
+  const rel = document.getElementById("id_guardian_relation"), row = document.getElementById("relationOtherRow");
+  const sync = () => { row.hidden = rel.value !== "other"; };
+  rel.addEventListener("change", sync);
+  sync();
+})();
+</script>{% endblock %}

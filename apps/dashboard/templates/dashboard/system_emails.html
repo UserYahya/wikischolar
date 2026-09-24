@@ -1,0 +1,53 @@
+{% extends "dashboard/base.html" %}
+{% block title %}System emails{% endblock %}
+{% block content %}
+<header class="page-head"><div>
+  <h1>System emails</h1>
+  <p class="lede">The wording of the emails the system sends by itself. Write placeholders such as <code>{code}</code> exactly as
+    listed; they are replaced for every student. Changes apply to the next email sent. Who sends them (Brevo, Gmail…) and the
+    Reply-to are set on <a href="{% url 'dashboard:email_settings' %}">Email &amp; SMS settings</a>.</p>
+</div></header>
+{% if not email.delivers %}
+<p class="error-box" role="status"><strong>Emails are not being delivered right now</strong> ({{ email.via }}): test emails will only be
+  printed in the server console. Set up <a href="{% url 'dashboard:email_settings' %}">Email &amp; SMS settings</a> first.</p>
+{% endif %}
+
+{% for c in cards %}
+<section class="system-email" id="{{ c.email.key }}">
+  <h2>{{ c.email.label }}
+    {% if c.customized %}<span class="tag ok">Customised</span>{% else %}<span class="tag">Default text</span>{% endif %}</h2>
+  <p class="hint">{{ c.email.description }}{% if c.row %} Last changed {{ c.row.updated_at|date:"j M Y H:i" }}{% if c.row.updated_by %} by {{ c.row.updated_by.full_name }}{% endif %}.{% endif %}</p>
+
+  <div class="cols">
+    <form method="post" class="edit-form" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="op" value="save"><input type="hidden" name="key" value="{{ c.email.key }}">
+      {% if c.form.errors %}<p class="error-box">Not saved: fix the problems below.</p>{% endif %}
+      <label for="{{ c.form.subject.id_for_label }}">Subject</label>{{ c.form.subject }}{{ c.form.subject.errors }}
+      <label for="{{ c.form.body.id_for_label }}">Email text</label>{{ c.form.body }}{{ c.form.body.errors }}
+      <div class="row"><button class="btn primary">Save</button></div>
+    </form>
+
+    <div>
+      <h3>Placeholders</h3>
+      <table class="data placeholders">
+        <tbody>{% for name, meaning in c.email.placeholders.items %}
+          <tr><td class="nowrap"><code>{{ "{" }}{{ name }}{{ "}" }}</code>{% if name in c.email.required %} <span class="tag">required</span>{% endif %}</td><td>{{ meaning }}</td></tr>
+        {% endfor %}</tbody>
+      </table>
+      <h3>Preview <small class="muted">(saved text, sample data)</small></h3>
+      <div class="message-body"><p><strong>Subject:</strong> {{ c.preview_subject }}</p><pre>{{ c.preview_body }}</pre></div>
+      <div class="row">
+        <form method="post">{% csrf_token %}<input type="hidden" name="op" value="test"><input type="hidden" name="key" value="{{ c.email.key }}">
+          <button class="btn">Send test to {{ user.email }}</button></form>
+        {% if c.customized %}
+        <form method="post" onsubmit="return confirm('Replace this text with the default? The current text stays in the audit log.')">{% csrf_token %}
+          <input type="hidden" name="op" value="reset"><input type="hidden" name="key" value="{{ c.email.key }}">
+          <button class="btn danger-btn">Reset to default</button></form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Locations{% endblock %}
+{% block content %}
+<header class="page-head"><div>
+  <h1>Regions &amp; districts</h1>
+  <p class="lede">Region assignments live in the database, not in code. Changing a district's region here is audited and immediately changes the region shown for every student in that district.</p>
+</div></header>
+
+{% if unassigned %}
+<p class="notice"><strong>{{ unassigned|length }} district{{ unassigned|length|pluralize }} without a region:</strong>
+{% for d in unassigned %}{{ d.name }}{% if not forloop.last %}, {% endif %}{% endfor %}. Students there appear as “Unassigned” in region reports.</p>
+{% endif %}
+
+<section>
+  <h2>Regions <span class="count">{{ regions|length }}</span></h2>
+  <div class="scroll"><table class="data">
+    <thead><tr><th>Code</th><th>Name</th><th>Bangla</th><th class="num">Districts</th><th class="num">Students</th>{% if can_edit %}<th><span class="sr">Actions</span></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in regions %}
+      <tr>
+        <td><code>{{ r.code }}</code></td>
+        {% if can_edit %}
+        <td colspan="2">
+          <form method="post" class="inline">{% csrf_token %}
+            <input type="hidden" name="op" value="rename_region"><input type="hidden" name="region" value="{{ r.pk }}">
+            <input name="name" value="{{ r.name }}" aria-label="Name of {{ r.name }}" required>
+            <input name="name_bn" value="{{ r.name_bn }}" aria-label="Bangla name of {{ r.name }}" lang="bn">
+            <button class="btn small">Save</button>
+          </form>
+        </td>
+        {% else %}<td>{{ r.name }}</td><td lang="bn">{{ r.name_bn }}</td>{% endif %}
+        <td class="num">{{ r.n }}</td><td class="num">{{ r.s }}</td>
+        {% if can_edit %}<td>
+          {% if not r.n %}<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="op" value="archive_region"><input type="hidden" name="region" value="{{ r.pk }}"><button class="btn small danger-btn">Archive</button></form>
+          {% else %}<span class="muted">In use</span>{% endif %}
+        </td>{% endif %}
+      </tr>
+    {% empty %}<tr><td colspan="6" class="empty">No regions yet.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+
+  {% if can_edit %}
+  <details {% if region_form.errors %}open{% endif %}>
+    <summary>Add a region</summary>
+    <form method="post" class="form-grid">{% csrf_token %}<input type="hidden" name="op" value="add_region">
+      {% if region_form.non_field_errors %}<div class="error-box">{{ region_form.non_field_errors }}</div>{% endif %}
+      {% for field in region_form %}
+      <p class="row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</p>
+      {% endfor %}
+      <p class="span2"><button class="btn primary">Add region</button></p>
+    </form>
+  </details>
+  {% endif %}
+</section>
+
+<section>
+  <h2>District → region assignment <span class="count">{{ districts|length }}</span></h2>
+  <form method="post">{% csrf_token %}<input type="hidden" name="op" value="assign">
+    <div class="scroll"><table class="data compact">
+      <thead><tr><th>District</th><th>Bangla</th><th>Region</th><th class="num">Upazilas</th><th class="num">Students</th></tr></thead>
+      <tbody>
+      {% for d in districts %}
+        <tr {% if not d.region_id %}class="unassigned"{% endif %}>
+          <td><a href="{% url 'dashboard:district' d.pk %}">{{ d.name }}</a></td>
+          <td lang="bn">{{ d.name_bn }}</td>
+          <td>{% if can_edit %}
+            <select name="region_{{ d.pk }}" aria-label="Region for {{ d.name }}">
+              <option value="" {% if not d.region_id %}selected{% endif %}>— Unassigned —</option>
+              {% for r in regions %}<option value="{{ r.pk }}" {% if r.pk == d.region_id %}selected{% endif %}>{{ r.name }}</option>{% endfor %}
+            </select>
+          {% else %}{{ d.region.name|default:"Unassigned" }}{% endif %}</td>
+          <td class="num">{{ d.upz }}</td><td class="num">{{ d.s }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% if can_edit %}<p class="toolbar"><button class="btn primary">Save assignments</button><span class="hint">Only districts whose region changed are written and audited.</span></p>{% endif %}
+  </form>
+</section>
+{% endblock %}

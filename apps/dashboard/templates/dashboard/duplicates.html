@@ -1,0 +1,31 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Duplicate schools{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Duplicate school review</h1></header>
+<p class="lede">Pairs of schools in the same upazila with similar names. Merging re-links every student to the school you keep, turns the other name into an alias, and records it in the audit log. Nothing is deleted.</p>
+<form method="get" class="toolbar">
+  <select name="district" aria-label="District"><option value="">All districts</option>{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == district %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
+  <label class="inline">Similarity at least <input name="threshold" type="number" min="0.3" max="1" step="0.05" value="{{ threshold|default:'0.5' }}" style="width:5.5rem"></label>
+  <button class="btn">Find pairs</button>
+</form>
+{% if pairs %}
+<div class="scroll"><table class="data pairs">
+  <thead><tr><th>School A</th><th>School B</th><th>Upazila</th><th class="num">Similarity</th><th>Merge</th></tr></thead>
+  <tbody>{% for a, b, sim, na, nb in pairs %}<tr>
+    <td><a href="{% url 'dashboard:school' a.pk %}">{{ a.name }}</a><br><small class="muted">{{ a.get_verification_status_display }} · {{ na }} student{{ na|pluralize }}</small></td>
+    <td><a href="{% url 'dashboard:school' b.pk %}">{{ b.name }}</a><br><small class="muted">{{ b.get_verification_status_display }} · {{ nb }} student{{ nb|pluralize }}</small></td>
+    <td>{{ a.upazila.name }}, {{ a.district.name }}</td><td class="num">{{ sim }}</td>
+    <td class="merge-cell">
+      <form method="post" action="{% url 'dashboard:merge' %}">{% csrf_token %}<input type="hidden" name="keep" value="{{ a.pk }}"><input type="hidden" name="duplicate" value="{{ b.pk }}"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn small">Keep A</button></form>
+      <form method="post" action="{% url 'dashboard:merge' %}">{% csrf_token %}<input type="hidden" name="keep" value="{{ b.pk }}"><input type="hidden" name="duplicate" value="{{ a.pk }}"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn small">Keep B</button></form>
+    </td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="empty">No likely duplicates at this similarity. Lower the threshold to look wider.</p>{% endif %}
+{% endblock %}
+{% block scripts %}<script>
+document.querySelectorAll(".merge-cell form").forEach((f) => f.addEventListener("submit", (e) => {
+  const row = f.closest("tr"); const keep = f.querySelector("button").textContent.includes("A") ? 0 : 1;
+  const names = [...row.querySelectorAll("td a")].slice(0, 2).map((a) => a.textContent);
+  if (!confirm(`Keep “${names[keep]}” and merge “${names[1 - keep]}” into it?`)) e.preventDefault();
+}));
+</script>{% endblock %}

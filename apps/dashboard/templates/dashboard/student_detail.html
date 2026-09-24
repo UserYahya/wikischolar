@@ -1,0 +1,89 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ s.wikischolar_id }}{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <p class="crumb"><a href="{% url 'dashboard:students' %}">Students</a></p>
+    <h1><span class="wsid">{{ s.wikischolar_id }}</span> {{ s.student_name }}</h1>
+    {% if s.is_deleted %}<p class="notice">Archived {{ s.deleted_at|date:"j M Y H:i" }} by {{ s.deleted_by.email }}.</p>{% endif %}
+  </div>
+  <div class="row">
+    {% if s.is_deleted %}{% if can_delete %}
+      <form method="post" action="{% url 'dashboard:student_restore' s.wikischolar_id %}">{% csrf_token %}<button class="btn primary">Restore</button></form>{% endif %}
+    {% elif can_edit %}
+      <a class="btn primary" href="{% url 'dashboard:student_edit' s.wikischolar_id %}">Edit</a>
+    {% endif %}
+  </div>
+</header>
+<div class="cols">
+  <section>
+    <h2>Student &amp; guardian</h2>
+    <dl class="facts">
+      <dt>Date of birth</dt><dd>{{ s.date_of_birth|date:"j M Y" }}</dd>
+      <dt>Gender</dt><dd>{{ s.get_gender_display }}</dd>
+      <dt>Guardian</dt><dd>{{ s.guardian_name }} ({{ s.guardian_relation_label }})</dd>
+      <dt>Form filled in by</dt><dd>{{ s.get_filled_by_display }}{% if s.guardian_declared_at %} <span class="tag ok">guardian declared {{ s.guardian_declared_at|date:"j M Y H:i" }}</span>{% endif %}</dd>
+      <dt>Phone</dt><dd>{{ s.phone }}</dd>
+      <dt>Email</dt><dd>{{ s.email }} <span class="tag ok">verified {{ s.email_verified_at|date:"j M" }}</span></dd>
+      <dt>Email updates</dt><dd>{{ s.updates_opt_in|yesno:"Opted in,Not opted in" }}</dd>
+      <dt>Policy consent</dt><dd>{{ s.policy_consent_at|date:"j M Y H:i" }} (version {{ s.policy_version }})</dd>
+    </dl>
+  </section>
+  <section>
+    <h2>Academic</h2>
+    <dl class="facts">
+      <dt>Region</dt><dd>{{ s.region.name|default:"No region assigned" }}</dd>
+      <dt>District</dt><dd>{{ s.district.name }} <span class="muted">{{ s.district.name_bn }}</span></dd>
+      <dt>Upazila</dt><dd>{{ s.upazila.name }} <span class="muted">{{ s.upazila.name_bn }}</span></dd>
+      <dt>School</dt><dd><a href="{% url 'dashboard:school' s.school_id %}">{{ s.school.name }}</a> <span class="tag">{{ s.school.get_verification_status_display }}</span></dd>
+      <dt>Typed as</dt><dd>“{{ s.school_name_as_entered }}” <span class="muted">· {{ s.get_school_resolution_display }}</span></dd>
+      <dt>Class</dt><dd>{{ s.get_current_class_display }}</dd>
+      <dt>Class roll</dt><dd>{{ s.class_roll|default:"—" }}</dd>
+      <dt>Student ID (SID)</dt><dd>{{ s.student_id_sid|default:"—" }}</dd>
+      <dt>Registered</dt><dd>{{ s.created_at|date:"j M Y H:i" }}</dd>
+    </dl>
+  </section>
+</div>
+
+<section>
+  <h2>Edit history</h2>
+  {% if history %}
+  <div class="scroll"><table class="data">
+    <thead><tr><th>When</th><th>Who</th><th>Field</th><th>Old</th><th>New</th><th>Reason</th></tr></thead>
+    <tbody>{% for h in history %}<tr><td>{{ h.changed_at|date:"j M Y H:i" }}</td><td>{{ h.changed_by.email|default:"system" }}</td><td>{{ h.field_name }}</td><td>{{ h.old_value|default_if_none:"—" }}</td><td>{{ h.new_value|default_if_none:"—" }}</td><td>{{ h.reason }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">No edits since registration.</p>{% endif %}
+</section>
+
+<section>
+  <h2>Messages sent</h2>
+  {% if notifications %}
+  <div class="scroll"><table class="data">
+    <thead><tr><th>When</th><th>Channel</th><th>Type</th><th>Batch</th><th>Status</th></tr></thead>
+    <tbody>{% for n in notifications %}<tr><td>{{ n.created_at|date:"j M Y H:i" }}</td><td>{{ n.get_channel_display }}</td><td>{{ n.get_kind_display }}</td>
+      <td>{% with b=n.email_batch|default:n.sms_batch %}{% if b %}<a href="{% url 'dashboard:batch' b.batch_code %}">{{ b.label }}</a>{% if b.name %} <small class="muted">{{ b.batch_code }}</small>{% endif %}{% else %}—{% endif %}{% endwith %}</td>
+      <td><span class="status {{ n.status }}">{{ n.get_status_display }}</span></td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">No messages yet.</p>{% endif %}
+</section>
+
+<section>
+  <h2>Access &amp; actions</h2>
+  <div class="scroll"><table class="data compact">
+    <thead><tr><th>When</th><th>Who</th><th>Action</th></tr></thead>
+    <tbody>{% for a in audit %}<tr><td>{{ a.created_at|date:"j M Y H:i" }}</td><td>{{ a.actor_label }}</td><td>{{ a.action }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+{% if not s.is_deleted and can_delete %}
+<section class="danger">
+  <h2>Archive this record</h2>
+  <p>Archiving hides the student from lists and messaging. Nothing is deleted; you can restore it from Archived records.</p>
+  <form method="post" action="{% url 'dashboard:student_archive' s.wikischolar_id %}" class="row">
+    {% csrf_token %}
+    <input name="reason" placeholder="Reason (e.g. duplicate registration)" aria-label="Reason" required>
+    <button class="btn danger-btn">Archive record</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

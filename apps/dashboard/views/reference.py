@@ -1,0 +1,224 @@
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
+
+from apps.core import audit
+from apps.core.permissions import require_perm
+from apps.core.utils import english_text
+from apps.reference import services as ref
+from apps.reference.models import District, Region, School, Upazila
+
+from ..forms import RegionForm
+from ._util import paginate
+
+
+def _english(request, raw):
+    """English-only names (same rule as the public form); None plus an error message otherwise."""
+    try:
+        return english_text(raw)
+    except ValidationError as exc:
+        messages.error(request, exc.messages[0])
+        return None
+
+
+@require_perm("schools.view")
+def school_list(request):
+    if request.method == "POST":
+        if not request.user.has_perm_code("schools.edit"):
+            messages.error(request, "You don't have permission to add schools.")
+            return redirect("dashboard:schools")
+        upz = Upazila.objects.filter(pk=request.POST.get("upazila") or 0).first()
+        name = _english(request, request.POST.get("name", ""))
+        if name is None:
+            return redirect("dashboard:schools")
+        if upz and name:
+            school = School.objects.create(name=name, upazila=upz, district_id=upz.district_id,
+                                           verification_status=School.Status.VERIFIED, source=School.Source.ADMIN,
+                                           verified_by=request.user)
+            audit.record("school.created", request=request, entity=school, after=audit.snapshot(school))
+            messages.success(request, f"Added “{school.name}”.")
+            return redirect("dashboard:school", pk=school.pk)
+        messages.error(request, "Choose an upazila and enter a school name.")
+    qs = (School.objects.select_related("district", "upazila")
+          .annotate(n=Count("students", filter=Q(students__is_deleted=False))))
+    status = request.GET.get("status", "active")
+    if status == "active":
+        qs = qs.exclude(verification_status="merged")
+    elif status:
+        qs = qs.filter(verification_status=status)
+    district = request.GET.get("district", "")
+    if district:
+        qs = qs.filter(district_id=district)
+    upazila = request.GET.get("upazila", "")
+    if upazila:
+        qs = qs.filter(upazila_id=upazila)
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(aliases__alias_text__icontains=q)).distinct()
+    page, qstring = paginate(request, qs.order_by("verification_status", "name"))
+    return render(request, "dashboard/schools.html", {
+        "page": page, "qstring": qstring, "districts": District.objects.all(),
+        "upazilas": Upazila.objects.filter(district_id=district) if district else [],
+        "f": {"status": status, "district": district, "upazila": upazila, "q": q},
+        "can_edit": request.user.has_perm_code("schools.edit"),
+    })
+
+
+@require_perm("schools.view")
+def school_detail(request, pk):
+    school = get_object_or_404(School.all_objects.select_related("district__region", "upazila", "merged_into"), pk=pk)
+    if request.method == "POST":
+        if not request.user.has_perm_code("schools.edit"):
+            messages.error(request, "You don't have permission to edit schools.")
+            return redirect("dashboard:school", pk=pk)
+        op = request.POST.get("op")
+        if op == "verify":
+            ref.set_school_status(school, School.Status.VERIFIED, request=request)
+            messages.success(request, "Marked as verified.")
+        elif op == "unverify":
+            ref.set_school_status(school, School.Status.PENDING, request=request)
+            messages.success(request, "Moved back to pending review.")
+        elif op == "rename" and request.POST.get("name", "").strip():
+            if (name := _english(request, request.POST["name"])) is not None:
+                ref.rename_school(school, name, request=request)
+                messages.success(request, "Renamed. The previous name was kept as an alias.")
+        elif op == "alias" and request.POST.get("alias", "").strip():
+            if (alias := _english(request, request.POST["alias"])) is not None:
+                ref.add_alias(school, alias, request=request)
+                messages.success(request, "Alias added. Matching entries will now resolve to this school.")
+        return redirect("dashboard:school", pk=pk)
+    students = school.students.select_related("district")[:100]
+    entered = (school.students.values("school_name_as_entered").annotate(n=Count("id")).order_by("-n")[:20])
+    return render(request, "dashboard/school_detail.html", {
+        "school": school, "aliases": school.aliases.select_related("created_by"),
+        "students": students, "student_count": school.students.count(), "entered": entered,
+        "merged_from": school.merged_from.all(), "can_edit": request.user.has_perm_code("schools.edit"),
+    })
+
+
+@require_perm("schools.merge")
+def duplicates(request):
+    district = request.GET.get("district") or None
+    try:
+        threshold = float(request.GET.get("threshold") or 0) or None
+    except ValueError:
+        threshold = None
+    pairs = ref.find_duplicate_pairs(district_id=district, threshold=threshold)
+    counts = dict(School.objects.filter(pk__in={s.pk for a, b, _ in pairs for s in (a, b)})
+                  .annotate(n=Count("students", filter=Q(students__is_deleted=False))).values_list("pk", "n"))
+    return render(request, "dashboard/duplicates.html", {
+        "pairs": [(a, b, sim, counts.get(a.pk, 0), counts.get(b.pk, 0)) for a, b, sim in pairs],
+        "districts": District.objects.all(), "district": district or "", "threshold": threshold or "",
+    })
+
+
+@require_POST
+@require_perm("schools.merge")
+def merge(request):
+    keep = get_object_or_404(School, pk=request.POST.get("keep"))
+    dup = get_object_or_404(School, pk=request.POST.get("duplicate"))
+    try:
+        moved = ref.merge_schools(keep=keep, duplicate=dup, request=request)
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Merged “{dup.name}” into “{keep.name}”. {moved} student(s) re-linked.")
+    return redirect(request.POST.get("next") or "dashboard:duplicates")
+
+
+@require_perm("reference.view")
+def locations(request):
+    can_edit = request.user.has_perm_code("reference.edit")
+    region_form = RegionForm(request.POST if request.POST.get("op") == "add_region" else None)
+    if request.method == "POST":
+        if not can_edit:
+            messages.error(request, "You don't have permission to change reference data.")
+            return redirect("dashboard:locations")
+        op = request.POST.get("op")
+        if op == "add_region" and region_form.is_valid():
+            region = region_form.save()
+            audit.record("reference.region_created", request=request, entity=region, after=audit.snapshot(region))
+            messages.success(request, f"Region “{region.name}” added.")
+            return redirect("dashboard:locations")
+        if op == "rename_region":
+            region = get_object_or_404(Region, pk=request.POST.get("region"))
+            before = audit.snapshot(region)
+            name = _english(request, request.POST.get("name", ""))
+            if name is None:
+                return redirect("dashboard:locations")
+            region.name = name or region.name
+            region.name_bn = request.POST.get("name_bn", region.name_bn).strip()
+            region.save()
+            audit.record("reference.region_updated", request=request, entity=region, before=before,
+                         after=audit.snapshot(region))
+            messages.success(request, "Region updated.")
+            return redirect("dashboard:locations")
+        if op == "archive_region":
+            region = get_object_or_404(Region, pk=request.POST.get("region"))
+            if region.districts.exists():
+                messages.error(request, "Move this region's districts to another region first.")
+            else:
+                region.soft_delete(by=request.user)
+                audit.record("reference.region_archived", request=request, entity=region)
+                messages.success(request, f"Region “{region.name}” archived.")
+            return redirect("dashboard:locations")
+        if op == "assign":
+            regions = {str(r.pk): r for r in Region.objects.all()}
+            changed = 0
+            with transaction.atomic():
+                for d in District.objects.select_related("region"):
+                    key = f"region_{d.pk}"
+                    if key in request.POST:
+                        changed += ref.assign_district_region(d, regions.get(request.POST[key]), request=request)
+            messages.success(request, f"{changed} district assignment(s) updated." if changed else "No changes.")
+            return redirect("dashboard:locations")
+    regions = Region.objects.annotate(n=Count("districts", distinct=True),
+                                      s=Count("districts__students", distinct=True,
+                                      filter=Q(districts__students__is_deleted=False)))
+    districts = (District.objects.select_related("region")
+                 .annotate(upz=Count("upazilas", distinct=True),
+                           s=Count("students", distinct=True, filter=Q(students__is_deleted=False)))
+                 .order_by("region__sort_order", "name"))
+    return render(request, "dashboard/locations.html", {
+        "regions": regions, "districts": districts, "region_form": region_form, "can_edit": can_edit,
+        "unassigned": [d for d in districts if not d.region_id],
+    })
+
+
+@require_perm("reference.view")
+def district_detail(request, pk):
+    district = get_object_or_404(District.objects.select_related("region"), pk=pk)
+    if request.method == "POST":
+        if not request.user.has_perm_code("reference.edit"):
+            messages.error(request, "You don't have permission to change reference data.")
+            return redirect("dashboard:district", pk=pk)
+        op = request.POST.get("op")
+        try:
+            with transaction.atomic():
+                name = _english(request, request.POST.get("name", ""))
+                if name is None:
+                    return redirect("dashboard:district", pk=pk)
+                if op == "add_upazila" and name:
+                    u = Upazila.objects.create(district=district, name=name,
+                                               name_bn=request.POST.get("name_bn", "").strip())
+                    audit.record("reference.upazila_created", request=request, entity=u, after=audit.snapshot(u))
+                    messages.success(request, f"Upazila “{u.name}” added.")
+                elif op == "rename_upazila":
+                    u = get_object_or_404(Upazila, pk=request.POST.get("upazila"), district=district)
+                    before = audit.snapshot(u)
+                    u.name = name or u.name
+                    u.name_bn = request.POST.get("name_bn", u.name_bn).strip()
+                    u.save()
+                    audit.record("reference.upazila_updated", request=request, entity=u, before=before,
+                                 after=audit.snapshot(u))
+                    messages.success(request, "Upazila updated.")
+        except IntegrityError:
+            messages.error(request, "An upazila with this name already exists in this district.")
+        return redirect("dashboard:district", pk=pk)
+    upazilas = district.upazilas.annotate(s=Count("students", distinct=True, filter=Q(students__is_deleted=False)),
+                                         sc=Count("schools", distinct=True, filter=~Q(schools__verification_status="merged")))
+    return render(request, "dashboard/district_detail.html", {
+        "district": district, "upazilas": upazilas, "can_edit": request.user.has_perm_code("reference.edit")})

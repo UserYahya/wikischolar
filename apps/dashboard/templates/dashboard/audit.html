@@ -1,0 +1,37 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<header class="page-head"><div>
+  <h1>Audit log <span class="count">{{ page.paginator.count }}</span></h1>
+  <p class="lede">Append-only. The database rejects updates and deletes on this table.</p>
+</div></header>
+<form method="get" class="toolbar">
+  <select name="action" aria-label="Action">
+    <option value="">All actions</option>
+    {% for a in actions %}<option value="{{ a }}" {% if a == f.action %}selected{% endif %}>{{ a }}</option>{% endfor %}
+  </select>
+  <input name="actor" value="{{ f.actor }}" placeholder="Actor email" aria-label="Actor">
+  <input name="entity" value="{{ f.entity }}" placeholder="Entity ID" aria-label="Entity ID">
+  <button class="btn">Filter</button>{% if f.action or f.actor or f.entity %}<a class="link" href="{% url 'dashboard:audit' %}">Clear</a>{% endif %}
+</form>
+<div class="scroll"><table class="data compact">
+  <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead>
+  <tbody>
+  {% for e in page %}
+    <tr>
+      <td class="nowrap">{{ e.created_at|date:"Y-m-d H:i:s" }}</td>
+      <td>{{ e.actor_label|default:e.get_actor_type_display }}</td>
+      <td><code>{{ e.action }}</code></td>
+      <td>{% if e.entity_type %}{{ e.entity_type }} <a href="?entity={{ e.entity_id }}">{{ e.entity_id }}</a>{% endif %}</td>
+      <td>{% if e.before or e.after or e.meta %}<details><summary>View</summary>
+        {% if e.meta %}<p class="muted">Meta</p><pre>{{ e.meta|pprint }}</pre>{% endif %}
+        {% if e.before %}<p class="muted">Before</p><pre>{{ e.before|pprint }}</pre>{% endif %}
+        {% if e.after %}<p class="muted">After</p><pre>{{ e.after|pprint }}</pre>{% endif %}
+      </details>{% endif %}</td>
+      <td class="muted">{{ e.ip_address|default:"" }}</td>
+    </tr>
+  {% empty %}<tr><td colspan="6" class="empty">No entries match.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% include "dashboard/_pagination.html" %}
+{% endblock %}

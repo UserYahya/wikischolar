@@ -1,0 +1,158 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Email & SMS settings{% endblock %}
+{% block content %}
+<header class="page-head"><div>
+  <h1>Email &amp; SMS settings</h1>
+  <p class="lede"><a href="#sms">Jump to SMS</a> · Email: the account that sends OTP codes, registration confirmations and bulk email.
+    {% if cfg and cfg.is_active %}<span class="tag ok">Active: {{ cfg.get_provider_display }}</span>
+    {% else %}<span class="tag">Not active: using the server's default email configuration</span>{% endif %}</p>
+</div></header>
+{% if not email.delivers %}
+<p class="error-box" role="status"><strong>Emails are not being delivered right now</strong> ({{ email.via }}): they are only printed in the
+  server console. Save Brevo or Google Mail credentials below, send a test, then activate them.</p>
+{% endif %}
+
+<form method="post" class="edit-form" id="emailSettings" autocomplete="off" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="op" value="save">
+  {% if form.errors %}<p class="error-box">Fix the highlighted fields.</p>{% endif %}
+  <div class="form-grid">
+    <div class="span2"><label for="id_provider">Provider</label>{{ form.provider }}{{ form.provider.errors }}</div>
+
+    <div class="span2 provider-note" data-for="brevo">
+      <p><strong>Brevo:</strong> in Brevo go to <em>SMTP &amp; API → SMTP</em>. Use the <em>SMTP login</em>
+        (looks like <code>xxxxxx@smtp-brevo.com</code>) as username and generate an <em>SMTP key</em> as password.</p>
+      <p>The From address must be a sender or domain verified in Brevo. Connection: smtp-relay.brevo.com, port 587, STARTTLS.</p>
+    </div>
+    <div class="span2 provider-note" data-for="brevo_api">
+      <p><strong>Brevo HTTPS API:</strong> sends over port 443, so it works on hosts that block outgoing SMTP
+        (test fails with “Network is unreachable” or a timeout). In Brevo go to <em>SMTP &amp; API → API keys</em>,
+        generate a key (starts with <code>xkeysib-</code>) and paste it as the password. No username is needed.</p>
+      <p>The From address must be a sender or domain verified in Brevo.</p>
+    </div>
+    <div class="span2 provider-note" data-for="gmail">
+      <p><strong>Google Mail:</strong> username is the full Gmail / Workspace address. Password must be an
+        <em>App password</em> (Google Account → Security → 2-Step Verification → App passwords), not the normal password.</p>
+      <p>The From address should be that account or a verified “Send mail as” alias. Google limits sending
+        (about 500/day for Gmail, 2,000/day for Workspace), so large bulk sends are better through Brevo.</p>
+    </div>
+    <div class="span2 provider-note" data-for="console">
+      <p>Nothing is sent: messages are printed in the server console. For local testing only.</p>
+    </div>
+
+    <div data-smtp><label for="id_host">SMTP host</label>{{ form.host }}{{ form.host.errors }}</div>
+    <div data-smtp><label for="id_port">Port</label>{{ form.port }}{{ form.port.errors }}</div>
+    <div data-smtp class="span2"><label for="id_security">Encryption</label>{{ form.security }}{{ form.security.errors }}</div>
+
+    <div data-cred data-user><label for="id_username">{{ form.username.label }}</label>{{ form.username }}{{ form.username.errors }}</div>
+    <div data-cred><label for="id_password">{{ form.password.label }}</label>{{ form.password }}
+      <p class="hint">{% if cfg.has_password %}A password is saved. Leave blank to keep it.{% else %}No password saved yet.{% endif %} Stored encrypted; never shown again.</p>
+      {{ form.password.errors }}</div>
+
+    <div><label for="id_from_email">{{ form.from_email.label }}</label>{{ form.from_email }}{{ form.from_email.errors }}</div>
+    <div><label for="id_from_name">{{ form.from_name.label }}</label>{{ form.from_name }}{{ form.from_name.errors }}</div>
+    <div class="span2"><label for="id_reply_to">{{ form.reply_to.label }}</label>{{ form.reply_to }}
+      <p class="hint">Every email (verification codes, confirmations, bulk messages) is sent with this Reply-to, so answers
+        reach a monitored inbox. Leave blank to use the default, <strong>{{ default_reply_to|default:"the From address" }}</strong>.</p>
+      {{ form.reply_to.errors }}</div>
+    <div class="span2"><label class="inline">{{ form.is_active }} {{ form.is_active.label }}</label>
+      <p class="hint">Save first, send a test email below, then tick this. Untick it to fall back to the server's default.</p></div>
+  </div>
+  <div class="row"><button class="btn primary">Save settings</button>
+    {% if cfg %}<span class="muted">Last changed {{ cfg.updated_at|date:"j M Y H:i" }}{% if cfg.updated_by %} by {{ cfg.updated_by.full_name }}{% endif %}</span>{% endif %}</div>
+</form>
+
+<section>
+  <h2>Send a test email</h2>
+  <p class="hint">Uses the saved settings above, even before they are active.</p>
+  <form method="post" class="row">{% csrf_token %}
+    <input type="hidden" name="op" value="test">
+    <label for="id_to" class="visually-hidden">{{ test_form.to.label }}</label>{{ test_form.to }}
+    <button class="btn" {% if not cfg %}disabled title="Save settings first"{% endif %}>Send test</button>
+    {{ test_form.to.errors }}
+  </form>
+</section>
+
+<h2 id="sms" class="section-head">SMS (MiM SMS)</h2>
+<p class="lede">Used for bulk SMS from <em>Messages</em>.
+  {% if sms_cfg and sms_cfg.is_active %}<span class="tag ok">Active: {{ sms_cfg.get_provider_display }}</span>
+  {% else %}<span class="tag">Not active: using the server's default SMS configuration</span>{% endif %}</p>
+{% if not sms.delivers %}
+<p class="error-box" role="status"><strong>SMS are not being delivered right now</strong> ({{ sms.via }}): they are only written to the server log.</p>
+{% endif %}
+
+<form method="post" class="edit-form" id="smsSettings" autocomplete="off" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="op" value="sms_save">
+  {% if sms_form.errors %}<p class="error-box">Fix the highlighted SMS fields.</p>{% endif %}
+  <div class="form-grid">
+    <div class="span2"><label for="id_sms-provider">Provider</label>
+      <select name="provider" id="id_sms-provider">{% for v, l in sms_form.fields.provider.choices %}<option value="{{ v }}" {% if v == sms_form.provider.value %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>{{ sms_form.provider.errors }}</div>
+
+    <div class="span2 provider-note" data-sms-for="mimsms">
+      <p><strong>Where to find each value</strong> (sign in at <a href="https://sms.mimsms.com" target="_blank" rel="noopener">sms.mimsms.com</a>):</p>
+      <p><em>API username</em>: your MiM SMS panel login email. <em>API key</em>: Utility → Developer. The key must be
+        <strong>activated</strong> there first. <em>Sender ID</em>: Utility → Sender ID, exactly as listed (a masking name or a number such as 8809612444598).</p>
+      <p><strong>Whitelist this server:</strong> in Utility → Developer add the server's public IP address and domain,
+        or MiM SMS rejects every request. For local testing, use a fixed (static) public IP.</p>
+    </div>
+    <div class="span2 provider-note" data-sms-for="console"><p>Nothing is sent: messages are written to the server log. For local testing only.</p></div>
+
+    <div data-sms-cred><label for="id_sms-username">{{ sms_form.username.label }}</label>
+      <input type="email" name="username" id="id_sms-username" value="{{ sms_form.username.value|default:'' }}" autocomplete="off">{{ sms_form.username.errors }}</div>
+    <div data-sms-cred><label for="id_sms-api_key">{{ sms_form.api_key.label }}</label>
+      <input type="password" name="api_key" id="id_sms-api_key" autocomplete="new-password">
+      <p class="hint">{% if sms_cfg.has_api_key %}An API key is saved. Leave blank to keep it.{% else %}No API key saved yet.{% endif %} Stored encrypted; never shown again.</p>
+      {{ sms_form.api_key.errors }}</div>
+    <div data-sms-cred><label for="id_sms-sender_name">{{ sms_form.sender_name.label }}</label>
+      <input name="sender_name" id="id_sms-sender_name" maxlength="20" value="{{ sms_form.sender_name.value|default:'' }}">{{ sms_form.sender_name.errors }}</div>
+    <div data-sms-cred><label for="id_sms-api_url">{{ sms_form.api_url.label }}</label>
+      <input type="url" name="api_url" id="id_sms-api_url" value="{{ sms_form.api_url.value|default:'' }}">
+      <p class="hint">Leave as https://api.mimsms.com/api unless MiM SMS tells you otherwise.</p>{{ sms_form.api_url.errors }}</div>
+    <div class="span2"><label class="inline"><input type="checkbox" name="is_active" {% if sms_form.is_active.value %}checked{% endif %}> {{ sms_form.is_active.label }}</label>
+      <p class="hint">Save first, send a test SMS below, then tick this.</p></div>
+  </div>
+  <div class="row"><button class="btn primary">Save SMS settings</button>
+    {% if sms_cfg %}<span class="muted">Last changed {{ sms_cfg.updated_at|date:"j M Y H:i" }}{% if sms_cfg.updated_by %} by {{ sms_cfg.updated_by.full_name }}{% endif %}</span>{% endif %}</div>
+</form>
+
+<section>
+  <h2>Test SMS and balance</h2>
+  <p class="hint">Uses the saved SMS settings, even before they are active. Each test SMS uses one SMS credit.</p>
+  <form method="post" class="row">{% csrf_token %}
+    <input type="hidden" name="op" value="sms_test">
+    <label for="id_phone" class="visually-hidden">{{ sms_test_form.phone.label }}</label>
+    <input name="phone" id="id_phone" type="tel" inputmode="tel" placeholder="01XXXXXXXXX" value="{{ sms_test_form.phone.value|default:'' }}">
+    <button class="btn" {% if not sms_cfg %}disabled title="Save SMS settings first"{% endif %}>Send test SMS</button>
+    {{ sms_test_form.phone.errors }}
+  </form>
+  <form method="post" class="row" style="margin-top:.5rem">{% csrf_token %}
+    <input type="hidden" name="op" value="sms_balance">
+    <button class="btn" {% if not sms_cfg %}disabled title="Save SMS settings first"{% endif %}>Check MiM SMS balance</button>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const sel = document.getElementById("id_provider");
+  const sync = () => {
+    const p = sel.value;
+    document.querySelectorAll(".provider-note").forEach((n) => { n.hidden = n.dataset.for !== p; });
+    document.querySelectorAll("[data-smtp]").forEach((n) => { n.hidden = p !== "smtp"; });
+    document.querySelectorAll("[data-cred]").forEach((n) => { n.hidden = p === "console"; });
+    document.querySelectorAll("[data-user]").forEach((n) => { n.hidden = p === "console" || p === "brevo_api"; });
+  };
+  sel.addEventListener("change", sync);
+  sync();
+  const smsSel = document.getElementById("id_sms-provider");
+  const smsSync = () => {
+    const p = smsSel.value;
+    document.querySelectorAll("[data-sms-for]").forEach((n) => { n.hidden = n.dataset.smsFor !== p; });
+    document.querySelectorAll("[data-sms-cred]").forEach((n) => { n.hidden = p === "console"; });
+  };
+  smsSel.addEventListener("change", smsSync);
+  smsSync();
+})();
+</script>
+{% endblock %}

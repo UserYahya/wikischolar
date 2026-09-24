@@ -1,0 +1,17 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Archived records{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Archived records</h1></header>
+<p class="lede">Archived students are hidden from lists, exports and messaging but kept in full. Restore brings them back exactly as they were.</p>
+{% if page.object_list %}
+<div class="scroll"><table class="data">
+  <thead><tr><th>WikiScholar ID</th><th>Name</th><th>School</th><th>Archived</th><th>By</th><th></th></tr></thead>
+  <tbody>{% for s in page %}<tr>
+    <td><a class="wsid" href="{% url 'dashboard:student' s.wikischolar_id %}">{{ s.wikischolar_id }}</a></td><td>{{ s.student_name }}</td><td>{{ s.school.name }}</td>
+    <td>{{ s.deleted_at|date:"j M Y H:i" }}</td><td>{{ s.deleted_by.email }}</td>
+    <td><form method="post" action="{% url 'dashboard:student_restore' s.wikischolar_id %}">{% csrf_token %}<button class="btn small">Restore</button></form></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% include "dashboard/_pagination.html" %}
+{% else %}<p class="empty">Nothing is archived.</p>{% endif %}
+{% endblock %}

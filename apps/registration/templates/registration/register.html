@@ -1,0 +1,200 @@
+{% extends "public_base.html" %}{% load static %}
+{% block title %}WikiScholar Registration{% endblock %}
+{% block content %}
+<main class="reg" id="reg">
+  <div class="intro">
+    <h1>Student Registration</h1>
+    <p>Complete the form in four steps. At the end you'll get a WikiScholar ID, which you'll need for every WikiScholar activity.
+      Please write everything in <strong>English</strong>.</p>
+  </div>
+
+  <nav class="rail" aria-label="Registration steps">
+    <ol>
+      <li data-step-tab="1" aria-current="step"><span class="n">1</span><span class="t">Student &amp; guardian</span></li>
+      <li data-step-tab="2"><span class="n">2</span><span class="t">School details</span></li>
+      <li data-step-tab="3"><span class="n">3</span><span class="t">Contact &amp; email verification</span></li>
+      <li data-step-tab="4"><span class="n">4</span><span class="t">Consent &amp; submit</span></li>
+    </ol>
+    <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a></p>
+  </nav>
+
+  <form class="sheet" id="regForm" novalidate autocomplete="on" lang="en">
+    {% csrf_token %}
+    <div class="hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+
+    <!-- Step 1 -->
+    <section class="step" data-step="1">
+      <h2>Student &amp; guardian</h2>
+      <fieldset class="declare" id="declareBox">
+        <legend>Guardian declaration</legend>
+        <p class="declare-note">This form must be filled in by the student's guardian (parent), as required by the
+          Wikimedia Bangladesh Youth Safety Policy.</p>
+        <label class="check">
+          <input type="checkbox" name="guardian_declaration" id="guardian_declaration" required>
+          <span>I am the <strong>guardian (parent)</strong> of the student named below, and I am filling in this form on
+            their behalf. The information I give is correct.</span>
+        </label>
+        <p class="err" data-err="guardian_declaration"></p>
+      </fieldset>
+      <div class="grid">
+        <div class="field span2">
+          <label for="student_name">Student's full name</label>
+          <input id="student_name" name="student_name" required maxlength="150" autocomplete="name" data-english placeholder="e.g. Rahim Uddin">
+          <p class="err" data-err="student_name"></p>
+        </div>
+        <div class="field">
+          <label for="date_of_birth">Date of birth</label>
+          <input id="date_of_birth" name="date_of_birth" type="date" required>
+          <p class="err" data-err="date_of_birth"></p>
+        </div>
+        <fieldset class="field">
+          <legend>Gender</legend>
+          <div class="choices">
+            {% for v, l in genders %}<label class="chip"><input type="radio" name="gender" value="{{ v }}" required><span>{{ l }}</span></label>{% endfor %}
+          </div>
+          <p class="err" data-err="gender"></p>
+        </fieldset>
+        <div class="field">
+          <label for="guardian_name">Guardian's name (your name)</label>
+          <input id="guardian_name" name="guardian_name" required maxlength="150" data-english>
+          <p class="err" data-err="guardian_name"></p>
+        </div>
+        <fieldset class="field">
+          <legend>Relation to guardian</legend>
+          <div class="choices">
+            {% for v, l in relations %}<label class="chip"><input type="radio" name="guardian_relation" value="{{ v }}" required><span>{{ l }}</span></label>{% endfor %}
+          </div>
+          <p class="err" data-err="guardian_relation"></p>
+        </fieldset>
+        <div class="field" id="relationOtherField" hidden>
+          <label for="guardian_relation_other">Write the relation</label>
+          <input id="guardian_relation_other" name="guardian_relation_other" maxlength="60" data-english placeholder="e.g. Uncle, Aunt, Brother">
+          <p class="err" data-err="guardian_relation_other"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2 -->
+    <section class="step" data-step="2" hidden>
+      <h2>School details</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="district">District</label>
+          <select id="district" name="district" required><option value="">Loading…</option></select>
+          <p class="err" data-err="district"></p>
+        </div>
+        <div class="field">
+          <label for="region">Region (automatic)</label>
+          <output id="region" class="derived" aria-live="polite">Shown after you choose a district</output>
+        </div>
+        <div class="field">
+          <label for="upazila">Upazila</label>
+          <select id="upazila" name="upazila" required disabled><option value="">Choose a district first</option></select>
+          <p class="err" data-err="upazila"></p>
+        </div>
+        <div class="field">
+          <label for="current_class">Current class</label>
+          <select id="current_class" name="current_class" required>
+            <option value="">Choose</option>
+            {% for v, l in classes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+          </select>
+          <p class="err" data-err="current_class"></p>
+        </div>
+        <div class="field span2 combo">
+          <label for="school_name">School name</label>
+          <input id="school_name" name="school_name" required maxlength="255" disabled data-english
+                 role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="schoolList"
+                 placeholder="Choose an upazila first" autocomplete="off">
+          <input type="hidden" name="school_id" id="school_id">
+          <ul id="schoolList" role="listbox" hidden></ul>
+          <p class="hint" id="schoolHint"></p>
+          <p class="hint" id="schoolHelp">Start typing: approved schools in the chosen upazila are suggested. If yours isn't listed, add it as new.</p>
+          <p class="err" data-err="school_name"></p>
+        </div>
+        <div class="field">
+          <label for="class_roll">Class roll</label>
+          <input id="class_roll" name="class_roll" inputmode="numeric" maxlength="20" aria-describedby="rollHelp" data-english>
+          <p class="err" data-err="class_roll"></p>
+        </div>
+        <div class="field">
+          <label for="student_id_sid">Student ID (SID)</label>
+          <input id="student_id_sid" name="student_id_sid" maxlength="40" aria-describedby="rollHelp" data-english>
+          <p class="err" data-err="student_id_sid"></p>
+        </div>
+        <p class="hint span2" id="rollHelp">Fill in at least one: class roll or student ID.</p>
+      </div>
+    </section>
+
+    <!-- Step 3 -->
+    <section class="step" data-step="3" hidden>
+      <h2>Contact &amp; email verification</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="phone">Mobile number</label>
+          <input id="phone" name="phone" type="tel" inputmode="tel" required placeholder="01XXXXXXXXX" autocomplete="tel">
+          <p class="err" data-err="phone"></p>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email" spellcheck="false" placeholder="name@gmail.com">
+          <p class="err" data-err="email"></p>
+        </div>
+        <div class="typo span2" id="typoBox" hidden role="alert">
+          <p id="typoText"></p>
+          <div class="row">
+            <button type="button" class="btn quiet" id="typoFix"></button>
+            <button type="button" class="btn quiet" id="typoKeep">No, my address is correct</button>
+          </div>
+        </div>
+        <div class="otp span2" id="otpBox">
+          <p class="hint" id="otpHowTo">The verification code is sent <strong>by email only</strong> (not by SMS).
+            If it hasn't arrived within a minute, check your <strong>Spam</strong> or <strong>Junk</strong> folder.</p>
+          <button type="button" class="btn" id="sendOtp">Send verification code</button>
+          <div class="otp-entry" id="otpEntry" hidden>
+            <label for="email_otp">Email code</label>
+            <div class="row">
+              <input id="email_otp" name="email_otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code">
+              <button type="button" class="btn" id="verifyOtp">Verify code</button>
+            </div>
+            <p class="hint" id="otpHint"></p>
+            <button type="button" class="link" id="resendOtp" disabled>Send a new code</button>
+          </div>
+          <p class="verified" id="verifiedNote" hidden>Email verified.</p>
+          <p class="err" data-err="email_otp"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 4 -->
+    <section class="step" data-step="4" hidden>
+      <h2>Consent &amp; submit</h2>
+      <label class="check">
+        <input type="checkbox" name="policy_consent" id="policy_consent" required>
+        <span>I have read and agree to the <a href="{{ POLICY_URL }}" target="_blank" rel="noopener">Wikimedia Bangladesh Youth Safety Policy</a></span>
+      </label>
+      <p class="err" data-err="policy_consent"></p>
+      <label class="check">
+        <input type="checkbox" name="updates_opt_in" id="updates_opt_in">
+        <span>I want to receive future WikiScholar updates by email</span>
+      </label>
+      <p class="err" data-err="__all__" id="formErr"></p>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="btn quiet" id="back" hidden>Back</button>
+      <button type="button" class="btn primary" id="next">Next step</button>
+      <button type="submit" class="btn primary" id="submit" hidden disabled>Complete registration</button>
+    </div>
+  </form>
+
+  <section class="done" id="done" hidden tabindex="-1" aria-live="polite">
+    <p class="done-lead">Registration complete</p>
+    <p class="wsid" id="wsid"></p>
+    <p>This is your WikiScholar ID. A confirmation email with these details has been sent to <strong id="doneEmail"></strong>.</p>
+    <dl id="summary"></dl>
+    <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a></p>
+    <p><a class="btn" href="{{ SITE_URL }}">&larr; Back to {{ SITE_HOST }}</a></p>
+  </section>
+</main>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/register.js' %}" defer></script>{% endblock %}

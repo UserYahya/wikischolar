@@ -1,0 +1,36 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Dashboard{% endblock %} · WikiScholar Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@100..112.5,400..800&family=Noto+Sans+Bengali:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+{% if user.is_authenticated %}
+<div class="shell">
+  <aside class="side">
+    <a class="wordmark" href="{% url 'dashboard:home' %}">Wiki<span>Scholar</span></a>
+    <nav aria-label="Dashboard">
+      <ul>
+        {% for item in NAV %}<li><a href="{% url item.url_name %}" {% if request.resolver_match.view_name == item.url_name %}aria-current="page"{% endif %}>{{ item.label }}</a></li>{% endfor %}
+      </ul>
+    </nav>
+    <div class="who">
+      <p>{{ user.full_name }}<br><small>{{ user.get_role_display }}</small></p>
+      <form method="post" action="{% url 'dashboard:logout' %}">{% csrf_token %}<button class="link">Sign out</button></form>
+    </div>
+  </aside>
+  <main class="main">
+    {% if messages %}<div class="flash">{% for m in messages %}<p class="{{ m.tags }}" role="status">{{ m }}</p>{% endfor %}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}{% block anon %}{% endblock %}{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

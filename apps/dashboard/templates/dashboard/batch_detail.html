@@ -1,0 +1,76 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ batch.label }}{% endblock %}
+{% block content %}
+<header class="page-head"><div>
+  <p class="crumb"><a href="{% url 'dashboard:batches' %}">Messages</a></p>
+  <h1>{{ batch.name|default:"(unnamed batch)" }} <span class="wsid count">{{ batch.batch_code }}</span></h1>
+  <p class="muted">{% if batch.channel == "email" %}Email: “{{ batch.subject }}”{% else %}SMS{% endif %} ·
+    sent by {{ batch.created_by.email }} on {{ batch.created_at|date:"j M Y H:i" }} to {{ batch.recipient_count }}
+    recipient{{ batch.recipient_count|pluralize }}{% if batch.opted_in_only %} (opted-in only){% endif %} · {{ batch.get_status_display }}</p>
+</div>
+<div class="row">
+  <a class="btn" href="{% url 'dashboard:students' %}?msg_batch={{ batch.batch_code }}&msg_batch_mode=sent">Show these students</a>
+  {% if can_send and failed %}<form method="post" action="{% url 'dashboard:batch_resend' batch.batch_code %}">{% csrf_token %}<button class="btn primary">Resend {{ failed }} not delivered</button></form>{% endif %}
+</div>
+</header>
+
+{% if stats.queued %}
+<section class="sending" aria-live="polite">
+  {% if keep_sending %}
+  <p><strong>Sending… {{ stats.queued }} message{{ stats.queued|pluralize }} left.</strong> Keep this page open until it finishes.
+    <a href="{% url 'dashboard:batch' batch.batch_code %}">Pause</a></p>
+  {% else %}
+  <p><strong>{{ stats.queued }} message{{ stats.queued|pluralize }} not sent yet.</strong> The scheduled <code>send_queued</code> job sends them
+    within a minute if it is set up, or send them now from here.</p>
+  {% endif %}
+  {% if can_send %}
+  <form method="post" action="{% url 'dashboard:batch_send' batch.batch_code %}" id="sendRemaining">{% csrf_token %}
+    <button class="btn primary">Send the remaining {{ stats.queued }} now</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="figures small">
+  <div><p class="fig"><a href="?">{{ batch.recipient_count }}</a></p><p>All recipients</p></div>
+  {% for key, label in statuses %}<div><p class="fig"><a href="?status={{ key }}">{% for k, v in stats.items %}{% if k == key %}{{ v }}{% endif %}{% endfor %}</a></p><p><span class="status {{ key }}">{{ label }}</span></p></div>{% endfor %}
+  <div><p class="fig"><a href="?status={{ not_delivered }}">{{ stats.not_delivered }}</a></p><p><span class="status failed">Not delivered</span></p></div>
+</section>
+<details class="message-body"><summary>Message text</summary><pre>{{ batch.body }}</pre></details>
+{% if filter_summary %}<p class="muted">Sent to: {% for label, text in filter_summary %}{{ label }}: {{ text }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+
+<section>
+  <h2>Recipients {% if status %}<small>· {% if status == not_delivered %}not delivered (failed or bounced){% else %}{{ status }}{% endif %} <a href="?">show all</a></small>{% endif %}</h2>
+  <form method="get" class="toolbar" role="search">
+    <label for="rstatus" class="visually-hidden">Delivery status</label>
+    <select id="rstatus" name="status">
+      <option value="">All statuses</option>
+      <option value="{{ not_delivered }}" {% if status == not_delivered %}selected{% endif %}>Not delivered (failed or bounced)</option>
+      {% for key, label in statuses %}<option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <label for="rq" class="visually-hidden">Search recipients</label>
+    <input id="rq" name="q" value="{{ q }}" placeholder="Name, WS ID, email or phone">
+    <button class="btn">Filter</button>
+    <a class="btn" href="{% url 'dashboard:batch_recipients_csv' batch.batch_code %}?{{ qstring }}">Download CSV</a>
+  </form>
+  <div class="scroll"><table class="data">
+    <thead><tr><th>WikiScholar ID</th><th>Name</th><th>Sent to</th><th>Status</th><th>Attempt</th><th>Error</th><th>Updated</th></tr></thead>
+    <tbody>{% for l in page %}<tr>
+      <td>{% if l.student %}<a class="wsid" href="{% url 'dashboard:student' l.wikischolar_id %}">{{ l.wikischolar_id }}</a>{% endif %}</td>
+      <td>{{ l.student.student_name }}</td><td>{{ l.destination }}</td>
+      <td><span class="status {{ l.status }}">{{ l.get_status_display }}</span>{% if l.resend_of_id %} <span class="tag">resend</span>{% endif %}</td>
+      <td class="num">{{ l.attempts }}</td><td class="err-cell">{{ l.error|truncatechars:120 }}</td>
+      <td>{{ l.status_updated_at|date:"j M H:i"|default:"—" }}</td>
+    </tr>{% empty %}<tr><td colspan="7" class="empty">No recipients match.</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% include "dashboard/_pagination.html" %}
+</section>
+{% endblock %}
+{% block scripts %}
+{% if keep_sending and can_send %}
+<script>
+  // Continue sending in chunks until nothing is queued (each request sends for a few seconds).
+  setTimeout(() => { const f = document.getElementById("sendRemaining"); if (f) f.submit(); }, 800);
+</script>
+{% endif %}
+{% endblock %}
