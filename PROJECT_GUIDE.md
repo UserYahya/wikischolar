@@ -35,7 +35,7 @@ Analytics) will plug into the same app.
 |---|---|---|
 | 1. Student & guardian | **required guardian declaration** (Youth Safety Policy: the guardian fills in the form: "I am the guardian of the student named below and I am filling in this form on their behalf"), name, date of birth, gender, guardian name, relation (Father / Mother / Other + typed relation) | "Other" requires the typed relation; the declaration is stored as `filled_by = guardian` + `guardian_declared_at` |
 | 2. School details | district → region (automatic) → upazila, class, school (typeahead), class roll and/or student ID | class 6–10 only; roll **or** SID required; while typing, **only approved (verified) schools** of the chosen upazila are suggested; a school not in the list is added as *pending* for staff to approve |
-| 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk |
+| 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk; **one email per student**: an address already used by an active student is refused on "Send verification code" ("already registered… use a different email address") and again on submit |
 | 4. Consent & submit | Youth Safety Policy consent, optional email updates opt-in | consent required |
 
 * **English only.** Every free-text value must be English letters, digits and basic punctuation.
@@ -175,7 +175,8 @@ These are enforced in code **and** in the database; changes must keep them true.
 * **Guardian declaration** is required for every new registration (form + server). `filled_by =
   'guardian'` exactly when `guardian_declared_at` is set (DB check `student_guardian_declaration`);
   students registered before the rule keep `filled_by = 'student'`. Not editable afterwards.
-* **Email is verified** by OTP before a student row can exist.
+* **Email is verified** by OTP before a student row can exist, and is **unique among active
+  students** (checked on send-code and on submit; archiving a student frees the address).
 * **Secrets** (SMTP password, SMS API key) are stored encrypted with `WS_CREDENTIALS_KEY`
   (or a key derived from `DJANGO_SECRET_KEY`) and never written to the audit log.
 * **School resolution** on submit: picked ID → exact normalised name → alias → trigram match
@@ -382,7 +383,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-115 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+118 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a

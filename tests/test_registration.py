@@ -263,3 +263,38 @@ class DatabaseIntegrityTests(WSTestCase):
         self.register()
         with self.assertRaises(Exception):
             Student.objects.get().delete()
+
+
+class EmailAlreadyRegisteredTests(WSTestCase):
+    def test_send_code_warns_when_email_is_taken(self):
+        self.register(email="taken@gmail.com")
+        self.client.get("/")
+        mail.outbox.clear()
+        r = self.post_json("/api/registration/email/send-otp/", {"email": "Taken@Gmail.com "})
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.json()["error"], "email_taken")
+        self.assertIn("already registered", r.json()["message"])
+        self.assertIn("use a different email", r.json()["message"])
+        self.assertEqual(len(mail.outbox), 0)  # no code sent
+        self.assertFalse(EmailVerification.objects.filter(email="taken@gmail.com", status="pending").exists())
+
+    def test_submit_is_refused_if_email_was_registered_meanwhile(self):
+        vid = self.verify_email("race@gmail.com")
+        other = self.client_class()
+        # another tab registers the same address first
+        vid2 = self.verify_email("race@gmail.com", client=other)
+        r = self.post_json("/api/registration/submit/", self.payload(vid2, email="race@gmail.com"), other)
+        self.assertEqual(r.status_code, 201)
+        r = self.post_json("/api/registration/submit/", self.payload(vid, email="race@gmail.com"))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("already registered", r.json()["errors"]["email"][0])
+        self.assertEqual(Student.objects.filter(email="race@gmail.com").count(), 1)
+
+    def test_archived_student_frees_the_email(self):
+        s = self.register(email="old@gmail.com")
+        self.client.force_login(self.admin)
+        self.client.post(f"/dashboard/students/{s['wikischolar_id']}/archive/", {"reason": "duplicate"})
+        self.client.logout()
+        self.client.get("/")
+        r = self.post_json("/api/registration/email/send-otp/", {"email": "old@gmail.com"})
+        self.assertEqual(r.status_code, 200, r.content)

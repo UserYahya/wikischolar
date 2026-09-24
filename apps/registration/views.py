@@ -27,6 +27,7 @@ MESSAGES = {
     "not_found": "Verification session not found. Send a new code.",
     "email_not_verified": "Your email isn't verified, or the verification expired. Please verify again.",
     "send_failed": "We couldn't send the code. Check the email address and try again.",
+    "email_taken": services.EMAIL_TAKEN_MESSAGE,
 }
 
 
@@ -82,6 +83,10 @@ def send_otp(request):
     ip = client_ip(request) or "unknown"
     if not (ratelimit.allow("otp_per_ip", ip) and ratelimit.allow("otp_per_email", email)):
         return _err("rate_limited", 429)
+    # One email per student: refuse before sending a code (checked after the rate limit, so the
+    # form can't be used to test many addresses quickly).
+    if services.email_registered(email):
+        return _err("email_taken", 409)
     ev, code, log = services.start_email_verification(email, request=request)
     if log.status == "failed":
         return _err("send_failed", 502)

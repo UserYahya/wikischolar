@@ -3,6 +3,17 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-09-24 (fifth update)
+
+### Added
+- **Email already registered** warning: "Send verification code" refuses an address that an active student already
+  uses ("This email address is already registered for another student. Please use a different email address.",
+  HTTP 409, no code sent). Re-checked on submit (two tabs); archived students free their address. Checked after
+  the rate limit, so the form can't be used to probe many addresses quickly. 3 new tests (118 in total).
+
+### Upgrade notes
+- No migrations. Upload, `collectstatic --noinput`, Restart.
+
 ## 2026-09-24 (fourth update)
 
 ### Changed

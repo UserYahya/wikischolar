@@ -85,6 +85,14 @@ class RegistrationForm(StudentCoreFields):
     def clean_school_name(self):
         return english_text(self.cleaned_data["school_name"])
 
+    def clean_email(self):
+        # Also checked here, not only on "Send verification code": two tabs could verify the same address.
+        from .services import EMAIL_TAKEN_MESSAGE, email_registered
+        email = super().clean_email()
+        if email_registered(email):
+            raise forms.ValidationError(EMAIL_TAKEN_MESSAGE)
+        return email
+
     def clean_website(self):
         if self.cleaned_data.get("website"):
             raise forms.ValidationError("spam")

@@ -22,6 +22,15 @@ CFG = settings.WIKISCHOLAR
 
 
 # ---- Email OTP -------------------------------------------------------------- #
+EMAIL_TAKEN_MESSAGE = ("This email address is already registered for another student. "
+                       "Please use a different email address.")
+
+
+def email_registered(email):
+    """True if an active (not archived) student already uses this email. Archived records free it."""
+    return Student.objects.filter(email__iexact=(email or "").strip()).exists()
+
+
 def _hash(code, verification_id):
     msg = f"{verification_id}:{code}".encode()
     return hmac.new(settings.SECRET_KEY.encode(), msg, hashlib.sha256).hexdigest()
