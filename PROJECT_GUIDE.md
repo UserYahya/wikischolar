@@ -351,6 +351,20 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 
 ---
 
+## 9a. Source code and git
+
+The code lives in a **private GitHub repository** (`main` branch). Ask the owner for access, then:
+
+```sh
+git clone https://github.com/UserYahya/wikischolar.git && cd wikischolar
+```
+
+Never commit secrets or local data. `.gitignore` already excludes `.env` (all real settings and
+passwords), `.venv`, the portable PostgreSQL (`.pgsql/`, `.pgdata/`), `dist/`, `staticfiles/`, zips
+and logs; only the templates `.env.example` and `docs/cpanel.env.example` are tracked. Tests use
+made-up accounts only. `.gitattributes` keeps LF line endings (the servers are Linux). Commit with
+a clear message, add a `CHANGELOG.md` entry, run the tests, then push.
+
 ## 9b. Packaging a release for upload
 
 ```sh

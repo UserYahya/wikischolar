@@ -20,6 +20,10 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 - System emails page: the subject box (and other form rows) stretched to the height of the preview column.
 - The logo appeared huge on the live site because browsers kept the old cached stylesheet (see above).
 
+### Added
+- The code is in a **private GitHub repository** (see PROJECT_GUIDE "Source code and git"); `.gitignore` extended
+  (zips, logs, `.claude/`, `.env.bak`) and `.gitattributes` added (LF line endings).
+
 ### Upgrade notes
 - No migrations. Run `collectstatic --noinput` (required from now on after every upload), then Restart.
 
