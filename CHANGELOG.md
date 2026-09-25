@@ -3,6 +3,11 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-09-25
+
+### Added
+- `docs/CHAT_SUMMARY.md`: summary of the development chats (requests, decisions, deployment lessons), without secrets.
+
 ## 2026-09-24 (fifth update)
 
 ### Added

@@ -7,6 +7,7 @@
 > The original product spec and what was built beyond it:
 > [`WikiScholar Registration & Database Platform — Complete Roadmap.md`](WikiScholar%20Registration%20%26%20Database%20Platform%20%E2%80%94%20Complete%20Roadmap.md).
 > What changed when: [`CHANGELOG.md`](CHANGELOG.md).
+> How it was built (summary of the AI chats): [`docs/CHAT_SUMMARY.md`](docs/CHAT_SUMMARY.md).
 
 ---
 
