@@ -5,7 +5,7 @@ decided and what went wrong. Use it with [`PROJECT_GUIDE.md`](../PROJECT_GUIDE.m
 [`CHANGELOG.md`](../CHANGELOG.md) (the changelog has the detail of every change).
 
 It contains **no secrets**. Passwords, API keys, database URLs and `.env` contents from the chats are left out on
-purpose. A database password pasted into one chat was reset afterwards; never paste secrets into chats.
+purpose. A database password was once pasted into a chat; the advice was to reset it. Never paste secrets into chats.
 
 ## 1. Phase 1: building the platform
 
