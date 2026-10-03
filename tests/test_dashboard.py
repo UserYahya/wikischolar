@@ -111,6 +111,14 @@ class StudentAdminTests(WSTestCase):
         r = self.client.get("/dashboard/students/", {"gender": "female", "class": "8"})
         self.assertEqual(r.context["count"], 1)
 
+    def test_filter_toggle_counts_only_narrowing_filters(self):
+        r = self.client.get("/dashboard/students/")
+        self.assertContains(r, 'id="filtersToggle"')
+        self.assertEqual(r.context["active_filters"], 0)
+        r = self.client.get("/dashboard/students/", {"gender": "female", "class": ["7", "8"], "q": "a",
+                                                     "sort": "name", "batch_size": "10"})
+        self.assertEqual(r.context["active_filters"], 3)
+
 
     def test_admin_edit_is_english_only(self):
         r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(student_name="রহিম"))

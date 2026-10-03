@@ -24,6 +24,9 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   green buttons; "Next step" is hidden until the email is verified (the bar says "Verify your email to
   continue.") and then gets focus. Enter in the phone or email box sends the code instead of showing an
   error. Changing a verified email hides "Next step" again.
+- Dashboard **Students**: a **"Hide filters"** button next to Export CSV folds the filter panel away so
+  the list uses the full width. While hidden it reads "Show filters (2 on)", counting the filters that
+  narrow the list (not sort or batching). The choice is remembered in that browser. 1 new test (122 in total).
 
 ## 2026-09-25
 

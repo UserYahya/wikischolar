@@ -5,11 +5,13 @@
 <header class="page-head">
   <h1>Students <span class="count">{{ count }}</span>{% if p.batch %} <small class="muted">batch {{ p.batch }} of {{ batches|length }}</small>{% endif %}</h1>
   <div class="row">
+    <button type="button" class="btn" id="filtersToggle" aria-controls="filters" aria-expanded="true" data-active="{{ active_filters }}" hidden>Hide filters</button>
     {% if can_export %}<a class="btn" href="{% url 'dashboard:students_export' %}?{{ qstring }}">Export CSV</a>{% endif %}
     {% if can_message and count %}<a class="btn primary" href="{% url 'dashboard:compose' %}?{{ qstring }}">Message this group</a>{% endif %}
   </div>
 </header>
-<div class="with-filters">
+<div class="with-filters" id="filterLayout">
+<script>try { if (localStorage.getItem("ws.filtersHidden") === "1") document.getElementById("filterLayout").classList.add("collapsed"); } catch (e) {}</script>
   <form class="filters" method="get" id="filters">
     <label for="q">Search</label>
     <input id="q" name="q" value="{{ p.q }}" placeholder="Name, WS ID, phone, email">
@@ -133,3 +135,22 @@
   </section>
 </div>
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+  var layout = document.getElementById("filterLayout"), btn = document.getElementById("filtersToggle");
+  var active = +btn.dataset.active;
+  function show() {
+    var hidden = layout.classList.contains("collapsed");
+    btn.textContent = hidden ? "Show filters" + (active ? " (" + active + " on)" : "") : "Hide filters";
+    btn.setAttribute("aria-expanded", String(!hidden));
+  }
+  btn.addEventListener("click", function () {
+    var hidden = layout.classList.toggle("collapsed");
+    try { localStorage.setItem("ws.filtersHidden", hidden ? "1" : "0"); } catch (e) {}
+    show();
+    if (!hidden) document.getElementById("q").focus();
+  });
+  btn.hidden = false;
+  show();
+})();
+</script>{% endblock %}

@@ -39,6 +39,7 @@ def student_list(request):
     page, qstring = paginate(request, qs)
     ctx = _filter_context(p)
     ctx.update({"page": page, "qstring": qstring, "count": page.paginator.count,
+                "active_filters": filters.active_count(p),
                 "can_message": request.user.has_perm_code("messages.send"),
                 "can_export": request.user.has_perm_code("students.export")})
     if p["batch_size"]:

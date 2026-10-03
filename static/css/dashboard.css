@@ -112,6 +112,8 @@ pre { white-space: pre-wrap; word-break: break-word; background: var(--paper); b
 .filters summary { cursor: pointer; padding: .1rem 0; }
 .checks { display: grid; gap: .1rem; padding: .25rem 0 .25rem 1.25rem; }
 .checks.cols3 { grid-template-columns: repeat(4, 1fr); padding-left: 0; }
+.with-filters.collapsed { grid-template-columns: minmax(0, 1fr); }
+.with-filters.collapsed .filters { display: none; }
 .results { min-width: 0; }
 .results > section, .results .scroll { background: var(--white); border: 1px solid var(--line); border-radius: 6px; }
 

@@ -14,6 +14,8 @@ SORTS = {
 MULTI = ("district", "region", "class", "gender")
 SINGLE = ("upazila", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
           "msg_batch", "msg_batch_mode")
+# Params that narrow the list (sort and batching only reorder or split it).
+NARROWING = MULTI + ("upazila", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch")
 # Message history filter: students a message batch was sent to, not sent to, or not delivered to.
 MSG_BATCH_MODES = {"sent": "Received", "not_sent": "Not sent", "not_delivered": "Not delivered"}
 MAX_BATCH_SIZE = 100_000
@@ -48,6 +50,10 @@ def params_from(querydict):
         # Oldest-first keeps existing batches stable as new students register.
         p["sort"] = "oldest"
     return p
+
+
+def active_count(p):
+    return sum(1 for k in NARROWING if p.get(k))
 
 
 def snapshot(p):
