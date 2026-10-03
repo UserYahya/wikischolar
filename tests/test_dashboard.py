@@ -309,14 +309,23 @@ class SchoolImportTests(WSTestCase):
         f = SimpleUploadedFile(name, text.encode("utf-8"), content_type="text/csv")
         return self.client.post("/dashboard/schools/import/", {"file": f, "status": status})
 
-    def test_template_lists_every_upazila_with_a_blank_name(self):
+    def test_template_is_just_the_headings_and_imports_once_filled_in(self):
         r = self.client.get("/dashboard/schools/import/template.csv")
         self.assertEqual(r["Content-Type"], "text/csv; charset=utf-8")
-        rows = r.content.decode("utf-8-sig").splitlines()
-        self.assertEqual(rows, ["district,upazila,name", "Gazipur,Kaliakair,", "Gazipur,Tongi,", "Jessore,Sharsha,"])
-        r = self.client.get(f"/dashboard/schools/import/template.csv?district={self.jessore.pk}")
-        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,"])
-        self.assertIn("schools-jessore-template.csv", r["Content-Disposition"])
+        self.assertIn("schools-import-template.csv", r["Content-Disposition"])
+        self.assertTrue(r.content.startswith(b"\xef\xbb\xbf"))  # BOM for Excel
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines(), ["District,Upazila,School name"])
+        r = self.upload(r.content.decode("utf-8") + "Gazipur,Tongi,Tongi Pilot School\n")
+        self.assertEqual(r.context["counts"]["new"], 1)
+
+    def test_district_and_upazila_list(self):
+        r = self.client.get("/dashboard/schools/import/locations.csv")
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines(), [
+            "District,Upazila,District (Bangla),Upazila (Bangla)", "Gazipur,Kaliakair,গাজীপুর,কালিয়াকৈর",
+            "Gazipur,Tongi,গাজীপুর,টঙ্গী", "Jessore,Sharsha,যশোর,শার্শা"])
+        r = self.client.get(f"/dashboard/schools/import/locations.csv?district={self.jessore.pk}")
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,যশোর,শার্শা"])
+        self.assertIn("districts-and-upazilas-jessore.csv", r["Content-Disposition"])
 
     def test_preview_then_confirm(self):
         csv_text = ("District,Upazila,Name,Notes\n"
@@ -363,7 +372,7 @@ class SchoolImportTests(WSTestCase):
         self.assertEqual(School.objects.filter(name="Tongi Pilot School").count(), 1)
 
     def test_bad_files(self):
-        self.assertContains(self.upload("school,place\nA,B\n"), "The first row must be the column names")
+        self.assertContains(self.upload("school,place\nA,B\n"), "The first row must be the column headings")
         self.assertContains(self.upload("district,upazila,name\nGazipur,Tongi,\n"), "No school names found")
         r = self.client.post("/dashboard/schools/import/", {"status": "verified"})
         self.assertContains(r, "Choose a CSV file to upload.")
@@ -372,6 +381,7 @@ class SchoolImportTests(WSTestCase):
         self.client.force_login(self.viewer)
         self.assertEqual(self.client.get("/dashboard/schools/import/").status_code, 403)
         self.assertEqual(self.client.get("/dashboard/schools/import/template.csv").status_code, 403)
+        self.assertEqual(self.client.get("/dashboard/schools/import/locations.csv").status_code, 403)
 
     def test_management_command_uses_the_same_checks(self):
         with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8") as fh:

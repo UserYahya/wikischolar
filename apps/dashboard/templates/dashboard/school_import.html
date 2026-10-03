@@ -43,16 +43,23 @@
 {% else %}
 <div class="cols import-steps">
   <section>
-    <h2>1. Download the template</h2>
-    <p>The template lists every upazila with its district, spelled the way the system expects. Type a school name in the <strong>name</strong> column. For more schools in the same upazila, copy the row. Rows left without a name are ignored.</p>
-    <form method="get" action="{% url 'dashboard:school_import_template' %}" class="toolbar">
+    <h2>1. Fill in the template</h2>
+    <p><a class="btn primary" href="{% url 'dashboard:school_import_template' %}">Download template (CSV)</a></p>
+    <p>Add one school per row under the three headings, for example:</p>
+    <div class="scroll"><table class="data compact">
+      <thead><tr><th>District</th><th>Upazila</th><th>School name</th></tr></thead>
+      <tbody><tr><td>Gazipur</td><td>Tongi</td><td>Tongi Pilot High School</td></tr></tbody>
+    </table></div>
+    <p class="hint">School names must be in English. Up to {{ max_rows }} schools and 1 MB per file. Save as CSV (in Excel: <em>CSV UTF-8</em>).</p>
+    <h3>District &amp; upazila list</h3>
+    <p class="hint">District and upazila must be spelled as in this list (English or Bangla; capitals don't matter). Copy them from here into the template.</p>
+    <form method="get" action="{% url 'dashboard:school_import_locations' %}" class="toolbar">
       <select name="district" aria-label="District">
         <option value="">All districts</option>
         {% for d in districts %}<option value="{{ d.pk }}">{{ d.name }}</option>{% endfor %}
       </select>
-      <button class="btn">Download template</button>
+      <button class="btn">Download list (CSV)</button>
     </form>
-    <p class="hint">Columns: <code>district</code>, <code>upazila</code>, <code>name</code>. School names must be in English. Up to {{ max_rows }} schools and 1 MB per file. Save as CSV (in Excel: <em>CSV UTF-8</em>).</p>
   </section>
   <section>
     <h2>2. Upload the filled-in file</h2>

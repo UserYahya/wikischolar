@@ -72,9 +72,10 @@ Analytics) will plug into the same app.
   active students or merged schools point to it. *Removed* in the status filter lists them with
   *Restore* (refused if the same name was added since).
 * **Importing schools from CSV** (Dashboard → Schools → *Import CSV*, needs `schools.edit`):
-  *Download template* (all districts or one) gives `district,upazila,name` with one row per upazila,
-  spelled as in the database, and the name blank; copy a row for more schools in the same
-  upazila; rows without a name are ignored. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
+  *Download template* gives the headings `District,Upazila,School name` (a lower-case `name` column
+  also works); fill in one school per row; rows without a school name are ignored. *District &
+  upazila list* (all districts or one) lists every upazila with its district in English and Bangla,
+  spelled as the import expects. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
   district/upazila matched in English or Bangla ignoring case) and choose *Verified* or *Pending*.
   A preview shows each row as *will be added*, *similar* (added only if ticked), *already listed*,
   *repeated in the file* or *error* (unknown district/upazila, not English, too long). Nothing is

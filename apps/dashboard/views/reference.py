@@ -132,13 +132,22 @@ def school_import(request):
     return render(request, "dashboard/school_import.html", ctx)
 
 
+def _csv_download(body, filename):
+    resp = HttpResponse(body, content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return resp
+
+
 @require_perm("schools.edit")
 def school_import_template(request):
+    return _csv_download(importer.template_csv(), "schools-import-template.csv")
+
+
+@require_perm("schools.edit")
+def school_import_locations(request):
     district = District.objects.filter(pk=request.GET.get("district") or 0).first()
-    name = f"schools-{district.name.lower().replace(' ', '-')}" if district else "schools"
-    resp = HttpResponse(importer.template_csv(district), content_type="text/csv; charset=utf-8")
-    resp["Content-Disposition"] = f'attachment; filename="{name}-template.csv"'
-    return resp
+    suffix = f"-{district.name.lower().replace(' ', '-')}" if district else ""
+    return _csv_download(importer.locations_csv(district), f"districts-and-upazilas{suffix}.csv")
 
 
 @require_perm("schools.view")

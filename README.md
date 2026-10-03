@@ -167,8 +167,9 @@ merge duplicates (students re-pointed with edit history, misspelling becomes an 
 duplicate row stays as `merged`). Admins add schools on **Schools → Add school** (a typeahead
 lists schools already in the upazila; the same name or an alias is refused and a similar name
 needs confirmation) and remove ones with no students (archived, restorable from *Removed*).
-**Schools → Import CSV** bulk-loads schools: download a template (every upazila with its district,
-name left blank), fill in names, upload, check the per-row preview, then confirm.
+**Schools → Import CSV** bulk-loads schools: download the template (headings *District, Upazila,
+School name*), fill in one school per row (a downloadable district & upazila list gives the
+spellings), upload, check the per-row preview, then confirm.
 
 **Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, upazila, school,
 class, gender, date-range, opt-in and text search; CSV export; per-student edit history;

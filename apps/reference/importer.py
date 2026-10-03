@@ -34,18 +34,29 @@ def _key(text):
     return " ".join((text or "").split()).casefold()
 
 
-def template_csv(district=None):
-    """district,upazila,name with one row per upazila (all, or one district's) and the name left blank."""
+TEMPLATE_HEADER = ["District", "Upazila", "School name"]
+
+
+def _csv(rows):
     out = io.StringIO()
-    out.write("﻿")  # BOM so Excel opens it as UTF-8
-    w = csv.writer(out)
-    w.writerow(["district", "upazila", "name"])
+    out.write("\ufeff")  # BOM so Excel opens it as UTF-8
+    csv.writer(out).writerows(rows)
+    return out.getvalue()
+
+
+def template_csv():
+    """The file admins fill in and upload: just the column headings."""
+    return _csv([TEMPLATE_HEADER])
+
+
+def locations_csv(district=None):
+    """Reference list of every upazila (all, or one district's) with its district, in English and
+    Bangla, so the template can be filled in with the spellings the import recognises."""
     upazilas = Upazila.objects.select_related("district").order_by("district__name", "name")
     if district:
         upazilas = upazilas.filter(district=district)
-    for u in upazilas:
-        w.writerow([u.district.name, u.name, ""])
-    return out.getvalue()
+    return _csv([["District", "Upazila", "District (Bangla)", "Upazila (Bangla)"]]
+                + [[u.district.name, u.name, u.district.name_bn, u.name_bn] for u in upazilas])
 
 
 def read_rows(data):
@@ -61,11 +72,11 @@ def read_rows(data):
     try:
         di, ui = header.index("district"), header.index("upazila")
     except ValueError:
-        raise ImportFileError("The first row must be the column names: district, upazila, name. "
+        raise ImportFileError("The first row must be the column headings: District, Upazila, School name. "
                               "Download the template to start from the right layout.") from None
     ni = next((header.index(c) for c in NAME_COLUMNS if c in header), None)
     if ni is None:
-        raise ImportFileError("There is no “name” column for the school names.")
+        raise ImportFileError("There is no “School name” column.")
     rows = []
     for line, cells in enumerate(reader, start=2):
         cell = lambda i: cells[i].strip() if i < len(cells) else ""  # noqa: E731
