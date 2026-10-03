@@ -81,6 +81,7 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .chip input:focus-visible + span { outline: 3px solid var(--marigold); outline-offset: 2px; }
 
 .hint { margin: .35rem 0 0; font-size: .88rem; color: var(--muted); }
+.label-note { font-weight: 400; color: var(--muted); }
 .err { margin: .3rem 0 0; font-size: .88rem; color: var(--error); }
 .err:empty { display: none; }
 .hp { position: absolute; left: -10000px; }

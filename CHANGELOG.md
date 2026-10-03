@@ -17,6 +17,9 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   for example 14/03/2012."
 - The registration summary and confirmation email show the date of birth as dd/mm/yyyy
   (`{date_of_birth}` placeholder). CSV exports keep yyyy-mm-dd.
+- Registration step 2: the label is now **"Student ID (SID) (if any)"** and the hint below says "Fill in at
+  least one. If the school hasn't given the student an ID, the class roll is enough.", so students
+  without an SID aren't held up looking for one.
 
 ## 2026-09-25
 
