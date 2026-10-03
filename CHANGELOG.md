@@ -28,6 +28,15 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   "Code expires in 9:59" (from `WS_OTP_TTL_MINUTES`), turning red in the last minute. At zero, "Verify
   code" is disabled, the message "This code has expired. Send a new one." appears and "Send a new code"
   is enabled at once. Verifying, or changing the email, removes the countdown.
+- Dashboard **Schools: add and remove schools.** *Add school* (header button, also offered when a
+  list is empty) replaces the small form that only appeared after picking a district. Choose district
+  and upazila, then type the name: schools already listed in that upazila appear as you type (like
+  the registration form, but including pending ones), and picking one opens it. The server refuses
+  the same name or an alias in the upazila, and asks for confirmation when a name is as similar as
+  the duplicate review would flag. Each school page has **Remove school** (with a reason), allowed
+  only when no active students or merged schools point to it; removed schools are listed under
+  *Removed* and can be restored. Removed schools no longer catch registrations through their
+  aliases. 10 new tests (131 in total).
 - Dashboard **Students**: a **"Hide filters"** button next to Export CSV folds the filter panel away so
   the list uses the full width. While hidden it reads "Show filters (2 on)", counting the filters that
   narrow the list (not sort or batching). The choice is remembered in that browser. 1 new test (122 in total).

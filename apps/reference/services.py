@@ -90,7 +90,7 @@ def resolve_school(*, upazila, typed_text, school_id=None):
     if exact:
         return exact, "exact"
     alias = (SchoolAlias.objects.select_related("school")
-             .filter(school__upazila=upazila, alias_normalized=qn).first())
+             .filter(school__upazila=upazila, school__is_deleted=False, alias_normalized=qn).first())
     if alias:
         return alias.school.canonical(), "alias"
 
@@ -106,6 +106,70 @@ def resolve_school(*, upazila, typed_text, school_id=None):
         verification_status=School.Status.PENDING, source=School.Source.REGISTRATION,
     )
     return school, "created"
+
+
+# ---- Adding & removing schools (dashboard) ------------------------------- #
+def same_name_school(upazila, name):
+    """A live school in the upazila whose name or an alias is `name` once normalised, else None."""
+    qn = normalize_school_name(name)
+    school = _alive_schools().filter(upazila=upazila, name_normalized=qn).first()
+    if school:
+        return school
+    alias = (SchoolAlias.objects.select_related("school")
+             .filter(school__upazila=upazila, school__is_deleted=False, alias_normalized=qn).first())
+    return alias.school.canonical() if alias else None
+
+
+def similar_schools(upazila, name, limit=8):
+    """Live schools in the upazila whose name or an alias is as close to `name` as the duplicate
+    review would flag (SCHOOL_DUPLICATE_THRESHOLD), closest first."""
+    qn = normalize_school_name(name)
+    alias_score = (SchoolAlias.objects.filter(school=OuterRef("pk"))
+                   .annotate(s=TrigramSimilarity("alias_normalized", Value(qn))).order_by("-s").values("s")[:1])
+    return list(
+        _alive_schools().filter(upazila=upazila)
+        .annotate(score=Greatest(TrigramSimilarity("name_normalized", Value(qn)),
+                                 Coalesce(Subquery(alias_score, output_field=FloatField()), Value(0.0))))
+        .filter(score__gte=settings.WIKISCHOLAR["SCHOOL_DUPLICATE_THRESHOLD"])
+        .order_by("-score", "name")[:limit]
+    )
+
+
+@transaction.atomic
+def add_school(*, upazila, name, request):
+    school = School.objects.create(
+        name=name, upazila=upazila, district_id=upazila.district_id, verification_status=School.Status.VERIFIED,
+        source=School.Source.ADMIN, verified_by=request.user, verified_at=timezone.now())
+    audit.record("school.created", request=request, entity=school, after=audit.snapshot(school))
+    return school
+
+
+def removal_blocker(school):
+    """Why `school` can't be removed yet, or "" if it can."""
+    n = school.students.count()
+    if n:
+        return (f"{n} student{'s are' if n != 1 else ' is'} linked to this school. If it is a duplicate, "
+                "merge it into the right school from Review duplicates instead.")
+    if school.merged_from.exists():
+        return "Other schools were merged into this one, so it can't be removed."
+    return ""
+
+
+@transaction.atomic
+def remove_school(school, *, request, reason=""):
+    if blocker := removal_blocker(school):
+        raise ValueError(blocker)
+    school.soft_delete(by=request.user)
+    audit.record("school.removed", request=request, entity=school, meta={"reason": reason})
+
+
+@transaction.atomic
+def restore_school(school, *, request):
+    clash = same_name_school(school.upazila, school.name)
+    if clash:
+        raise ValueError(f"“{clash.name}” is already listed in {school.upazila.name}, so this can't be restored.")
+    school.restore()
+    audit.record("school.restored", request=request, entity=school)
 
 
 # ---- Duplicate review & merge --------------------------------------------- #

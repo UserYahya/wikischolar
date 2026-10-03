@@ -63,6 +63,14 @@ Analytics) will plug into the same app.
   (`WS_SITE_URL`; shortened to "← wikischolar.bd" on phones); the success screen has the same link.
 * **Approving schools** makes them suggestible: Dashboard → Schools → a pending school → *Mark
   verified* (or bulk-load a verified list with `import_schools CSV --status verified`).
+* **Adding and removing schools** (Dashboard → Schools, needs `schools.edit`): *Add school* picks
+  district → upazila → name; as the name is typed, schools already in that upazila (verified and
+  pending) are listed, and picking one opens it. On submit the same name or an alias in the
+  upazila (after normalising, so "Govt" = "Government") is refused, and a name as similar as
+  *Review duplicates* would flag (`WS_SCHOOL_DUPLICATE`) needs "It's a different school". A school
+  page's *Remove school* archives it (soft delete, reason in the audit log); it is refused while
+  active students or merged schools point to it. *Removed* in the status filter lists them with
+  *Restore* (refused if the same name was added since).
 
 ### Admin dashboard (`/dashboard/`)
 * **Overview**: totals, daily registrations, students per region/district, warnings (e.g.

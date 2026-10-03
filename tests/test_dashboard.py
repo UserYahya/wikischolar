@@ -41,6 +41,8 @@ class PermissionTests(WSTestCase):
                     "/dashboard/messages/", "/dashboard/messages/compose/", "/dashboard/schools/",
                     f"/dashboard/schools/?district={self.gazipur.pk}&upazila={self.tongi.pk}",
                     f"/dashboard/schools/{self.school.pk}/", "/dashboard/schools/duplicates/",
+                    "/dashboard/schools/add/", f"/dashboard/schools/add/?district={self.gazipur.pk}",
+                    "/dashboard/schools/?status=removed",
                     "/dashboard/locations/", f"/dashboard/locations/districts/{self.gazipur.pk}/",
                     "/dashboard/audit/", "/dashboard/admins/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
@@ -142,7 +144,8 @@ class StudentAdminTests(WSTestCase):
         self.assertContains(r, f'value="{today:%d/%m/%Y}"')
 
     def test_school_names_from_dashboard_are_english_only(self):
-        self.client.post("/dashboard/schools/", {"upazila": self.tongi.pk, "name": "টঙ্গী স্কুল"})
+        self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "upazila": self.tongi.pk,
+                                                      "name": "টঙ্গী স্কুল"})
         self.assertFalse(School.objects.filter(name="টঙ্গী স্কুল").exists())
         self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "rename", "name": "টঙ্গী"})
         self.school.refresh_from_db()
@@ -205,6 +208,91 @@ class SchoolMergeTests(WSTestCase):
         # the next registrant typing the misspelling lands on the canonical school
         self.register(email="n@gmail.com", school_id=None, school_name="tongi govt high skool")
         self.assertEqual(Student.objects.get(email="n@gmail.com").school, self.school)
+
+
+class SchoolAddRemoveTests(WSTestCase):
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def add(self, name, upazila=None, district=None, **extra):
+        return self.client.post("/dashboard/schools/add/", {
+            "district": (district or self.gazipur).pk, "upazila": (upazila or self.tongi).pk, "name": name, **extra})
+
+    def test_add_new_school(self):
+        r = self.add("Tongi  Pilot Girls School")
+        school = School.objects.get(name="Tongi Pilot Girls School")
+        self.assertRedirects(r, f"/dashboard/schools/{school.pk}/")
+        self.assertEqual((school.verification_status, school.source, school.verified_by), ("verified", "admin", self.admin))
+        self.assertTrue(AuditLog.objects.filter(action="school.created", entity_id=str(school.pk)).exists())
+
+    def test_same_name_or_alias_is_refused(self):
+        SchoolAlias.objects.create(school=self.school, alias_text="Tongi Boys School")
+        for name in ["tongi government high school", "TONGI BOYS SCHOOL"]:
+            r = self.add(name)
+            self.assertContains(r, "This school is already listed.")
+            self.assertContains(r, f'href="/dashboard/schools/{self.school.pk}/"')
+        self.assertEqual(School.objects.count(), 1)
+        # the same name in another upazila is a different school
+        self.add("Tongi Government High School", upazila=self.kaliakair)
+        self.assertEqual(School.objects.count(), 2)
+
+    def test_similar_name_needs_confirmation(self):
+        r = self.add("Tongi Goverment High Scool")
+        self.assertContains(r, "have a similar name")
+        self.assertFalse(School.objects.filter(name="Tongi Goverment High Scool").exists())
+        self.add("Tongi Goverment High Scool", confirm="1")
+        self.assertTrue(School.objects.filter(name="Tongi Goverment High Scool").exists())
+        # "Govt" is the same name once abbreviations are expanded, so it is refused outright
+        self.assertContains(self.add("Tongi Govt. High School", confirm="1"), "This school is already listed.")
+
+    def test_upazila_must_be_in_district(self):
+        r = self.add("Sharsha Model School", upazila=self.sharsha, district=self.gazipur)
+        self.assertContains(r, "Choose the district and upazila.")
+        self.assertFalse(School.objects.filter(name="Sharsha Model School").exists())
+
+    def test_viewer_cannot_add_or_remove(self):
+        self.client.force_login(self.viewer)
+        self.assertEqual(self.client.get("/dashboard/schools/add/").status_code, 403)
+        self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "x"})
+        self.assertTrue(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_remove_blocked_while_students_are_linked(self):
+        self.register()
+        r = self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "x"}, follow=True)
+        self.assertContains(r, "1 student is linked to this school")
+        self.assertTrue(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_remove_and_restore(self):
+        SchoolAlias.objects.create(school=self.school, alias_text="TGHS")
+        r = self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "added by mistake"})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(School.objects.filter(pk=self.school.pk).exists())
+        self.assertTrue(AuditLog.objects.filter(action="school.removed", entity_id=str(self.school.pk)).exists())
+        self.assertContains(self.client.get("/dashboard/schools/?status=removed"), self.school.name)
+        self.assertNotContains(self.client.get("/dashboard/schools/"), self.school.name)
+        # registrants no longer land on it, even through its alias
+        self.register(school_id=self.school.pk, school_name="TGHS")
+        self.assertNotEqual(Student.objects.get().school_id, self.school.pk)
+        # restoring is fine: the pending "TGHS" school isn't the same name
+        self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "restore"})
+        self.assertTrue(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_restore_refused_when_same_name_was_added_since(self):
+        self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "x"})
+        self.add("Tongi Government High School")
+        r = self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "restore"}, follow=True)
+        self.assertContains(r, "is already listed in Tongi")
+        self.assertFalse(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_typeahead_shows_pending_schools_to_staff_only(self):
+        School.objects.create(name="Tongi Pending School", district=self.gazipur, upazila=self.tongi)
+        url = f"/api/reference/schools/?upazila={self.tongi.pk}&q=tongi&pending=1"
+        names = [s["name"] for s in self.client.get(url).json()["schools"]]
+        self.assertIn("Tongi Pending School", names)
+        self.client.logout()
+        names = [s["name"] for s in self.client.get(url).json()["schools"]]
+        self.assertNotIn("Tongi Pending School", names)
 
 
 class MessagingTests(WSTestCase):

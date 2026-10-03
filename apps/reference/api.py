@@ -46,9 +46,12 @@ def schools(request):
     except ValueError:
         return JsonResponse({"error": "upazila_required"}, status=400)
     q = request.GET.get("q", "")[:120]
-    # Dashboard editor (signed-in staff, ?all=1): every school incl. pending. Public form: approved only.
-    staff_list = bool(request.GET.get("all")) and request.user.is_authenticated
-    results = services.search_schools(upazila_id, q, limit=500 if staff_list else 8, verified_only=not staff_list)
+    # Signed-in staff also see pending schools: ?all=1 lists every school (student editor),
+    # ?pending=1 is the typeahead on the dashboard's Add school page. Public form: approved only.
+    staff = request.user.is_authenticated
+    staff_list = bool(request.GET.get("all")) and staff
+    with_pending = staff_list or (bool(request.GET.get("pending")) and staff)
+    results = services.search_schools(upazila_id, q, limit=500 if staff_list else 8, verified_only=not with_pending)
     return JsonResponse({"schools": [
         {"id": s.pk, "name": s.name, "verified": s.verification_status == "verified"} for s in results
     ]})

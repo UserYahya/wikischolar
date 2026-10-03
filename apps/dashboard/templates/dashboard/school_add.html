@@ -1,0 +1,51 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Add a school{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <p class="crumb"><a href="{% url 'dashboard:schools' %}">Schools</a></p>
+    <h1>Add a school</h1>
+  </div>
+</header>
+<form method="post" class="edit-form" id="addSchool" novalidate data-school-url="{% url 'dashboard:school' 0 %}">
+  {% csrf_token %}
+  <div class="form-grid">
+    <div><label for="id_district">District</label>
+      <select name="district" id="id_district" data-cascade="district" required>
+        <option value="" {% if not d.district %}selected{% endif %} disabled>Choose district…</option>
+        {% for x in districts %}<option value="{{ x.pk }}" {% if x.pk|stringformat:"s" == d.district %}selected{% endif %}>{{ x.name }}</option>{% endfor %}
+      </select></div>
+    <div><label for="id_upazila">Upazila</label>
+      <select name="upazila" id="id_upazila" data-cascade="upazila" required {% if not upazilas %}disabled{% endif %}>
+        <option value="" {% if not d.upazila %}selected{% endif %} disabled>{% if upazilas %}Choose upazila…{% else %}Choose a district first{% endif %}</option>
+        {% for u in upazilas %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == d.upazila %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+      </select>
+      {% if errors.upazila %}<ul class="errorlist"><li>{{ errors.upazila }}</li></ul>{% endif %}</div>
+    <div class="span2"><label for="id_name">Official school name</label>
+      <div class="combo"><input id="id_name" name="name" value="{{ d.name }}" maxlength="255" autocomplete="off" required
+             role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="schoolList" aria-describedby="nameHelp"
+             placeholder="{% if d.upazila %}Type the name in English{% else %}Choose an upazila first{% endif %}">
+      <ul id="schoolList" class="combo-list" role="listbox" aria-label="Schools already listed" hidden></ul></div>
+      {% if errors.name %}<ul class="errorlist"><li>{{ errors.name }}</li></ul>{% endif %}
+      <p class="hint" id="nameHelp">Schools already listed in the upazila appear as you type. If yours is there, open it instead of adding it again.</p></div>
+  </div>
+
+  {% if same %}
+  <div class="notice" role="alert">
+    <p><strong>“{{ same.name }}”</strong> is already listed in {{ same.upazila.name }}{% if same.verification_status == "pending" %} (pending review){% endif %}.
+      <a href="{% url 'dashboard:school' same.pk %}">Open it</a></p>
+  </div>
+  {% elif similar %}
+  <div class="notice" role="alert" id="similarBox">
+    <p>These schools in this upazila have a similar name. Check that yours isn't one of them:</p>
+    <ul class="plain">{% for s in similar %}<li><a href="{% url 'dashboard:school' s.pk %}">{{ s.name }}</a>{% if s.verification_status == "pending" %} <span class="tag">pending</span>{% endif %}</li>{% endfor %}</ul>
+    <button class="btn" name="confirm" value="1">It's a different school — add “{{ d.name }}”</button>
+  </div>
+  {% endif %}
+
+  <div class="row"><button class="btn primary" id="addBtn" {% if similar %}hidden{% endif %}>Add school</button><a class="link" href="{% url 'dashboard:schools' %}">Cancel</a></div>
+  <p class="hint">Schools added here are marked verified. To load a long list, use <code>manage.py import_schools</code>.</p>
+</form>
+{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/cascade.js' %}" defer></script>
+<script src="{% static 'js/school-add.js' %}" defer></script>{% endblock %}

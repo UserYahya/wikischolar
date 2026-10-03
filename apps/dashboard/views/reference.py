@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.core import audit
@@ -26,28 +27,12 @@ def _english(request, raw):
 
 @require_perm("schools.view")
 def school_list(request):
-    if request.method == "POST":
-        if not request.user.has_perm_code("schools.edit"):
-            messages.error(request, "You don't have permission to add schools.")
-            return redirect("dashboard:schools")
-        upz = Upazila.objects.filter(pk=request.POST.get("upazila") or 0).first()
-        name = _english(request, request.POST.get("name", ""))
-        if name is None:
-            return redirect("dashboard:schools")
-        if upz and name:
-            school = School.objects.create(name=name, upazila=upz, district_id=upz.district_id,
-                                           verification_status=School.Status.VERIFIED, source=School.Source.ADMIN,
-                                           verified_by=request.user)
-            audit.record("school.created", request=request, entity=school, after=audit.snapshot(school))
-            messages.success(request, f"Added “{school.name}”.")
-            return redirect("dashboard:school", pk=school.pk)
-        messages.error(request, "Choose an upazila and enter a school name.")
-    qs = (School.objects.select_related("district", "upazila")
-          .annotate(n=Count("students", filter=Q(students__is_deleted=False))))
     status = request.GET.get("status", "active")
+    qs = (School.all_objects.filter(is_deleted=status == "removed").select_related("district", "upazila")
+          .annotate(n=Count("students", filter=Q(students__is_deleted=False))))
     if status == "active":
         qs = qs.exclude(verification_status="merged")
-    elif status:
+    elif status and status != "removed":
         qs = qs.filter(verification_status=status)
     district = request.GET.get("district", "")
     if district:
@@ -67,6 +52,44 @@ def school_list(request):
     })
 
 
+@require_perm("schools.edit")
+def school_add(request):
+    """Add a verified school. An exact name or alias in the upazila is refused; a similar name asks
+    for confirmation, so the dashboard doesn't create the duplicates the merge screen cleans up."""
+    data = {"district": request.GET.get("district", ""), "upazila": request.GET.get("upazila", ""), "name": ""}
+    errors, same, similar = {}, None, []
+    if request.method == "POST":
+        data = {k: request.POST.get(k, "").strip() for k in ("district", "upazila", "name")}
+        upz = Upazila.objects.filter(pk=data["upazila"] if data["upazila"].isdigit() else 0,
+                                     district_id=data["district"] if data["district"].isdigit() else 0).first()
+        if not upz:
+            errors["upazila"] = "Choose the district and upazila."
+        name = ""
+        if not data["name"]:
+            errors["name"] = "Enter the school's official name."
+        else:
+            try:
+                name = english_text(data["name"])
+            except ValidationError as exc:
+                errors["name"] = exc.messages[0]
+            if len(name) > 255:
+                errors["name"] = "Keep the name under 255 characters."
+        if not errors:
+            same = ref.same_name_school(upz, name)
+            if same:
+                errors["name"] = "This school is already listed."
+            else:
+                similar = [] if request.POST.get("confirm") else ref.similar_schools(upz, name)
+                if not similar:
+                    school = ref.add_school(upazila=upz, name=name, request=request)
+                    messages.success(request, f"Added “{school.name}” to {upz.name}.")
+                    return redirect("dashboard:school", pk=school.pk)
+    return render(request, "dashboard/school_add.html", {
+        "d": data, "errors": errors, "same": same, "similar": similar, "districts": District.objects.all(),
+        "upazilas": Upazila.objects.filter(district_id=data["district"]) if data["district"].isdigit() else [],
+    })
+
+
 @require_perm("schools.view")
 def school_detail(request, pk):
     school = get_object_or_404(School.all_objects.select_related("district__region", "upazila", "merged_into"), pk=pk)
@@ -75,7 +98,25 @@ def school_detail(request, pk):
             messages.error(request, "You don't have permission to edit schools.")
             return redirect("dashboard:school", pk=pk)
         op = request.POST.get("op")
-        if op == "verify":
+        if op == "remove":
+            try:
+                ref.remove_school(school, request=request, reason=request.POST.get("reason", ""))
+            except ValueError as exc:
+                messages.error(request, str(exc))
+                return redirect("dashboard:school", pk=pk)
+            messages.success(request, f"Removed “{school.name}”. You can restore it from Schools → Removed.")
+            return redirect(f"{reverse('dashboard:schools')}?district={school.district_id}&upazila={school.upazila_id}")
+        if op == "restore":
+            try:
+                ref.restore_school(school, request=request)
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(request, "Restored.")
+            return redirect("dashboard:school", pk=pk)
+        if school.is_deleted:
+            messages.error(request, "Restore this school before changing it.")
+        elif op == "verify":
             ref.set_school_status(school, School.Status.VERIFIED, request=request)
             messages.success(request, "Marked as verified.")
         elif op == "unverify":
@@ -96,6 +137,7 @@ def school_detail(request, pk):
         "school": school, "aliases": school.aliases.select_related("created_by"),
         "students": students, "student_count": school.students.count(), "entered": entered,
         "merged_from": school.merged_from.all(), "can_edit": request.user.has_perm_code("schools.edit"),
+        "removal_blocker": "" if school.is_deleted else ref.removal_blocker(school),
     })
 
 

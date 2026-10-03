@@ -24,6 +24,7 @@ urlpatterns = [
     path("messages/<str:code>/resend/", messaging.resend_failed, name="batch_resend"),
 
     path("schools/", reference.school_list, name="schools"),
+    path("schools/add/", reference.school_add, name="school_add"),
     path("schools/duplicates/", reference.duplicates, name="duplicates"),
     path("schools/merge/", reference.merge, name="merge"),
     path("schools/<int:pk>/", reference.school_detail, name="school"),

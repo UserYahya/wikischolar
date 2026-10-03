@@ -164,7 +164,9 @@ stored), updates opt-in, summary screen with the WikiScholar ID, confirmation em
 free text is kept exactly as typed (`school_name_as_entered`) *and* resolved to a school row
 (dual storage); unknown schools become `pending`; admins verify, rename, add aliases, and
 merge duplicates (students re-pointed with edit history, misspelling becomes an alias, the
-duplicate row stays as `merged`).
+duplicate row stays as `merged`). Admins add schools on **Schools → Add school** (a typeahead
+lists schools already in the upazila; the same name or an alias is refused and a similar name
+needs confirmation) and remove ones with no students (archived, restorable from *Removed*).
 
 **Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, upazila, school,
 class, gender, date-range, opt-in and text search; CSV export; per-student edit history;
