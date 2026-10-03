@@ -1,0 +1,25 @@
+/* Date fields (static/js/datefield.js): a dd/mm/yyyy text box with a calendar button inside it,
+   and the Air Datepicker popup in WikiScholar colours. Load after public.css or dashboard.css. */
+.datefield { position: relative; display: block; min-width: 0; }
+.datefield > input[data-datefield] { width: 100%; padding-right: 2.6rem; font-variant-numeric: tabular-nums; }
+.datefield-btn { position: absolute; top: 50%; right: .3rem; transform: translateY(-50%); display: grid; place-items: center;
+  width: 2.2rem; height: 2.2rem; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--green);
+  cursor: pointer; }
+.datefield-btn:hover { background: var(--tint); }
+
+.air-datepicker {
+  --adp-font-family: var(--body);
+  --adp-accent-color: var(--green);
+  --adp-color: var(--ink);
+  --adp-color-secondary: var(--muted);
+  --adp-day-name-color: var(--deep);
+  --adp-background-color-hover: var(--tint);
+  --adp-cell-background-color-selected: var(--green);
+  --adp-cell-background-color-selected-hover: var(--deep);
+  --adp-border-color: var(--line);
+  --adp-border-radius: 8px;
+  --adp-mobile-width: min(340px, calc(100vw - 32px));
+  --adp-mobile-day-cell-height: 42px;
+  --adp-z-index: 1000;
+}
+.air-datepicker-overlay { --adp-overlay-z-index: 999; }

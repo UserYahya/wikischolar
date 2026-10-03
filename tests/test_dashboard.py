@@ -1,4 +1,7 @@
+from datetime import date, timedelta
+
 from django.core import mail
+from django.utils import timezone
 
 from apps.core.models import AuditLog
 from apps.notifications.models import NotificationLog
@@ -113,6 +116,22 @@ class StudentAdminTests(WSTestCase):
         r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(student_name="রহিম"))
         self.assertEqual(r.status_code, 200)
         self.assertIn("student_name", r.context["form"].errors)
+
+    def test_edit_date_of_birth_is_british(self):
+        r = self.client.get(f"/dashboard/students/{self.wsid}/edit/")
+        self.assertContains(r, 'value="14/03/2011"')
+        r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(date_of_birth="01/02/2010"))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Student.objects.get(wikischolar_id=self.wsid).date_of_birth, date(2010, 2, 1))
+
+    def test_registered_between_filter_reads_british_and_iso_dates(self):
+        today = timezone.localdate()
+        for params, count in [({"from": today.strftime("%d/%m/%Y")}, 1), ({"to": today.isoformat()}, 1),
+                              ({"from": (today + timedelta(days=1)).strftime("%d/%m/%Y")}, 0)]:
+            r = self.client.get("/dashboard/students/", params)
+            self.assertEqual(r.context["count"], count, params)
+        r = self.client.get("/dashboard/students/", {"to": today.isoformat()})
+        self.assertContains(r, f'value="{today:%d/%m/%Y}"')
 
     def test_school_names_from_dashboard_are_english_only(self):
         self.client.post("/dashboard/schools/", {"upazila": self.tongi.pk, "name": "টঙ্গী স্কুল"})

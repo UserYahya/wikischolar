@@ -180,7 +180,9 @@ details > summary { cursor: pointer; color: var(--green); font-weight: 500; }
    filter panel's contents past its edge. Let everything in the panel shrink. */
 .filters { grid-template-columns: minmax(0, 1fr); }
 .filters fieldset, .filters > *, .row2 > * { min-width: 0; }
-.filters input[type=date] { min-width: 0; padding-inline: .4rem; font-size: .8125rem; }
+.filters .datefield > input[data-datefield] { min-width: 0; padding-left: .4rem; padding-right: 1.75rem; font-size: .8125rem; }
+.filters .datefield-btn { right: .1rem; width: 1.6rem; height: 1.6rem; }
+.filters .datefield-btn svg { width: 16px; height: 16px; }
 .wsid { white-space: nowrap; }
 td.nowrap { white-space: nowrap; }
 .data tr:has(input, select, button) > td { vertical-align: middle; }

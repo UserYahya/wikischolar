@@ -6,8 +6,9 @@ One deployable Django process (gunicorn, or Passenger on cPanel) + PostgreSQL + 
 for rate limits (Redis, or the database cache `DJANGO_CACHE=db` where there is no Redis) + one
 worker loop (or cron job) for queued messages. Email leaves through SMTP or Brevo's HTTPS API;
 SMS through MiM SMS; both are chosen on the dashboard (`email_settings`, `sms_settings`). No SPA: pages are server-rendered, with small vanilla-JS
-files for the public form (`static/js/register.js`) and the dashboard editor
-(`static/js/cascade.js`). This keeps the MVP easy to host and audit; a React front end can
+files for the public form (`static/js/register.js`), the dashboard editor
+(`static/js/cascade.js`) and dd/mm/yyyy date fields (`static/js/datefield.js` with the vendored
+Air Datepicker). This keeps the MVP easy to host and audit; a React front end can
 later consume the same JSON endpoints.
 
 ```

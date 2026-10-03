@@ -1,5 +1,6 @@
 {% extends "public_base.html" %}{% load static %}
 {% block title %}WikiScholar Registration{% endblock %}
+{% block head %}{% include "_datefield_assets.html" %}{% endblock %}
 {% block content %}
 <main class="reg" id="reg">
   <div class="intro">
@@ -44,7 +45,10 @@
         </div>
         <div class="field">
           <label for="date_of_birth">Date of birth</label>
-          <input id="date_of_birth" name="date_of_birth" type="date" required>
+          <input id="date_of_birth" name="date_of_birth" type="text" inputmode="numeric" maxlength="10" required
+                 autocomplete="bday" placeholder="dd/mm/yyyy" aria-describedby="dob_hint" data-datefield data-max="yesterday"
+                 data-view="years">
+          <p class="hint" id="dob_hint">Day/month/year, for example 14/03/2012.</p>
           <p class="err" data-err="date_of_birth"></p>
         </div>
         <fieldset class="field">

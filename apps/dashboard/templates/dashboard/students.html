@@ -1,5 +1,6 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Students{% endblock %}
+{% block head %}{% include "_datefield_assets.html" %}{% endblock %}
 {% block content %}
 <header class="page-head">
   <h1>Students <span class="count">{{ count }}</span>{% if p.batch %} <small class="muted">batch {{ p.batch }} of {{ batches|length }}</small>{% endif %}</h1>
@@ -54,7 +55,7 @@
     </fieldset>
     <fieldset>
       <legend>Registered between</legend>
-      <div class="row2"><input type="date" name="from" value="{{ p.from }}" aria-label="From"><input type="date" name="to" value="{{ p.to }}" aria-label="To"></div>
+      <div class="row2"><input type="text" name="from" value="{{ p.from }}" aria-label="From" placeholder="dd/mm/yyyy" data-datefield data-max="today"><input type="text" name="to" value="{{ p.to }}" aria-label="To" placeholder="dd/mm/yyyy" data-datefield data-max="today"></div>
     </fieldset>
     <label class="inline"><input type="checkbox" name="opt_in" value="1" {% if p.opt_in == "1" %}checked{% endif %}> Opted in to email updates</label>
     <label for="filled_by">Form filled in by</label>

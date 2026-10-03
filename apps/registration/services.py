@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core import audit, ids
+from apps.core.utils import DATE_FORMAT
 from apps.notifications import services as notify
 from apps.notifications.models import NotificationLog
 from apps.reference import services as reference
@@ -119,7 +120,7 @@ def summary(student):
     return {
         "wikischolar_id": student.wikischolar_id,
         "student_name": student.student_name,
-        "date_of_birth": student.date_of_birth.isoformat(),
+        "date_of_birth": student.date_of_birth.strftime(DATE_FORMAT),
         "gender": student.get_gender_display(),
         "guardian": f"{student.guardian_name} ({student.guardian_relation_label})",
         "district": student.district.name,

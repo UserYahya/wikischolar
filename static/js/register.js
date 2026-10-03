@@ -21,6 +21,7 @@
     phone: "Enter a valid Bangladeshi mobile number (for example 01712345678).",
     email: "Enter a valid email address.",
     dob: "Date of birth must be in the past.",
+    dobFormat: "Enter the date as dd/mm/yyyy, for example 14/03/2012.",
     rollOrSid: "Fill in either the class roll or the student ID.",
     relationOther: "Write the student's relation to the guardian.",
     declaration: "Tick the guardian declaration: the form must be filled in by the student's guardian.",
@@ -135,8 +136,9 @@
     });
     if (n === 1 && !val("guardian_declaration")) fail("guardian_declaration", MSG.declaration);
     if (n === 1 && val("date_of_birth")) {
-      const d = new Date(val("date_of_birth") + "T00:00:00");
-      if (isNaN(d) || d >= new Date(new Date().toDateString())) fail("date_of_birth", MSG.dob);
+      const d = window.WSDate.parse(val("date_of_birth"));
+      if (!d) fail("date_of_birth", MSG.dobFormat);
+      else if (d >= new Date(new Date().toDateString())) fail("date_of_birth", MSG.dob);
     }
     if (n === 2 && !val("class_roll") && !val("student_id_sid")) {
       fail("class_roll", MSG.rollOrSid); fail("student_id_sid", MSG.rollOrSid);
@@ -506,7 +508,6 @@
     return step;
   }
 
-  $("#date_of_birth").max = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
   (async () => {
     await loadDistricts();
     const draft = loadDraft();

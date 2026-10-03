@@ -3,6 +3,21 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-03
+
+### Changed
+- **Dates are British style (dd/mm/yyyy) and look the same on every browser and phone.** The
+  registration form's date of birth, the dashboard's student editor and the "Registered between"
+  filter no longer use the browser's own date picker (which differs per phone and shows US order
+  on some). Each is now a text box (number keypad on phones, slashes added while typing, Bangla
+  digits accepted) with a calendar button that opens Air Datepicker 3.6.0 (MIT, vendored in
+  `static/vendor/air-datepicker/`). The birth-date calendar starts on a year grid.
+- The server reads dd/mm/yyyy (`apps.core.utils.parse_date`, `BritishDateField`) and still accepts
+  yyyy-mm-dd, so old dashboard links keep working. A wrong date gets "Enter the date as dd/mm/yyyy,
+  for example 14/03/2012."
+- The registration summary and confirmation email show the date of birth as dd/mm/yyyy
+  (`{date_of_birth}` placeholder). CSV exports keep yyyy-mm-dd.
+
 ## 2026-09-25
 
 ### Added

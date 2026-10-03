@@ -42,6 +42,17 @@ Analytics) will plug into the same app.
 * **English only.** Every free-text value must be English letters, digits and basic punctuation.
   Bangla digits are converted to 0–9 automatically; other scripts are refused, in the browser
   and on the server.
+* **Dates are British style, dd/mm/yyyy, everywhere** (date of birth on the form and in the
+  dashboard editor, the dashboard's "Registered between" filter). Browsers' own date pickers look
+  and behave differently on every phone, so each date is a plain text box (number keypad on
+  phones, slashes added while typing, Bangla digits accepted) with a calendar button that opens
+  [Air Datepicker](https://github.com/t1m0n/air-datepicker) (MIT, no dependencies, copied into
+  `static/vendor/air-datepicker/`, no CDN) as the same centred popup on every device. The birth-date
+  calendar opens on a year grid. Mark an input with `data-datefield` (optional `data-min`/`data-max`
+  = `today`, `yesterday` or a date; `data-view="years"`) and include `_datefield_assets.html` in the
+  page's `{% block head %}`; `static/js/datefield.js` does the rest. On the server,
+  `apps.core.utils.parse_date` / `BritishDateField` read dd/mm/yyyy (and still yyyy-mm-dd, so old
+  links keep working). CSV exports keep ISO dates (yyyy-mm-dd) for spreadsheets.
 * **No data loss on Back.** Answers are kept as a draft in the browser tab (sessionStorage);
   the browser/phone Back button moves between steps; finished steps can be clicked to reopen.
   The draft is cleared after a successful registration.
@@ -106,7 +117,7 @@ Analytics) will plug into the same app.
 |---|---|
 | Language / framework | Python 3.12, **Django 5.1** |
 | Database | **PostgreSQL 13+** (16 recommended) with the **`pg_trgm`** extension. PostgreSQL only: integrity rules are DB triggers and constraints |
-| Front end | Server-rendered Django templates + small vanilla JS (`static/js/register.js`, `static/js/cascade.js`); no build step |
+| Front end | Server-rendered Django templates + small vanilla JS (`static/js/register.js`, `static/js/cascade.js`, `static/js/datefield.js`); one vendored library, Air Datepicker (`static/vendor/`); no build step |
 | Static files | WhiteNoise with content-hashed names (`apps/core/storage.py`), so browsers load new CSS/JS right after an update; **run `collectstatic` after every upload** (if forgotten, pages still work, but may look old) |
 | Cache / rate limits | Redis if `REDIS_URL` is set; else database cache (`DJANGO_CACHE=db`); else in-process memory (single process only) |
 | Encryption of stored secrets | `cryptography` (Fernet) |
@@ -411,8 +422,10 @@ apps/reference/                   regions, districts, upazilas, schools (+ looku
 apps/registration/                students, OTP, public form (templates/registration/), emails.py (system email defaults)
 apps/notifications/               email/SMS providers, batches, logs, settings
 apps/dashboard/                   staff UI: views/, templates/dashboard/, filters.py, forms.py
-static/css, static/js             public.css, dashboard.css, register.js, cascade.js
+static/css, static/js             public.css, dashboard.css, datefield.css, register.js, cascade.js, datefield.js
+static/vendor/air-datepicker/     date picker library (MIT), copied unchanged from npm
 templates/public_base.html        public page shell
+templates/_datefield_assets.html  CSS/JS for dd/mm/yyyy date fields (include in {% block head %})
 data/reference_seed.json          regions/districts/upazilas seed
 tests/                            test suite (base.py has fixtures and helpers)
 docs/                             architecture, database, cPanel deployment, env template
