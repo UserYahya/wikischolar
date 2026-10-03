@@ -107,7 +107,7 @@
       else { li.removeAttribute("role"); li.removeAttribute("tabindex"); li.removeAttribute("title"); }
     });
     $("#back").hidden = n === 1;
-    $("#next").hidden = n === 4;
+    syncNext();
     $("#submit").hidden = n !== 4;
     updateSubmit();
     if (push && (history.state || {}).wsStep !== n) history.pushState({ wsStep: n }, "", `#step-${n}`);
@@ -325,6 +325,7 @@
     if (state.verifiedEmail && !isVerified()) {
       $("#verifiedNote").hidden = true; $("#sendOtp").hidden = false; $("#otpEntry").hidden = true;
       state.verificationId = null; state.verifiedEmail = null;
+      syncNext();
     }
     clearTimeout(typoTimer);
     typoTimer = setTimeout(checkTypo, 700);
@@ -396,6 +397,14 @@
   function showVerified() {
     $("#otpEntry").hidden = true; $("#sendOtp").hidden = true; $("#verifiedNote").hidden = false;
     updateSubmit();
+    syncNext();
+    if (state.step === 3 && !state.restoring) $("#next").focus();
+  }
+  // Step 3 has one next action at a time: send the code, verify it, then "Next step".
+  function syncNext() {
+    const waiting = state.step === 3 && !isVerified();
+    $("#next").hidden = state.step === 4 || waiting;
+    $("#verifyFirst").hidden = !waiting;
   }
   $("#email_otp").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("#verifyOtp").click(); } });
 
@@ -406,7 +415,11 @@
   form.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.matches("input:not([type=checkbox])") && state.step < 4 && e.target.id !== "school_name"
         && e.target.id !== "email_otp") {
-      e.preventDefault(); $("#next").click();
+      e.preventDefault();
+      // Step 3 before verifying: Enter sends the code (or goes to the code box once it's sent).
+      if (state.step === 3 && !isVerified()) {
+        if ($("#otpEntry").hidden) sendOtp(); else $("#email_otp").focus();
+      } else $("#next").click();
     }
   });
   // keep the draft current for every plain field

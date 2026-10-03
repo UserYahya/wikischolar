@@ -153,12 +153,12 @@
         <div class="otp span2" id="otpBox">
           <p class="hint" id="otpHowTo">The verification code is sent <strong>by email only</strong> (not by SMS).
             If it hasn't arrived within a minute, check your <strong>Spam</strong> or <strong>Junk</strong> folder.</p>
-          <button type="button" class="btn" id="sendOtp">Send verification code</button>
+          <button type="button" class="btn primary" id="sendOtp">Send verification code</button>
           <div class="otp-entry" id="otpEntry" hidden>
             <label for="email_otp">Email code</label>
             <div class="row">
               <input id="email_otp" name="email_otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code">
-              <button type="button" class="btn" id="verifyOtp">Verify code</button>
+              <button type="button" class="btn primary" id="verifyOtp">Verify code</button>
             </div>
             <p class="hint" id="otpHint"></p>
             <button type="button" class="link" id="resendOtp" disabled>Send a new code</button>
@@ -186,6 +186,7 @@
 
     <div class="actions">
       <button type="button" class="btn quiet" id="back" hidden>Back</button>
+      <p class="nav-note" id="verifyFirst" hidden>Verify your email to continue.</p>
       <button type="button" class="btn primary" id="next">Next step</button>
       <button type="submit" class="btn primary" id="submit" hidden disabled>Complete registration</button>
     </div>

@@ -20,6 +20,10 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 - Registration step 2: the label is now **"Student ID (SID) (if any)"** and the hint below says "Fill in at
   least one. If the school hasn't given the student an ID, the class roll is enough.", so students
   without an SID aren't held up looking for one.
+- Registration step 3: **one clear next action**. "Send verification code" and then "Verify code" are the solid
+  green buttons; "Next step" is hidden until the email is verified (the bar says "Verify your email to
+  continue.") and then gets focus. Enter in the phone or email box sends the code instead of showing an
+  error. Changing a verified email hides "Next step" again.
 
 ## 2026-09-25
 
