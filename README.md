@@ -130,7 +130,7 @@ record which student batch they were sent to.
 | Command | Purpose |
 |---|---|
 | `seed_reference [--file PATH] [--reset-region-assignments]` | Load/refresh regions, districts, upazilas. Idempotent. |
-| `import_schools CSV [--status verified\|pending]` | Import a canonical school list (`district,upazila,name`, English names as in the DB). |
+| `import_schools CSV [--status verified\|pending]` | Import a school list (`district,upazila,name`). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
 | `create_super_admin --email --name [--password]` | Bootstrap the first Super Admin; everyone else is created from the dashboard. |
 | `check_host` | Pre-flight on a new server: Python, PostgreSQL 13+, `pg_trgm`, settings, migrations, cache. |
 | `find_non_english` | List stored names, school names, rolls or SIDs that aren't English (entered before the English-only rule). |
@@ -167,6 +167,8 @@ merge duplicates (students re-pointed with edit history, misspelling becomes an 
 duplicate row stays as `merged`). Admins add schools on **Schools → Add school** (a typeahead
 lists schools already in the upazila; the same name or an alias is refused and a similar name
 needs confirmation) and remove ones with no students (archived, restorable from *Removed*).
+**Schools → Import CSV** bulk-loads schools: download a template (every upazila with its district,
+name left blank), fill in names, upload, check the per-row preview, then confirm.
 
 **Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, upazila, school,
 class, gender, date-range, opt-in and text search; CSV export; per-student edit history;

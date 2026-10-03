@@ -44,7 +44,7 @@
   {% endif %}
 
   <div class="row"><button class="btn primary" id="addBtn" {% if similar %}hidden{% endif %}>Add school</button><a class="link" href="{% url 'dashboard:schools' %}">Cancel</a></div>
-  <p class="hint">Schools added here are marked verified. To load a long list, use <code>manage.py import_schools</code>.</p>
+  <p class="hint">Schools added here are marked verified. To add many at once, use <a href="{% url 'dashboard:school_import' %}">Import CSV</a>.</p>
 </form>
 {% endblock %}
 {% block scripts %}{% load static %}<script src="{% static 'js/cascade.js' %}" defer></script>

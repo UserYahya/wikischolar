@@ -71,6 +71,15 @@ Analytics) will plug into the same app.
   page's *Remove school* archives it (soft delete, reason in the audit log); it is refused while
   active students or merged schools point to it. *Removed* in the status filter lists them with
   *Restore* (refused if the same name was added since).
+* **Importing schools from CSV** (Dashboard → Schools → *Import CSV*, needs `schools.edit`):
+  *Download template* (all districts or one) gives `district,upazila,name` with one row per upazila,
+  spelled as in the database, and the name blank; copy a row for more schools in the same
+  upazila; rows without a name are ignored. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
+  district/upazila matched in English or Bangla ignoring case) and choose *Verified* or *Pending*.
+  A preview shows each row as *will be added*, *similar* (added only if ticked), *already listed*,
+  *repeated in the file* or *error* (unknown district/upazila, not English, too long). Nothing is
+  saved until *Import N schools*; the rows wait in the session and are checked again then. One
+  `school.imported` audit entry records the count and the new school IDs; source is *Bulk import*.
 
 ### Admin dashboard (`/dashboard/`)
 * **Overview**: totals, daily registrations, students per region/district, warnings (e.g.
@@ -363,7 +372,7 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `migrate` | create/update tables (run after every code update) |
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
 | `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts, upazilas (idempotent; keeps dashboard edits) |
-| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English) |
+| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
 | `send_queued` | send queued bulk messages (cron/worker, run one at a time) |

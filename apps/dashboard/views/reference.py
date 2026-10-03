@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -9,6 +10,7 @@ from django.views.decorators.http import require_POST
 from apps.core import audit
 from apps.core.permissions import require_perm
 from apps.core.utils import english_text
+from apps.reference import importer
 from apps.reference import services as ref
 from apps.reference.models import District, Region, School, Upazila
 
@@ -88,6 +90,55 @@ def school_add(request):
         "d": data, "errors": errors, "same": same, "similar": similar, "districts": District.objects.all(),
         "upazilas": Upazila.objects.filter(district_id=data["district"]) if data["district"].isdigit() else [],
     })
+
+
+IMPORT_SESSION_KEY = "school_import"
+
+
+@require_perm("schools.edit")
+def school_import(request):
+    """Upload a CSV, preview what each row would do, then confirm. The parsed rows wait in the
+    session between the two steps and are checked again on confirm."""
+    ctx = {"districts": District.objects.all(), "max_rows": importer.MAX_ROWS}
+    if request.method == "POST" and request.POST.get("op") == "confirm":
+        pending = request.session.pop(IMPORT_SESSION_KEY, None)
+        if not pending:
+            messages.error(request, "That upload has expired. Please upload the file again.")
+            return redirect("dashboard:school_import")
+        add = {int(x) for x in request.POST.getlist("add_similar") if x.isdigit()}
+        created, planned = importer.apply(pending["rows"], status=pending["status"], add_similar=add, request=request)
+        skipped = len(planned) - len(created)
+        messages.success(request, f"Imported {len(created)} school{'s' if len(created) != 1 else ''} from "
+                         f"{pending['file']}." + (f" {skipped} row{'s were' if skipped != 1 else ' was'} not added "
+                                                  f"(already listed, repeated, similar or with errors)." if skipped else ""))
+        return redirect("dashboard:schools")
+    if request.method == "POST":
+        upload = request.FILES.get("file")
+        status = request.POST.get("status")
+        status = status if status in (School.Status.VERIFIED, School.Status.PENDING) else School.Status.VERIFIED
+        if not upload:
+            ctx["file_error"] = "Choose a CSV file to upload."
+        else:
+            try:
+                rows = importer.read_rows(upload.read(importer.MAX_BYTES + 1))
+            except importer.ImportFileError as exc:
+                ctx["file_error"] = str(exc)
+            else:
+                planned = importer.plan(rows)
+                request.session[IMPORT_SESSION_KEY] = {"rows": rows, "status": status, "file": upload.name}
+                ctx.update(planned=planned, counts=importer.summary(planned), file_name=upload.name,
+                           status_label=School.Status(status).label)
+        ctx["status"] = status
+    return render(request, "dashboard/school_import.html", ctx)
+
+
+@require_perm("schools.edit")
+def school_import_template(request):
+    district = District.objects.filter(pk=request.GET.get("district") or 0).first()
+    name = f"schools-{district.name.lower().replace(' ', '-')}" if district else "schools"
+    resp = HttpResponse(importer.template_csv(district), content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = f'attachment; filename="{name}-template.csv"'
+    return resp
 
 
 @require_perm("schools.view")

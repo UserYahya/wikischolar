@@ -1,0 +1,86 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Import schools{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <p class="crumb"><a href="{% url 'dashboard:schools' %}">Schools</a></p>
+    <h1>Import schools from CSV</h1>
+  </div>
+</header>
+
+{% if planned %}
+<section class="import-preview">
+  <h2>Check before importing <small class="muted">· {{ file_name }} · added as {{ status_label|lower }}</small></h2>
+  <ul class="import-counts">
+    <li><span class="tag ok">{{ counts.new }}</span> will be added</li>
+    {% if counts.similar %}<li><span class="tag">{{ counts.similar }}</span> similar to a listed school (added only if ticked)</li>{% endif %}
+    {% if counts.exists %}<li><span class="status">{{ counts.exists }}</span> already listed (skipped)</li>{% endif %}
+    {% if counts.repeated %}<li><span class="status">{{ counts.repeated }}</span> repeated in the file (skipped)</li>{% endif %}
+    {% if counts.error %}<li><span class="status failed">{{ counts.error }}</span> with errors (skipped)</li>{% endif %}
+  </ul>
+  <form method="post" id="confirmImport">{% csrf_token %}
+    <div class="scroll"><table class="data">
+      <thead><tr><th class="num">Row</th><th>District</th><th>Upazila</th><th>School name</th><th>Result</th></tr></thead>
+      <tbody>{% for r in planned %}
+        <tr class="import-{{ r.result }}">
+          <td class="num">{{ r.line }}</td><td>{{ r.district }}</td><td>{{ r.upazila }}</td><td>{{ r.name }}</td>
+          <td>{% if r.result == "new" %}<span class="tag ok">Will be added</span>
+            {% elif r.result == "similar" %}
+              <label class="inline"><input type="checkbox" name="add_similar" value="{{ r.line }}"> Add anyway</label>
+              <small class="muted">Similar to {% for s in r.similar %}<a href="{% url 'dashboard:school' s.pk %}" target="_blank">{{ s.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</small>
+            {% elif r.result == "exists" %}<span class="status">Already listed</span> <a href="{% url 'dashboard:school' r.school.pk %}" target="_blank">{{ r.school.name }}</a>
+            {% elif r.result == "repeated" %}<span class="status">Skipped</span> <small class="muted">{{ r.message }}</small>
+            {% else %}<span class="status failed">Error</span> <small class="err-text">{{ r.message }}</small>{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+    <div class="row">
+      <button class="btn primary" name="op" value="confirm" id="importBtn" data-new="{{ counts.new }}" {% if not counts.new and not counts.similar %}disabled{% endif %}>Import {{ counts.new }} school{{ counts.new|pluralize }}</button>
+      <a class="link" href="{% url 'dashboard:school_import' %}">Upload a different file</a>
+    </div>
+    {% if counts.error %}<p class="hint">Rows with errors are skipped. Fix them in the file and upload it again, or import the rest now and the fixed rows later; schools already added are skipped next time.</p>{% endif %}
+  </form>
+</section>
+{% else %}
+<div class="cols import-steps">
+  <section>
+    <h2>1. Download the template</h2>
+    <p>The template lists every upazila with its district, spelled the way the system expects. Type a school name in the <strong>name</strong> column. For more schools in the same upazila, copy the row. Rows left without a name are ignored.</p>
+    <form method="get" action="{% url 'dashboard:school_import_template' %}" class="toolbar">
+      <select name="district" aria-label="District">
+        <option value="">All districts</option>
+        {% for d in districts %}<option value="{{ d.pk }}">{{ d.name }}</option>{% endfor %}
+      </select>
+      <button class="btn">Download template</button>
+    </form>
+    <p class="hint">Columns: <code>district</code>, <code>upazila</code>, <code>name</code>. School names must be in English. Up to {{ max_rows }} schools and 1 MB per file. Save as CSV (in Excel: <em>CSV UTF-8</em>).</p>
+  </section>
+  <section>
+    <h2>2. Upload the filled-in file</h2>
+    <form method="post" enctype="multipart/form-data" class="edit-form-plain">{% csrf_token %}
+      <label for="file">CSV file</label>
+      <input type="file" id="file" name="file" accept=".csv,text/csv" required>
+      {% if file_error %}<ul class="errorlist"><li>{{ file_error }}</li></ul>{% endif %}
+      <fieldset>
+        <legend>Add the schools as</legend>
+        <label class="inline"><input type="radio" name="status" value="verified" {% if status != "pending" %}checked{% endif %}> Verified (suggested on the registration form)</label>
+        <label class="inline"><input type="radio" name="status" value="pending" {% if status == "pending" %}checked{% endif %}> Pending review</label>
+      </fieldset>
+      <button class="btn primary">Check the file</button>
+      <p class="hint">Nothing is saved yet. You'll see what will happen to each row and confirm before anything is added.</p>
+    </form>
+  </section>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if planned %}<script>
+(function () {
+  // Keep the button's count in step with the ticked similar-name rows.
+  const btn = document.getElementById("importBtn"), base = +btn.dataset.new;
+  document.getElementById("confirmImport").addEventListener("change", () => {
+    const n = base + document.querySelectorAll('input[name="add_similar"]:checked').length;
+    btn.textContent = `Import ${n} school${n === 1 ? "" : "s"}`;
+    btn.disabled = n === 0;
+  });
+  if (base === 0) btn.disabled = true;
+})();
+</script>{% endif %}{% endblock %}

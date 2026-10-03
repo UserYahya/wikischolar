@@ -1,6 +1,11 @@
+import io
+import os
+import tempfile
 from datetime import date, timedelta
 
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.utils import timezone
 
 from apps.core.models import AuditLog
@@ -293,6 +298,91 @@ class SchoolAddRemoveTests(WSTestCase):
         self.client.logout()
         names = [s["name"] for s in self.client.get(url).json()["schools"]]
         self.assertNotIn("Tongi Pending School", names)
+
+
+class SchoolImportTests(WSTestCase):
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def upload(self, text, status="verified", name="schools.csv"):
+        f = SimpleUploadedFile(name, text.encode("utf-8"), content_type="text/csv")
+        return self.client.post("/dashboard/schools/import/", {"file": f, "status": status})
+
+    def test_template_lists_every_upazila_with_a_blank_name(self):
+        r = self.client.get("/dashboard/schools/import/template.csv")
+        self.assertEqual(r["Content-Type"], "text/csv; charset=utf-8")
+        rows = r.content.decode("utf-8-sig").splitlines()
+        self.assertEqual(rows, ["district,upazila,name", "Gazipur,Kaliakair,", "Gazipur,Tongi,", "Jessore,Sharsha,"])
+        r = self.client.get(f"/dashboard/schools/import/template.csv?district={self.jessore.pk}")
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,"])
+        self.assertIn("schools-jessore-template.csv", r["Content-Disposition"])
+
+    def test_preview_then_confirm(self):
+        csv_text = ("District,Upazila,Name,Notes\n"
+                    "gazipur, tongi ,Tongi Pilot School,x\n"
+                    "Gazipur,Tongi,TONGI GOVT HIGH SCHOOL,\n"        # same as the listed school
+                    "Gazipur,Tongi,Tongi Goverment High Scool,\n"    # similar
+                    "Gazipur,Tongi,Tongi pilot school,\n"            # repeat of row 2
+                    "Gazipur,Nowhere,Some School,\n"
+                    "Narnia,Tongi,Some School,\n"
+                    "Jessore,Sharsha,শার্শা স্কুল,\n"
+                    "Gazipur,Kaliakair,,\n"                          # blank name: ignored
+                    "যশোর,শার্শা,Sharsha Model School,\n")           # Bangla place names are fine
+        r = self.upload(csv_text)
+        self.assertEqual(r.context["counts"], {"new": 2, "similar": 1, "exists": 1, "repeated": 1, "error": 3})
+        self.assertContains(r, "No upazila “Nowhere” in Gazipur.")
+        self.assertContains(r, "Unknown district “Narnia”.")
+        self.assertContains(r, "Same school as row 2.")
+        self.assertEqual(School.objects.count(), 1)  # nothing saved yet
+        similar_line = next(row["line"] for row in r.context["planned"] if row["result"] == "similar")
+        r = self.client.post("/dashboard/schools/import/", {"op": "confirm", "add_similar": [similar_line]})
+        self.assertRedirects(r, "/dashboard/schools/")
+        names = set(School.objects.values_list("name", flat=True))
+        self.assertEqual(names, {"Tongi Government High School", "Tongi Pilot School",
+                                 "Tongi Goverment High Scool", "Sharsha Model School"})
+        new = School.objects.get(name="Sharsha Model School")
+        self.assertEqual((new.verification_status, new.source, new.upazila), ("verified", "import", self.sharsha))
+        self.assertEqual(AuditLog.objects.get(action="school.imported").meta["created"], 3)
+        # the upload is used once
+        r = self.client.post("/dashboard/schools/import/", {"op": "confirm"}, follow=True)
+        self.assertContains(r, "That upload has expired.")
+
+    def test_similar_rows_are_skipped_unless_ticked_and_status_is_kept(self):
+        self.upload("district,upazila,name\nGazipur,Tongi,Tongi Goverment High Scool\nGazipur,Tongi,Tongi Pilot School\n",
+                    status="pending")
+        self.client.post("/dashboard/schools/import/", {"op": "confirm"})
+        self.assertEqual(School.objects.get(name="Tongi Pilot School").verification_status, "pending")
+        self.assertFalse(School.objects.filter(name="Tongi Goverment High Scool").exists())
+
+    def test_rechecked_on_confirm(self):
+        self.upload("district,upazila,name\nGazipur,Tongi,Tongi Pilot School\n")
+        self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "upazila": self.tongi.pk,
+                                                     "name": "Tongi Pilot School"})
+        self.client.post("/dashboard/schools/import/", {"op": "confirm"})
+        self.assertEqual(School.objects.filter(name="Tongi Pilot School").count(), 1)
+
+    def test_bad_files(self):
+        self.assertContains(self.upload("school,place\nA,B\n"), "The first row must be the column names")
+        self.assertContains(self.upload("district,upazila,name\nGazipur,Tongi,\n"), "No school names found")
+        r = self.client.post("/dashboard/schools/import/", {"status": "verified"})
+        self.assertContains(r, "Choose a CSV file to upload.")
+
+    def test_viewer_cannot_import(self):
+        self.client.force_login(self.viewer)
+        self.assertEqual(self.client.get("/dashboard/schools/import/").status_code, 403)
+        self.assertEqual(self.client.get("/dashboard/schools/import/template.csv").status_code, 403)
+
+    def test_management_command_uses_the_same_checks(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8") as fh:
+            fh.write("district,upazila,name\nGazipur,Tongi,Tongi Govt High School\nGazipur,Tongi,Tongi Pilot School\n"
+                     "Gazipur,Nowhere,X School\n")
+        out, err = io.StringIO(), io.StringIO()
+        call_command("import_schools", fh.name, stdout=out, stderr=err)
+        os.unlink(fh.name)
+        self.assertIn("1 created, 1 already existed, 0 repeated, 1 with errors.", out.getvalue())
+        self.assertIn("Row 4: No upazila “Nowhere” in Gazipur.", err.getvalue())
+        self.assertEqual(School.objects.get(name="Tongi Pilot School").source, "import")
 
 
 class MessagingTests(WSTestCase):

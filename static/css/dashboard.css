@@ -232,3 +232,18 @@ td.nowrap { white-space: nowrap; }
 .system-email textarea { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .875rem; min-height: 16rem; resize: vertical; }
 .system-email h3 { font-size: .95rem; margin: .5rem 0; }
 .placeholders td { font-size: .8125rem; padding: .3rem .5rem; }
+
+/* Schools → Import CSV */
+.import-steps { align-items: start; }
+.import-steps section > p:first-of-type { margin-top: 0; }
+.edit-form-plain { display: grid; gap: .5rem; justify-items: start; }
+.edit-form-plain label:not(.inline) { font-weight: 600; font-size: .8125rem; }
+.edit-form-plain fieldset { border: 0; padding: 0; margin: .25rem 0; display: grid; gap: .25rem; }
+.edit-form-plain legend { font-weight: 600; font-size: .8125rem; padding: 0; margin-bottom: .25rem; }
+.import-counts { list-style: none; padding: 0; margin: .5rem 0 1rem; display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; }
+.import-counts .tag, .import-counts .status { min-width: 1.75rem; text-align: center; }
+.import-preview .scroll { max-height: 60vh; overflow: auto; margin-bottom: 1rem; }
+.import-preview .row { display: flex; gap: 1rem; align-items: center; }
+.import-error td { background: var(--error-soft); }
+.import-similar td { background: var(--marigold-soft); }
+.err-text { color: var(--error); }

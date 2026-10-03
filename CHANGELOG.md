@@ -37,6 +37,12 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   only when no active students or merged schools point to it; removed schools are listed under
   *Removed* and can be restored. Removed schools no longer catch registrations through their
   aliases. 10 new tests (131 in total).
+- Dashboard **Schools → Import CSV**: download a **template** (all districts or one) listing every
+  upazila with its district and a blank name column, fill in school names, and upload it. A
+  **preview** shows what happens to each row (will be added / similar to a listed school, added only
+  if ticked / already listed / repeated in the file / error with the reason) and nothing is saved
+  until you confirm. Schools can be added as verified or pending. `manage.py import_schools` now
+  uses the same checks (it also catches aliases and reports each bad row). 7 new tests (138 in total).
 - Dashboard **Students**: a **"Hide filters"** button next to Export CSV folds the filter panel away so
   the list uses the full width. While hidden it reads "Show filters (2 on)", counting the filters that
   narrow the list (not sort or batching). The choice is remembered in that browser. 1 new test (122 in total).
