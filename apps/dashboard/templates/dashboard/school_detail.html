@@ -5,9 +5,12 @@
   <p class="crumb"><a href="{% url 'dashboard:schools' %}?district={{ school.district_id }}&upazila={{ school.upazila_id }}">Schools in {{ school.upazila.name }}</a></p>
   <h1>{{ school.name }}</h1>
   <p class="muted">{{ school.upazila.name }}, {{ school.district.name }}{% if school.district.region %} ({{ school.district.region.name }}){% endif %} · <span class="tag {% if school.verification_status == 'verified' %}ok{% endif %}">{{ school.get_verification_status_display }}</span></p>
+  {% if school.is_deleted %}<p class="notice">Removed {{ school.deleted_at|date:"j M Y H:i" }}{% if school.deleted_by %} by {{ school.deleted_by.email }}{% endif %}. Registrations no longer match it.</p>{% endif %}
   {% if school.merged_into %}<p class="notice">Merged into <a href="{% url 'dashboard:school' school.merged_into_id %}">{{ school.merged_into.name }}</a>. New registrations resolve there.</p>{% endif %}
 </div>
-{% if can_edit and not school.merged_into %}
+{% if can_edit and school.is_deleted %}
+<form method="post">{% csrf_token %}<button class="btn primary" name="op" value="restore">Restore</button></form>
+{% elif can_edit and not school.merged_into %}
 <form method="post">{% csrf_token %}
   {% if school.verification_status == "pending" %}<button class="btn primary" name="op" value="verify">Mark verified</button>
   {% else %}<button class="btn" name="op" value="unverify">Move to pending</button>{% endif %}
@@ -18,7 +21,7 @@
     <h2>Names</h2>
     <p class="hint">Aliases are alternate spellings. When a registrant types one, it resolves to this school automatically.</p>
     <ul class="plain">{% for a in aliases %}<li>{{ a.alias_text }} <span class="muted">({{ a.get_source_display }})</span></li>{% empty %}<li class="muted">No aliases yet.</li>{% endfor %}</ul>
-    {% if can_edit and not school.merged_into %}
+    {% if can_edit and not school.merged_into and not school.is_deleted %}
     <form method="post" class="toolbar">{% csrf_token %}<input name="alias" placeholder="Add an alternate spelling" aria-label="Alias" required><button class="btn" name="op" value="alias">Add alias</button></form>
     <form method="post" class="toolbar">{% csrf_token %}<input name="name" value="{{ school.name }}" aria-label="Official name" required><button class="btn" name="op" value="rename">Rename</button></form>
     {% endif %}
@@ -38,4 +41,17 @@
   {% if student_count > 100 %}<p><a href="{% url 'dashboard:students' %}?district={{ school.district_id }}&upazila={{ school.upazila_id }}&school={{ school.pk }}">See all {{ student_count }}</a></p>{% endif %}
   {% endif %}
 </section>
+{% if can_edit and not school.is_deleted %}
+<section class="danger">
+  <h2>Remove this school</h2>
+  {% if removal_blocker %}<p>{{ removal_blocker }}</p>
+  {% else %}
+  <p>Removing hides the school from lists and from the registration form's suggestions. Nothing is deleted; you can restore it from Schools → Removed.</p>
+  <form method="post" class="row">{% csrf_token %}
+    <input name="reason" placeholder="Reason (e.g. added by mistake)" aria-label="Reason" required>
+    <button class="btn danger-btn" name="op" value="remove">Remove school</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
 {% endblock %}

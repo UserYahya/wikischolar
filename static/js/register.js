@@ -21,6 +21,7 @@
     phone: "Enter a valid Bangladeshi mobile number (for example 01712345678).",
     email: "Enter a valid email address.",
     dob: "Date of birth must be in the past.",
+    dobFormat: "Enter the date as dd/mm/yyyy, for example 14/03/2012.",
     rollOrSid: "Fill in either the class roll or the student ID.",
     relationOther: "Write the student's relation to the guardian.",
     declaration: "Tick the guardian declaration: the form must be filled in by the student's guardian.",
@@ -106,7 +107,7 @@
       else { li.removeAttribute("role"); li.removeAttribute("tabindex"); li.removeAttribute("title"); }
     });
     $("#back").hidden = n === 1;
-    $("#next").hidden = n === 4;
+    syncNext();
     $("#submit").hidden = n !== 4;
     updateSubmit();
     if (push && (history.state || {}).wsStep !== n) history.pushState({ wsStep: n }, "", `#step-${n}`);
@@ -135,8 +136,9 @@
     });
     if (n === 1 && !val("guardian_declaration")) fail("guardian_declaration", MSG.declaration);
     if (n === 1 && val("date_of_birth")) {
-      const d = new Date(val("date_of_birth") + "T00:00:00");
-      if (isNaN(d) || d >= new Date(new Date().toDateString())) fail("date_of_birth", MSG.dob);
+      const d = window.WSDate.parse(val("date_of_birth"));
+      if (!d) fail("date_of_birth", MSG.dobFormat);
+      else if (d >= new Date(new Date().toDateString())) fail("date_of_birth", MSG.dob);
     }
     if (n === 2 && !val("class_roll") && !val("student_id_sid")) {
       fail("class_roll", MSG.rollOrSid); fail("student_id_sid", MSG.rollOrSid);
@@ -323,6 +325,8 @@
     if (state.verifiedEmail && !isVerified()) {
       $("#verifiedNote").hidden = true; $("#sendOtp").hidden = false; $("#otpEntry").hidden = true;
       state.verificationId = null; state.verifiedEmail = null;
+      stopExpiry();
+      syncNext();
     }
     clearTimeout(typoTimer);
     typoTimer = setTimeout(checkTypo, 700);
@@ -343,6 +347,29 @@
       if (left <= 0) { clearInterval(cooldown); btn.disabled = false; }
     }, 1000);
   }
+  // Counts down to the code's expiry from a fixed end time, so a throttled background tab stays right.
+  let expiryTimer = null;
+  function stopExpiry() { clearInterval(expiryTimer); $("#otpTimer").hidden = true; }
+  function startExpiry(minutes) {
+    const end = Date.now() + minutes * 60000, el = $("#otpTimer");
+    clearInterval(expiryTimer);
+    el.hidden = false; $("#verifyOtp").disabled = false;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      if (left === 0) {
+        stopExpiry();
+        $("#verifyOtp").disabled = true;
+        setError("email_otp", "This code has expired. Send a new one.");
+        clearInterval(cooldown);
+        $("#resendOtp").disabled = false; $("#resendOtp").textContent = "Send a new code";
+        return;
+      }
+      el.textContent = `Code expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+      el.classList.toggle("soon", left <= 60);
+    };
+    tick();
+    expiryTimer = setInterval(tick, 1000);
+  }
   async function sendOtp() {
     clearErrors(["email", "email_otp"]);
     const email = emailIn.value.trim().toLowerCase();
@@ -355,12 +382,13 @@
       if (!ok) { setError("email", data.message || MSG.network); return; }
       state.verificationId = data.verification_id;
       $("#otpEntry").hidden = false;
-      $("#otpHint").textContent = `We sent a 6-digit code by email to ${email}. It is valid for ${data.expires_in_minutes} minutes. ` +
+      $("#otpHint").textContent = `We sent a 6-digit code by email to ${email}. ` +
         "Can't find it? Check your Spam or Junk folder." +
         (data.debug_code ? ` [dev mode: ${data.debug_code}]` : "");
       $("#email_otp").value = ""; $("#email_otp").focus();
       btn.hidden = true;
       startCooldown();
+      startExpiry(data.expires_in_minutes);
       saveDraft();
     } catch (_) { setError("email", MSG.network); }
     finally { btn.removeAttribute("aria-busy"); btn.disabled = false; }
@@ -392,8 +420,17 @@
     finally { btn.removeAttribute("aria-busy"); }
   });
   function showVerified() {
+    stopExpiry();
     $("#otpEntry").hidden = true; $("#sendOtp").hidden = true; $("#verifiedNote").hidden = false;
     updateSubmit();
+    syncNext();
+    if (state.step === 3 && !state.restoring) $("#next").focus();
+  }
+  // Step 3 has one next action at a time: send the code, verify it, then "Next step".
+  function syncNext() {
+    const waiting = state.step === 3 && !isVerified();
+    $("#next").hidden = state.step === 4 || waiting;
+    $("#verifyFirst").hidden = !waiting;
   }
   $("#email_otp").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("#verifyOtp").click(); } });
 
@@ -404,7 +441,11 @@
   form.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.matches("input:not([type=checkbox])") && state.step < 4 && e.target.id !== "school_name"
         && e.target.id !== "email_otp") {
-      e.preventDefault(); $("#next").click();
+      e.preventDefault();
+      // Step 3 before verifying: Enter sends the code (or goes to the code box once it's sent).
+      if (state.step === 3 && !isVerified()) {
+        if ($("#otpEntry").hidden) sendOtp(); else $("#email_otp").focus();
+      } else $("#next").click();
     }
   });
   // keep the draft current for every plain field
@@ -506,7 +547,6 @@
     return step;
   }
 
-  $("#date_of_birth").max = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
   (async () => {
     await loadDistricts();
     const draft = loadDraft();

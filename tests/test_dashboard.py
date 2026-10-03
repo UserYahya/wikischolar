@@ -1,4 +1,12 @@
+import io
+import os
+import tempfile
+from datetime import date, timedelta
+
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
+from django.utils import timezone
 
 from apps.core.models import AuditLog
 from apps.notifications.models import NotificationLog
@@ -38,6 +46,8 @@ class PermissionTests(WSTestCase):
                     "/dashboard/messages/", "/dashboard/messages/compose/", "/dashboard/schools/",
                     f"/dashboard/schools/?district={self.gazipur.pk}&upazila={self.tongi.pk}",
                     f"/dashboard/schools/{self.school.pk}/", "/dashboard/schools/duplicates/",
+                    "/dashboard/schools/add/", f"/dashboard/schools/add/?district={self.gazipur.pk}",
+                    "/dashboard/schools/?status=removed",
                     "/dashboard/locations/", f"/dashboard/locations/districts/{self.gazipur.pk}/",
                     "/dashboard/audit/", "/dashboard/admins/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
@@ -108,14 +118,39 @@ class StudentAdminTests(WSTestCase):
         r = self.client.get("/dashboard/students/", {"gender": "female", "class": "8"})
         self.assertEqual(r.context["count"], 1)
 
+    def test_filter_toggle_counts_only_narrowing_filters(self):
+        r = self.client.get("/dashboard/students/")
+        self.assertContains(r, 'id="filtersToggle"')
+        self.assertEqual(r.context["active_filters"], 0)
+        r = self.client.get("/dashboard/students/", {"gender": "female", "class": ["7", "8"], "q": "a",
+                                                     "sort": "name", "batch_size": "10"})
+        self.assertEqual(r.context["active_filters"], 3)
+
 
     def test_admin_edit_is_english_only(self):
         r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(student_name="রহিম"))
         self.assertEqual(r.status_code, 200)
         self.assertIn("student_name", r.context["form"].errors)
 
+    def test_edit_date_of_birth_is_british(self):
+        r = self.client.get(f"/dashboard/students/{self.wsid}/edit/")
+        self.assertContains(r, 'value="14/03/2011"')
+        r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(date_of_birth="01/02/2010"))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Student.objects.get(wikischolar_id=self.wsid).date_of_birth, date(2010, 2, 1))
+
+    def test_registered_between_filter_reads_british_and_iso_dates(self):
+        today = timezone.localdate()
+        for params, count in [({"from": today.strftime("%d/%m/%Y")}, 1), ({"to": today.isoformat()}, 1),
+                              ({"from": (today + timedelta(days=1)).strftime("%d/%m/%Y")}, 0)]:
+            r = self.client.get("/dashboard/students/", params)
+            self.assertEqual(r.context["count"], count, params)
+        r = self.client.get("/dashboard/students/", {"to": today.isoformat()})
+        self.assertContains(r, f'value="{today:%d/%m/%Y}"')
+
     def test_school_names_from_dashboard_are_english_only(self):
-        self.client.post("/dashboard/schools/", {"upazila": self.tongi.pk, "name": "টঙ্গী স্কুল"})
+        self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "upazila": self.tongi.pk,
+                                                      "name": "টঙ্গী স্কুল"})
         self.assertFalse(School.objects.filter(name="টঙ্গী স্কুল").exists())
         self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "rename", "name": "টঙ্গী"})
         self.school.refresh_from_db()
@@ -178,6 +213,186 @@ class SchoolMergeTests(WSTestCase):
         # the next registrant typing the misspelling lands on the canonical school
         self.register(email="n@gmail.com", school_id=None, school_name="tongi govt high skool")
         self.assertEqual(Student.objects.get(email="n@gmail.com").school, self.school)
+
+
+class SchoolAddRemoveTests(WSTestCase):
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def add(self, name, upazila=None, district=None, **extra):
+        return self.client.post("/dashboard/schools/add/", {
+            "district": (district or self.gazipur).pk, "upazila": (upazila or self.tongi).pk, "name": name, **extra})
+
+    def test_add_new_school(self):
+        r = self.add("Tongi  Pilot Girls School")
+        school = School.objects.get(name="Tongi Pilot Girls School")
+        self.assertRedirects(r, f"/dashboard/schools/{school.pk}/")
+        self.assertEqual((school.verification_status, school.source, school.verified_by), ("verified", "admin", self.admin))
+        self.assertTrue(AuditLog.objects.filter(action="school.created", entity_id=str(school.pk)).exists())
+
+    def test_same_name_or_alias_is_refused(self):
+        SchoolAlias.objects.create(school=self.school, alias_text="Tongi Boys School")
+        for name in ["tongi government high school", "TONGI BOYS SCHOOL"]:
+            r = self.add(name)
+            self.assertContains(r, "This school is already listed.")
+            self.assertContains(r, f'href="/dashboard/schools/{self.school.pk}/"')
+        self.assertEqual(School.objects.count(), 1)
+        # the same name in another upazila is a different school
+        self.add("Tongi Government High School", upazila=self.kaliakair)
+        self.assertEqual(School.objects.count(), 2)
+
+    def test_similar_name_needs_confirmation(self):
+        r = self.add("Tongi Goverment High Scool")
+        self.assertContains(r, "have a similar name")
+        self.assertFalse(School.objects.filter(name="Tongi Goverment High Scool").exists())
+        self.add("Tongi Goverment High Scool", confirm="1")
+        self.assertTrue(School.objects.filter(name="Tongi Goverment High Scool").exists())
+        # "Govt" is the same name once abbreviations are expanded, so it is refused outright
+        self.assertContains(self.add("Tongi Govt. High School", confirm="1"), "This school is already listed.")
+
+    def test_upazila_must_be_in_district(self):
+        r = self.add("Sharsha Model School", upazila=self.sharsha, district=self.gazipur)
+        self.assertContains(r, "Choose the district and upazila.")
+        self.assertFalse(School.objects.filter(name="Sharsha Model School").exists())
+
+    def test_viewer_cannot_add_or_remove(self):
+        self.client.force_login(self.viewer)
+        self.assertEqual(self.client.get("/dashboard/schools/add/").status_code, 403)
+        self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "x"})
+        self.assertTrue(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_remove_blocked_while_students_are_linked(self):
+        self.register()
+        r = self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "x"}, follow=True)
+        self.assertContains(r, "1 student is linked to this school")
+        self.assertTrue(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_remove_and_restore(self):
+        SchoolAlias.objects.create(school=self.school, alias_text="TGHS")
+        r = self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "added by mistake"})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(School.objects.filter(pk=self.school.pk).exists())
+        self.assertTrue(AuditLog.objects.filter(action="school.removed", entity_id=str(self.school.pk)).exists())
+        self.assertContains(self.client.get("/dashboard/schools/?status=removed"), self.school.name)
+        self.assertNotContains(self.client.get("/dashboard/schools/"), self.school.name)
+        # registrants no longer land on it, even through its alias
+        self.register(school_id=self.school.pk, school_name="TGHS")
+        self.assertNotEqual(Student.objects.get().school_id, self.school.pk)
+        # restoring is fine: the pending "TGHS" school isn't the same name
+        self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "restore"})
+        self.assertTrue(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_restore_refused_when_same_name_was_added_since(self):
+        self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "remove", "reason": "x"})
+        self.add("Tongi Government High School")
+        r = self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "restore"}, follow=True)
+        self.assertContains(r, "is already listed in Tongi")
+        self.assertFalse(School.objects.filter(pk=self.school.pk).exists())
+
+    def test_typeahead_shows_pending_schools_to_staff_only(self):
+        School.objects.create(name="Tongi Pending School", district=self.gazipur, upazila=self.tongi)
+        url = f"/api/reference/schools/?upazila={self.tongi.pk}&q=tongi&pending=1"
+        names = [s["name"] for s in self.client.get(url).json()["schools"]]
+        self.assertIn("Tongi Pending School", names)
+        self.client.logout()
+        names = [s["name"] for s in self.client.get(url).json()["schools"]]
+        self.assertNotIn("Tongi Pending School", names)
+
+
+class SchoolImportTests(WSTestCase):
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def upload(self, text, status="verified", name="schools.csv"):
+        f = SimpleUploadedFile(name, text.encode("utf-8"), content_type="text/csv")
+        return self.client.post("/dashboard/schools/import/", {"file": f, "status": status})
+
+    def test_template_is_just_the_headings_and_imports_once_filled_in(self):
+        r = self.client.get("/dashboard/schools/import/template.csv")
+        self.assertEqual(r["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("schools-import-template.csv", r["Content-Disposition"])
+        self.assertTrue(r.content.startswith(b"\xef\xbb\xbf"))  # BOM for Excel
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines(), ["District,Upazila,School name"])
+        r = self.upload(r.content.decode("utf-8") + "Gazipur,Tongi,Tongi Pilot School\n")
+        self.assertEqual(r.context["counts"]["new"], 1)
+
+    def test_district_and_upazila_list(self):
+        r = self.client.get("/dashboard/schools/import/locations.csv")
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines(), [
+            "District,Upazila,District (Bangla),Upazila (Bangla)", "Gazipur,Kaliakair,গাজীপুর,কালিয়াকৈর",
+            "Gazipur,Tongi,গাজীপুর,টঙ্গী", "Jessore,Sharsha,যশোর,শার্শা"])
+        r = self.client.get(f"/dashboard/schools/import/locations.csv?district={self.jessore.pk}")
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,যশোর,শার্শা"])
+        self.assertIn("districts-and-upazilas-jessore.csv", r["Content-Disposition"])
+
+    def test_preview_then_confirm(self):
+        csv_text = ("District,Upazila,Name,Notes\n"
+                    "gazipur, tongi ,Tongi Pilot School,x\n"
+                    "Gazipur,Tongi,TONGI GOVT HIGH SCHOOL,\n"        # same as the listed school
+                    "Gazipur,Tongi,Tongi Goverment High Scool,\n"    # similar
+                    "Gazipur,Tongi,Tongi pilot school,\n"            # repeat of row 2
+                    "Gazipur,Nowhere,Some School,\n"
+                    "Narnia,Tongi,Some School,\n"
+                    "Jessore,Sharsha,শার্শা স্কুল,\n"
+                    "Gazipur,Kaliakair,,\n"                          # blank name: ignored
+                    "যশোর,শার্শা,Sharsha Model School,\n")           # Bangla place names are fine
+        r = self.upload(csv_text)
+        self.assertEqual(r.context["counts"], {"new": 2, "similar": 1, "exists": 1, "repeated": 1, "error": 3})
+        self.assertContains(r, "No upazila “Nowhere” in Gazipur.")
+        self.assertContains(r, "Unknown district “Narnia”.")
+        self.assertContains(r, "Same school as row 2.")
+        self.assertEqual(School.objects.count(), 1)  # nothing saved yet
+        similar_line = next(row["line"] for row in r.context["planned"] if row["result"] == "similar")
+        r = self.client.post("/dashboard/schools/import/", {"op": "confirm", "add_similar": [similar_line]})
+        self.assertRedirects(r, "/dashboard/schools/")
+        names = set(School.objects.values_list("name", flat=True))
+        self.assertEqual(names, {"Tongi Government High School", "Tongi Pilot School",
+                                 "Tongi Goverment High Scool", "Sharsha Model School"})
+        new = School.objects.get(name="Sharsha Model School")
+        self.assertEqual((new.verification_status, new.source, new.upazila), ("verified", "import", self.sharsha))
+        self.assertEqual(AuditLog.objects.get(action="school.imported").meta["created"], 3)
+        # the upload is used once
+        r = self.client.post("/dashboard/schools/import/", {"op": "confirm"}, follow=True)
+        self.assertContains(r, "That upload has expired.")
+
+    def test_similar_rows_are_skipped_unless_ticked_and_status_is_kept(self):
+        self.upload("district,upazila,name\nGazipur,Tongi,Tongi Goverment High Scool\nGazipur,Tongi,Tongi Pilot School\n",
+                    status="pending")
+        self.client.post("/dashboard/schools/import/", {"op": "confirm"})
+        self.assertEqual(School.objects.get(name="Tongi Pilot School").verification_status, "pending")
+        self.assertFalse(School.objects.filter(name="Tongi Goverment High Scool").exists())
+
+    def test_rechecked_on_confirm(self):
+        self.upload("district,upazila,name\nGazipur,Tongi,Tongi Pilot School\n")
+        self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "upazila": self.tongi.pk,
+                                                     "name": "Tongi Pilot School"})
+        self.client.post("/dashboard/schools/import/", {"op": "confirm"})
+        self.assertEqual(School.objects.filter(name="Tongi Pilot School").count(), 1)
+
+    def test_bad_files(self):
+        self.assertContains(self.upload("school,place\nA,B\n"), "The first row must be the column headings")
+        self.assertContains(self.upload("district,upazila,name\nGazipur,Tongi,\n"), "No school names found")
+        r = self.client.post("/dashboard/schools/import/", {"status": "verified"})
+        self.assertContains(r, "Choose a CSV file to upload.")
+
+    def test_viewer_cannot_import(self):
+        self.client.force_login(self.viewer)
+        self.assertEqual(self.client.get("/dashboard/schools/import/").status_code, 403)
+        self.assertEqual(self.client.get("/dashboard/schools/import/template.csv").status_code, 403)
+        self.assertEqual(self.client.get("/dashboard/schools/import/locations.csv").status_code, 403)
+
+    def test_management_command_uses_the_same_checks(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8") as fh:
+            fh.write("district,upazila,name\nGazipur,Tongi,Tongi Govt High School\nGazipur,Tongi,Tongi Pilot School\n"
+                     "Gazipur,Nowhere,X School\n")
+        out, err = io.StringIO(), io.StringIO()
+        call_command("import_schools", fh.name, stdout=out, stderr=err)
+        os.unlink(fh.name)
+        self.assertIn("1 created, 1 already existed, 0 repeated, 1 with errors.", out.getvalue())
+        self.assertIn("Row 4: No upazila “Nowhere” in Gazipur.", err.getvalue())
+        self.assertEqual(School.objects.get(name="Tongi Pilot School").source, "import")
 
 
 class MessagingTests(WSTestCase):

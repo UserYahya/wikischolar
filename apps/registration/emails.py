@@ -12,7 +12,7 @@ _STUDENT_PLACEHOLDERS = {
     "wikischolar_id": "the new WikiScholar ID, e.g. WS-2027-000001",
     "details": "all registration details, one per line (name, date of birth, guardian, district, "
                "upazila, school, class, roll / student ID, phone, who filled in the form)",
-    "date_of_birth": "date of birth (YYYY-MM-DD)",
+    "date_of_birth": "date of birth (DD/MM/YYYY)",
     "gender": "gender",
     "guardian": "guardian's name and relation, e.g. Karim Uddin (Father)",
     "district": "district",
@@ -29,7 +29,7 @@ _STUDENT_PLACEHOLDERS = {
 }
 
 _SAMPLE_SUMMARY = {
-    "wikischolar_id": "WS-2027-000123", "student_name": "Rahim Uddin", "date_of_birth": "2012-03-14",
+    "wikischolar_id": "WS-2027-000123", "student_name": "Rahim Uddin", "date_of_birth": "14/03/2012",
     "gender": "Male", "guardian": "Karim Uddin (Father)", "district": "Gazipur", "region": "Dhaka",
     "upazila": "Tongi", "school": "Tongi Government High School", "current_class": "Class 8",
     "class_roll": "12", "student_id_sid": "", "phone": "01712345678", "email": "rahim@gmail.com",

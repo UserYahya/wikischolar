@@ -35,13 +35,24 @@ Analytics) will plug into the same app.
 | Step | Collects | Rules |
 |---|---|---|
 | 1. Student & guardian | **required guardian declaration** (Youth Safety Policy: the guardian fills in the form: "I am the guardian of the student named below and I am filling in this form on their behalf"), name, date of birth, gender, guardian name, relation (Father / Mother / Other + typed relation) | "Other" requires the typed relation; the declaration is stored as `filled_by = guardian` + `guardian_declared_at` |
-| 2. School details | district → region (automatic) → upazila, class, school (typeahead), class roll and/or student ID | class 6–10 only; roll **or** SID required; while typing, **only approved (verified) schools** of the chosen upazila are suggested; a school not in the list is added as *pending* for staff to approve |
-| 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk; **one email per student**: an address already used by an active student is refused on "Send verification code" ("already registered… use a different email address") and again on submit |
+| 2. School details | district → region (automatic) → upazila, class, school (typeahead), class roll and/or student ID (labelled "(if any)": many students have none) | class 6–10 only; roll **or** SID required; while typing, **only approved (verified) schools** of the chosen upazila are suggested; a school not in the list is added as *pending* for staff to approve |
+| 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk; **one action at a time**: "Send verification code", then "Verify code", is the solid button, and "Next step" only appears once the email is verified (until then the bar says "Verify your email to continue.", and Enter sends the code); **one email per student**: an address already used by an active student is refused on "Send verification code" ("already registered… use a different email address") and again on submit |
 | 4. Consent & submit | Youth Safety Policy consent, optional email updates opt-in | consent required |
 
 * **English only.** Every free-text value must be English letters, digits and basic punctuation.
   Bangla digits are converted to 0–9 automatically; other scripts are refused, in the browser
   and on the server.
+* **Dates are British style, dd/mm/yyyy, everywhere** (date of birth on the form and in the
+  dashboard editor, the dashboard's "Registered between" filter). Browsers' own date pickers look
+  and behave differently on every phone, so each date is a plain text box (number keypad on
+  phones, slashes added while typing, Bangla digits accepted) with a calendar button that opens
+  [Air Datepicker](https://github.com/t1m0n/air-datepicker) (MIT, no dependencies, copied into
+  `static/vendor/air-datepicker/`, no CDN) as the same centred popup on every device. The birth-date
+  calendar opens on a year grid. Mark an input with `data-datefield` (optional `data-min`/`data-max`
+  = `today`, `yesterday` or a date; `data-view="years"`) and include `_datefield_assets.html` in the
+  page's `{% block head %}`; `static/js/datefield.js` does the rest. On the server,
+  `apps.core.utils.parse_date` / `BritishDateField` read dd/mm/yyyy (and still yyyy-mm-dd, so old
+  links keep working). CSV exports keep ISO dates (yyyy-mm-dd) for spreadsheets.
 * **No data loss on Back.** Answers are kept as a draft in the browser tab (sessionStorage);
   the browser/phone Back button moves between steps; finished steps can be clicked to reopen.
   The draft is cleared after a successful registration.
@@ -52,6 +63,24 @@ Analytics) will plug into the same app.
   (`WS_SITE_URL`; shortened to "← wikischolar.bd" on phones); the success screen has the same link.
 * **Approving schools** makes them suggestible: Dashboard → Schools → a pending school → *Mark
   verified* (or bulk-load a verified list with `import_schools CSV --status verified`).
+* **Adding and removing schools** (Dashboard → Schools, needs `schools.edit`): *Add school* picks
+  district → upazila → name; as the name is typed, schools already in that upazila (verified and
+  pending) are listed, and picking one opens it. On submit the same name or an alias in the
+  upazila (after normalising, so "Govt" = "Government") is refused, and a name as similar as
+  *Review duplicates* would flag (`WS_SCHOOL_DUPLICATE`) needs "It's a different school". A school
+  page's *Remove school* archives it (soft delete, reason in the audit log); it is refused while
+  active students or merged schools point to it. *Removed* in the status filter lists them with
+  *Restore* (refused if the same name was added since).
+* **Importing schools from CSV** (Dashboard → Schools → *Import CSV*, needs `schools.edit`):
+  *Download template* gives the headings `District,Upazila,School name` (a lower-case `name` column
+  also works); fill in one school per row; rows without a school name are ignored. *District &
+  upazila list* (all districts or one) lists every upazila with its district in English and Bangla,
+  spelled as the import expects. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
+  district/upazila matched in English or Bangla ignoring case) and choose *Verified* or *Pending*.
+  A preview shows each row as *will be added*, *similar* (added only if ticked), *already listed*,
+  *repeated in the file* or *error* (unknown district/upazila, not English, too long). Nothing is
+  saved until *Import N schools*; the rows wait in the session and are checked again then. One
+  `school.imported` audit entry records the count and the new school IDs; source is *Bulk import*.
 
 ### Admin dashboard (`/dashboard/`)
 * **Overview**: totals, daily registrations, students per region/district, warnings (e.g.
@@ -106,7 +135,7 @@ Analytics) will plug into the same app.
 |---|---|
 | Language / framework | Python 3.12, **Django 5.1** |
 | Database | **PostgreSQL 13+** (16 recommended) with the **`pg_trgm`** extension. PostgreSQL only: integrity rules are DB triggers and constraints |
-| Front end | Server-rendered Django templates + small vanilla JS (`static/js/register.js`, `static/js/cascade.js`); no build step |
+| Front end | Server-rendered Django templates + small vanilla JS (`static/js/register.js`, `static/js/cascade.js`, `static/js/datefield.js`); one vendored library, Air Datepicker (`static/vendor/`); no build step |
 | Static files | WhiteNoise with content-hashed names (`apps/core/storage.py`), so browsers load new CSS/JS right after an update; **run `collectstatic` after every upload** (if forgotten, pages still work, but may look old) |
 | Cache / rate limits | Redis if `REDIS_URL` is set; else database cache (`DJANGO_CACHE=db`); else in-process memory (single process only) |
 | Encryption of stored secrets | `cryptography` (Fernet) |
@@ -344,7 +373,7 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `migrate` | create/update tables (run after every code update) |
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
 | `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts, upazilas (idempotent; keeps dashboard edits) |
-| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English) |
+| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
 | `send_queued` | send queued bulk messages (cron/worker, run one at a time) |
@@ -411,8 +440,10 @@ apps/reference/                   regions, districts, upazilas, schools (+ looku
 apps/registration/                students, OTP, public form (templates/registration/), emails.py (system email defaults)
 apps/notifications/               email/SMS providers, batches, logs, settings
 apps/dashboard/                   staff UI: views/, templates/dashboard/, filters.py, forms.py
-static/css, static/js             public.css, dashboard.css, register.js, cascade.js
+static/css, static/js             public.css, dashboard.css, datefield.css, register.js, cascade.js, datefield.js
+static/vendor/air-datepicker/     date picker library (MIT), copied unchanged from npm
 templates/public_base.html        public page shell
+templates/_datefield_assets.html  CSS/JS for dd/mm/yyyy date fields (include in {% block head %})
 data/reference_seed.json          regions/districts/upazilas seed
 tests/                            test suite (base.py has fixtures and helpers)
 docs/                             architecture, database, cPanel deployment, env template

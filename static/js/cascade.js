@@ -1,4 +1,4 @@
-/* Dashboard student editor: district → upazila → school cascade.
+/* Dashboard student editor: district → upazila → school cascade (Add school: district → upazila).
    Uses the same reference API as the public form, so region/district data
    always comes from the database. */
 (function () {
@@ -6,7 +6,7 @@
   const district = document.querySelector('[data-cascade="district"]');
   const upazila = document.querySelector('[data-cascade="upazila"]');
   const school = document.querySelector('[data-cascade="school"]');
-  if (!district || !upazila || !school) return;
+  if (!district || !upazila) return;
 
   function fill(select, items, label) {
     select.replaceChildren();
@@ -27,6 +27,7 @@
   }
 
   async function loadSchools() {
+    if (!school) return;
     school.disabled = true;
     if (!upazila.value) { fill(school, [], "school"); return; }
     try {
@@ -45,7 +46,7 @@
     } catch (e) {
       fill(upazila, [], "upazila");
     } finally { upazila.disabled = false; }
-    fill(school, [], "school");
+    if (school) fill(school, [], "school");
   }
 
   district.addEventListener("change", loadUpazilas);

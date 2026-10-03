@@ -1,5 +1,6 @@
 from django import forms
 
+from apps.core.utils import BritishDateField
 from apps.reference.models import District, Upazila
 
 from .choices import CLASS_CHOICES, Gender, GuardianRelation
@@ -12,7 +13,7 @@ REQUIRED = {"required": "This field is required."}
 class StudentCoreFields(forms.Form):
     """Fields and cross-field rules shared by public registration and admin edits."""
     student_name = forms.CharField(max_length=150, error_messages=REQUIRED)
-    date_of_birth = forms.DateField(validators=[validate_past_date], error_messages=REQUIRED)
+    date_of_birth = BritishDateField(validators=[validate_past_date], error_messages=REQUIRED)
     gender = forms.ChoiceField(choices=Gender.choices, error_messages=REQUIRED)
     guardian_name = forms.CharField(max_length=150, error_messages=REQUIRED)
     guardian_relation = forms.ChoiceField(choices=GuardianRelation.choices, error_messages=REQUIRED)

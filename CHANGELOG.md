@@ -3,6 +3,51 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-03
+
+### Changed
+- **Dates are British style (dd/mm/yyyy) and look the same on every browser and phone.** The
+  registration form's date of birth, the dashboard's student editor and the "Registered between"
+  filter no longer use the browser's own date picker (which differs per phone and shows US order
+  on some). Each is now a text box (number keypad on phones, slashes added while typing, Bangla
+  digits accepted) with a calendar button that opens Air Datepicker 3.6.0 (MIT, vendored in
+  `static/vendor/air-datepicker/`). The birth-date calendar starts on a year grid.
+- The server reads dd/mm/yyyy (`apps.core.utils.parse_date`, `BritishDateField`) and still accepts
+  yyyy-mm-dd, so old dashboard links keep working. A wrong date gets "Enter the date as dd/mm/yyyy,
+  for example 14/03/2012."
+- The registration summary and confirmation email show the date of birth as dd/mm/yyyy
+  (`{date_of_birth}` placeholder). CSV exports keep yyyy-mm-dd.
+- Registration step 2: the label is now **"Student ID (SID) (if any)"** and the hint below says "Fill in at
+  least one. If the school hasn't given the student an ID, the class roll is enough.", so students
+  without an SID aren't held up looking for one.
+- Registration step 3: **one clear next action**. "Send verification code" and then "Verify code" are the solid
+  green buttons; "Next step" is hidden until the email is verified (the bar says "Verify your email to
+  continue.") and then gets focus. Enter in the phone or email box sends the code instead of showing an
+  error. Changing a verified email hides "Next step" again.
+- Registration step 3: after "Send verification code" a **countdown** under the code box shows
+  "Code expires in 9:59" (from `WS_OTP_TTL_MINUTES`), turning red in the last minute. At zero, "Verify
+  code" is disabled, the message "This code has expired. Send a new one." appears and "Send a new code"
+  is enabled at once. Verifying, or changing the email, removes the countdown.
+- Dashboard **Schools: add and remove schools.** *Add school* (header button, also offered when a
+  list is empty) replaces the small form that only appeared after picking a district. Choose district
+  and upazila, then type the name: schools already listed in that upazila appear as you type (like
+  the registration form, but including pending ones), and picking one opens it. The server refuses
+  the same name or an alias in the upazila, and asks for confirmation when a name is as similar as
+  the duplicate review would flag. Each school page has **Remove school** (with a reason), allowed
+  only when no active students or merged schools point to it; removed schools are listed under
+  *Removed* and can be restored. Removed schools no longer catch registrations through their
+  aliases. 10 new tests (131 in total).
+- Dashboard **Schools → Import CSV**: download the **template** (headings *District, Upazila, School
+  name*), fill in one school per row, and upload it. A separate **district & upazila list** (all
+  districts or one, English and Bangla) gives the spellings the import recognises. A
+  **preview** shows what happens to each row (will be added / similar to a listed school, added only
+  if ticked / already listed / repeated in the file / error with the reason) and nothing is saved
+  until you confirm. Schools can be added as verified or pending. `manage.py import_schools` now
+  uses the same checks (it also catches aliases and reports each bad row). 8 new tests (139 in total).
+- Dashboard **Students**: a **"Hide filters"** button next to Export CSV folds the filter panel away so
+  the list uses the full width. While hidden it reads "Show filters (2 on)", counting the filters that
+  narrow the list (not sort or batching). The choice is remembered in that browser. 1 new test (122 in total).
+
 ## 2026-09-25
 
 ### Added

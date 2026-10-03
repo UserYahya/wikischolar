@@ -1,8 +1,7 @@
 """One filter definition shared by the student list, CSV export and bulk messaging."""
-from datetime import datetime
-
 from django.db.models import Q
 
+from apps.core.utils import DATE_FORMAT, parse_date
 from apps.notifications import services as notify
 from apps.notifications.models import NotificationLog
 from apps.registration.choices import FilledBy
@@ -15,16 +14,16 @@ SORTS = {
 MULTI = ("district", "region", "class", "gender")
 SINGLE = ("upazila", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
           "msg_batch", "msg_batch_mode")
+# Params that narrow the list (sort and batching only reorder or split it).
+NARROWING = MULTI + ("upazila", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch")
 # Message history filter: students a message batch was sent to, not sent to, or not delivered to.
 MSG_BATCH_MODES = {"sent": "Received", "not_sent": "Not sent", "not_delivered": "Not delivered"}
 MAX_BATCH_SIZE = 100_000
 
 
-def _date(v):
-    try:
-        return datetime.strptime(v, "%Y-%m-%d").date()
-    except (TypeError, ValueError):
-        return None
+def _date_label(v):
+    d = parse_date(v)
+    return d.strftime(DATE_FORMAT) if d else v
 
 
 def _positive_int(v, upper):
@@ -38,6 +37,8 @@ def _positive_int(v, upper):
 def params_from(querydict):
     p = {k: [v for v in querydict.getlist(k) if v] for k in MULTI}
     p.update({k: querydict.get(k, "").strip() for k in SINGLE})
+    # Show dates as dd/mm/yyyy even when a link carries yyyy-mm-dd.
+    p["from"], p["to"] = _date_label(p["from"]), _date_label(p["to"])
     if not p["msg_batch"]:
         p["msg_batch_mode"] = ""
     elif p["msg_batch_mode"] not in MSG_BATCH_MODES:
@@ -49,6 +50,10 @@ def params_from(querydict):
         # Oldest-first keeps existing batches stable as new students register.
         p["sort"] = "oldest"
     return p
+
+
+def active_count(p):
+    return sum(1 for k in NARROWING if p.get(k))
 
 
 def snapshot(p):
@@ -71,10 +76,10 @@ def apply(p, qs=None):
         qs = qs.filter(current_class__in=p["class"])
     if p["gender"]:
         qs = qs.filter(gender__in=p["gender"])
-    if _date(p["from"]):
-        qs = qs.filter(created_at__date__gte=_date(p["from"]))
-    if _date(p["to"]):
-        qs = qs.filter(created_at__date__lte=_date(p["to"]))
+    if parse_date(p["from"]):
+        qs = qs.filter(created_at__date__gte=parse_date(p["from"]))
+    if parse_date(p["to"]):
+        qs = qs.filter(created_at__date__lte=parse_date(p["to"]))
     if p["opt_in"] == "1":
         qs = qs.filter(updates_opt_in=True)
     if p["filled_by"] in FilledBy.values:
@@ -136,7 +141,7 @@ def describe(snap):
         labels = dict(Gender.choices)
         out.append(("Gender", ", ".join(str(labels.get(g, g)) for g in snap["gender"])))
     if snap.get("from") or snap.get("to"):
-        out.append(("Registered", f"{snap.get('from') or '…'} to {snap.get('to') or '…'}"))
+        out.append(("Registered", f"{_date_label(snap.get('from') or '') or '…'} to {_date_label(snap.get('to') or '') or '…'}"))
     if snap.get("filled_by") in FilledBy.values:
         out.append(("Filled in by", FilledBy(snap["filled_by"]).label))
     if snap.get("opt_in") == "1":

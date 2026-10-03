@@ -130,7 +130,7 @@ record which student batch they were sent to.
 | Command | Purpose |
 |---|---|
 | `seed_reference [--file PATH] [--reset-region-assignments]` | Load/refresh regions, districts, upazilas. Idempotent. |
-| `import_schools CSV [--status verified\|pending]` | Import a canonical school list (`district,upazila,name`, English names as in the DB). |
+| `import_schools CSV [--status verified\|pending]` | Import a school list (`district,upazila,name`). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
 | `create_super_admin --email --name [--password]` | Bootstrap the first Super Admin; everyone else is created from the dashboard. |
 | `check_host` | Pre-flight on a new server: Python, PostgreSQL 13+, `pg_trgm`, settings, migrations, cache. |
 | `find_non_english` | List stored names, school names, rolls or SIDs that aren't English (entered before the English-only rule). |
@@ -164,7 +164,12 @@ stored), updates opt-in, summary screen with the WikiScholar ID, confirmation em
 free text is kept exactly as typed (`school_name_as_entered`) *and* resolved to a school row
 (dual storage); unknown schools become `pending`; admins verify, rename, add aliases, and
 merge duplicates (students re-pointed with edit history, misspelling becomes an alias, the
-duplicate row stays as `merged`).
+duplicate row stays as `merged`). Admins add schools on **Schools → Add school** (a typeahead
+lists schools already in the upazila; the same name or an alias is refused and a similar name
+needs confirmation) and remove ones with no students (archived, restorable from *Removed*).
+**Schools → Import CSV** bulk-loads schools: download the template (headings *District, Upazila,
+School name*), fill in one school per row (a downloadable district & upazila list gives the
+spellings), upload, check the per-row preview, then confirm.
 
 **Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, upazila, school,
 class, gender, date-range, opt-in and text search; CSV export; per-student edit history;

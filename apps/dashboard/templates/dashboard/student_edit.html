@@ -1,5 +1,6 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Edit {{ s.wikischolar_id }}{% endblock %}
+{% block head %}{% include "_datefield_assets.html" %}{% endblock %}
 {% block content %}
 <header class="page-head">
   <div>
@@ -12,7 +13,7 @@
   {% if form.non_field_errors %}<p class="error-box">{{ form.non_field_errors|join:" " }}</p>{% endif %}
   <div class="form-grid">
     <div><label for="id_student_name">Student name</label>{{ form.student_name }}{{ form.student_name.errors }}</div>
-    <div><label for="id_date_of_birth">Date of birth</label><input type="date" name="date_of_birth" id="id_date_of_birth" value="{% if form.is_bound %}{{ form.data.date_of_birth }}{% else %}{{ form.initial.date_of_birth|date:'Y-m-d' }}{% endif %}">{{ form.date_of_birth.errors }}</div>
+    <div><label for="id_date_of_birth">Date of birth</label><input type="text" name="date_of_birth" id="id_date_of_birth" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" data-datefield data-max="yesterday" data-view="years" value="{% if form.is_bound %}{{ form.data.date_of_birth }}{% else %}{{ form.initial.date_of_birth|date:'d/m/Y' }}{% endif %}">{{ form.date_of_birth.errors }}</div>
     <div><label for="id_gender">Gender</label>{{ form.gender }}{{ form.gender.errors }}</div>
     <div><label for="id_guardian_name">Guardian name</label>{{ form.guardian_name }}{{ form.guardian_name.errors }}</div>
     <div><label for="id_guardian_relation">Guardian relation</label>{{ form.guardian_relation }}{{ form.guardian_relation.errors }}</div>

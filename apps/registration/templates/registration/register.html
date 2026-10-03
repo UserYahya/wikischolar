@@ -1,5 +1,6 @@
 {% extends "public_base.html" %}{% load static %}
 {% block title %}WikiScholar Registration{% endblock %}
+{% block head %}{% include "_datefield_assets.html" %}{% endblock %}
 {% block content %}
 <main class="reg" id="reg">
   <div class="intro">
@@ -44,7 +45,10 @@
         </div>
         <div class="field">
           <label for="date_of_birth">Date of birth</label>
-          <input id="date_of_birth" name="date_of_birth" type="date" required>
+          <input id="date_of_birth" name="date_of_birth" type="text" inputmode="numeric" maxlength="10" required
+                 autocomplete="bday" placeholder="dd/mm/yyyy" aria-describedby="dob_hint" data-datefield data-max="yesterday"
+                 data-view="years">
+          <p class="hint" id="dob_hint">Day/month/year, for example 14/03/2012.</p>
           <p class="err" data-err="date_of_birth"></p>
         </div>
         <fieldset class="field">
@@ -117,11 +121,11 @@
           <p class="err" data-err="class_roll"></p>
         </div>
         <div class="field">
-          <label for="student_id_sid">Student ID (SID)</label>
+          <label for="student_id_sid">Student ID (SID) <span class="label-note">(if any)</span></label>
           <input id="student_id_sid" name="student_id_sid" maxlength="40" aria-describedby="rollHelp" data-english>
           <p class="err" data-err="student_id_sid"></p>
         </div>
-        <p class="hint span2" id="rollHelp">Fill in at least one: class roll or student ID.</p>
+        <p class="hint span2" id="rollHelp">Fill in at least one. If the school hasn't given the student an ID, the class roll is enough.</p>
       </div>
     </section>
 
@@ -149,18 +153,19 @@
         <div class="otp span2" id="otpBox">
           <p class="hint" id="otpHowTo">The verification code is sent <strong>by email only</strong> (not by SMS).
             If it hasn't arrived within a minute, check your <strong>Spam</strong> or <strong>Junk</strong> folder.</p>
-          <button type="button" class="btn" id="sendOtp">Send verification code</button>
+          <button type="button" class="btn primary" id="sendOtp">Send verification code</button>
           <div class="otp-entry" id="otpEntry" hidden>
             <label for="email_otp">Email code</label>
             <div class="row">
               <input id="email_otp" name="email_otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code">
-              <button type="button" class="btn" id="verifyOtp">Verify code</button>
+              <button type="button" class="btn primary" id="verifyOtp">Verify code</button>
             </div>
+            <p class="otp-timer" id="otpTimer" hidden></p>
             <p class="hint" id="otpHint"></p>
             <button type="button" class="link" id="resendOtp" disabled>Send a new code</button>
           </div>
           <p class="verified" id="verifiedNote" hidden>Email verified.</p>
-          <p class="err" data-err="email_otp"></p>
+          <p class="err" data-err="email_otp" aria-live="polite"></p>
         </div>
       </div>
     </section>
@@ -182,6 +187,7 @@
 
     <div class="actions">
       <button type="button" class="btn quiet" id="back" hidden>Back</button>
+      <p class="nav-note" id="verifyFirst" hidden>Verify your email to continue.</p>
       <button type="button" class="btn primary" id="next">Next step</button>
       <button type="submit" class="btn primary" id="submit" hidden disabled>Complete registration</button>
     </div>
