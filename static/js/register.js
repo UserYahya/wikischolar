@@ -325,6 +325,7 @@
     if (state.verifiedEmail && !isVerified()) {
       $("#verifiedNote").hidden = true; $("#sendOtp").hidden = false; $("#otpEntry").hidden = true;
       state.verificationId = null; state.verifiedEmail = null;
+      stopExpiry();
       syncNext();
     }
     clearTimeout(typoTimer);
@@ -346,6 +347,29 @@
       if (left <= 0) { clearInterval(cooldown); btn.disabled = false; }
     }, 1000);
   }
+  // Counts down to the code's expiry from a fixed end time, so a throttled background tab stays right.
+  let expiryTimer = null;
+  function stopExpiry() { clearInterval(expiryTimer); $("#otpTimer").hidden = true; }
+  function startExpiry(minutes) {
+    const end = Date.now() + minutes * 60000, el = $("#otpTimer");
+    clearInterval(expiryTimer);
+    el.hidden = false; $("#verifyOtp").disabled = false;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      if (left === 0) {
+        stopExpiry();
+        $("#verifyOtp").disabled = true;
+        setError("email_otp", "This code has expired. Send a new one.");
+        clearInterval(cooldown);
+        $("#resendOtp").disabled = false; $("#resendOtp").textContent = "Send a new code";
+        return;
+      }
+      el.textContent = `Code expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+      el.classList.toggle("soon", left <= 60);
+    };
+    tick();
+    expiryTimer = setInterval(tick, 1000);
+  }
   async function sendOtp() {
     clearErrors(["email", "email_otp"]);
     const email = emailIn.value.trim().toLowerCase();
@@ -358,12 +382,13 @@
       if (!ok) { setError("email", data.message || MSG.network); return; }
       state.verificationId = data.verification_id;
       $("#otpEntry").hidden = false;
-      $("#otpHint").textContent = `We sent a 6-digit code by email to ${email}. It is valid for ${data.expires_in_minutes} minutes. ` +
+      $("#otpHint").textContent = `We sent a 6-digit code by email to ${email}. ` +
         "Can't find it? Check your Spam or Junk folder." +
         (data.debug_code ? ` [dev mode: ${data.debug_code}]` : "");
       $("#email_otp").value = ""; $("#email_otp").focus();
       btn.hidden = true;
       startCooldown();
+      startExpiry(data.expires_in_minutes);
       saveDraft();
     } catch (_) { setError("email", MSG.network); }
     finally { btn.removeAttribute("aria-busy"); btn.disabled = false; }
@@ -395,6 +420,7 @@
     finally { btn.removeAttribute("aria-busy"); }
   });
   function showVerified() {
+    stopExpiry();
     $("#otpEntry").hidden = true; $("#sendOtp").hidden = true; $("#verifiedNote").hidden = false;
     updateSubmit();
     syncNext();

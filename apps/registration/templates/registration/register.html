@@ -160,11 +160,12 @@
               <input id="email_otp" name="email_otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code">
               <button type="button" class="btn primary" id="verifyOtp">Verify code</button>
             </div>
+            <p class="otp-timer" id="otpTimer" hidden></p>
             <p class="hint" id="otpHint"></p>
             <button type="button" class="link" id="resendOtp" disabled>Send a new code</button>
           </div>
           <p class="verified" id="verifiedNote" hidden>Email verified.</p>
-          <p class="err" data-err="email_otp"></p>
+          <p class="err" data-err="email_otp" aria-live="polite"></p>
         </div>
       </div>
     </section>
