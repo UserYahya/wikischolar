@@ -15,19 +15,19 @@
         <option value="" {% if not d.district %}selected{% endif %} disabled>Choose district…</option>
         {% for x in districts %}<option value="{{ x.pk }}" {% if x.pk|stringformat:"s" == d.district %}selected{% endif %}>{{ x.name }}</option>{% endfor %}
       </select></div>
-    <div><label for="id_upazila">Upazila</label>
+    <div><label for="id_upazila">Upazila / Area</label>
       <select name="upazila" id="id_upazila" data-cascade="upazila" required {% if not upazilas %}disabled{% endif %}>
-        <option value="" {% if not d.upazila %}selected{% endif %} disabled>{% if upazilas %}Choose upazila…{% else %}Choose a district first{% endif %}</option>
-        {% for u in upazilas %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == d.upazila %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+        <option value="" {% if not d.upazila %}selected{% endif %} disabled>{% if upazilas %}Choose upazila or area…{% else %}Choose a district first{% endif %}</option>
+        {% include "dashboard/_area_options.html" with areas=upazilas selected=d.upazila %}
       </select>
       {% if errors.upazila %}<ul class="errorlist"><li>{{ errors.upazila }}</li></ul>{% endif %}</div>
     <div class="span2"><label for="id_name">Official school name</label>
       <div class="combo"><input id="id_name" name="name" value="{{ d.name }}" maxlength="255" autocomplete="off" required
              role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="schoolList" aria-describedby="nameHelp"
-             placeholder="{% if d.upazila %}Type the name in English{% else %}Choose an upazila first{% endif %}">
+             placeholder="{% if d.upazila %}Type the name in English{% else %}Choose an upazila or area first{% endif %}">
       <ul id="schoolList" class="combo-list" role="listbox" aria-label="Schools already listed" hidden></ul></div>
       {% if errors.name %}<ul class="errorlist"><li>{{ errors.name }}</li></ul>{% endif %}
-      <p class="hint" id="nameHelp">Schools already listed in the upazila appear as you type. If yours is there, open it instead of adding it again.</p></div>
+      <p class="hint" id="nameHelp">Schools already listed in the upazila or area appear as you type. If yours is there, open it instead of adding it again.</p></div>
   </div>
 
   {% if same %}
@@ -37,7 +37,7 @@
   </div>
   {% elif similar %}
   <div class="notice" role="alert" id="similarBox">
-    <p>These schools in this upazila have a similar name. Check that yours isn't one of them:</p>
+    <p>These schools in this upazila / area have a similar name. Check that yours isn't one of them:</p>
     <ul class="plain">{% for s in similar %}<li><a href="{% url 'dashboard:school' s.pk %}">{{ s.name }}</a>{% if s.verification_status == "pending" %} <span class="tag">pending</span>{% endif %}</li>{% endfor %}</ul>
     <button class="btn" name="confirm" value="1">It's a different school — add “{{ d.name }}”</button>
   </div>

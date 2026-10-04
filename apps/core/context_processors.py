@@ -8,6 +8,7 @@ def platform(request):
            "SITE_URL": site, "SITE_HOST": site.split("://", 1)[-1]}
     user = getattr(request, "user", None)
     if user is not None and user.is_authenticated:
-        from .registry import nav_for
+        from .registry import nav_for, nav_groups_for
         ctx["NAV"] = nav_for(user)
+        ctx["NAV_GROUPS"] = nav_groups_for(user)
     return ctx

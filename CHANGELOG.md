@@ -3,6 +3,84 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-05
+
+### Added
+- **Upazila / Area: city corporations, cantonments and "Other area".** After choosing a district the
+  list now also holds the **thanas of the district's city corporation(s)** (metropolitan police
+  thanas, Dhaka's split between Dhaka North and Dhaka South), the **cantonments**, and one
+  **"Other area (not listed)"** per district, each under its own heading, before/after the upazilas
+  (thanas, cantonments, upazilas, Other area). All 13 city corporations are covered (105 thanas; Bogura City
+  Corporation was gazetted in May 2026); Mymensingh, Narayanganj, Cumilla and Bogura, which have no
+  metropolitan police, appear as one option each. 31 cantonments. A hint
+  explains it in English and Bangla. These are rows of the existing `upazilas` table with a new
+  `group` / `group_bn` (blank = upazila), so students, schools, school search and the CSV import
+  work as before. **Nine missing upazilas are added (503 now):** Shayestaganj
+  (Habiganj, 2017), the five gazetted on 4 June 2026 (Mokamtola, Matamuhuri, Chandraganj, Ruhia, Bhully)
+  and the three notified on 8 July 2026 (Fatikchhari North, Bangra, South Gafargaon). Migration `reference.0004` adds the new areas
+  to an existing database from `data/reference_seed.json`; `seed_reference` loads them on a new one.
+  A test checks the seed covers 503 upazilas, all 13 city corporations, the cantonments and an
+  "Other area" in every district.
+- Dashboard: area dropdowns are grouped the same way; the student page and filter say "Upazila /
+  Area"; a new **Area type** filter (upazila / city-corporation thana / cantonment / Other area); the
+  Overview warns when students chose "Other area"; a district's page shows each area's group and can
+  add one with a group; the export has an `area_group` column; the school import accepts an
+  "Upazila / Area" (or "Area") column and its location list includes thanas and cantonments.
+- **Bangla beside every English text on the registration form**: labels, hints, step names,
+  buttons, chips, dropdown options ("Class 8 · অষ্টম শ্রেণি", "Dhaka · ঢাকা") and every error or
+  status message, in a smaller, quieter font so the page stays clean. Answers are still typed in
+  English. Server and script messages get their Bangla from `apps/registration/bangla.py`; a test
+  fails if a message has no translation.
+- **Section** (optional) in step 2, with instructions: write it if the class has sections,
+  otherwise leave it empty. Shown in the summary, the confirmation email (`{section}`), the
+  dashboard (detail, edit) and the CSV export.
+- **"How did you hear about WikiScholar?"** dropdown (required) in step 4: Social media, Google or
+  YouTube ad, Notice on Wikipedia, Teacher or school announcement, Banner, Wikipedia volunteers
+  came to our school, Somewhere else. Stored as `students.heard_from` (DB check), shown on the
+  student page, exported, and counted on the dashboard Overview.
+- **HTML emails.** Every email (OTP, confirmation, bulk messages, test emails) now goes out as a
+  designed HTML email (logo, card, footer) together with the plain text. The OTP code sits in a
+  large box, the WikiScholar ID is highlighted and the registration details are a table. Admins
+  still edit plain text; the System emails page previews the HTML version.
+- **New logo and site icon**: the English logo in the form header, on the dashboard sidebar,
+  sign-in page and emails (the Bangla logo is kept in `docs/brand/`); favicon and app icons on every
+  page (`/favicon.ico` too). Originals in `docs/brand/`.
+- `WS_PUBLIC_URL` (default `https://register.wikischolar.bd`): this app's address, used for the
+  logo in emails.
+
+### Changed
+- Guardian declaration: "I am the **guardian** of the student named below…" (was "guardian
+  (parent)"); the note above it says "guardian" too.
+- **Class roll accepts numbers only**: Bangla digits become 0–9, anything else is dropped as you
+  type with a note, and the server refuses it ("Write the class roll in numbers only"). Admin
+  edits follow the same rule.
+- Youth Safety Policy link: **`https://wikischolar.bd/youth-policy`** (`WS_POLICY_URL` default and
+  both env templates). A server whose `.env` sets the old URL must be updated.
+- **Dashboard sidebar grouped into collapsible sections**: Overview; Students (All students,
+  Archived records); Schools & places (Schools, Duplicate schools, Regions & districts); Messaging
+  (Messages, System emails, Email & SMS settings); Administration (Admins, Audit log). The current
+  page's group opens by itself. `register_nav(..., group=…)`.
+- The OTP email's default text puts the code on its own line.
+- `docs/schema.sql` regenerated (it was missing tables added since September).
+
+### Fixed (form design review)
+- The guardian relation chip "Other" showed the Bangla for "Somewhere else"; each choice list now has
+  its own translations.
+- Opening a step (or restoring a draft) drew a thick yellow focus box around the step heading.
+- Step 2 reads in order: district and region, upazila / area, school, class with section, roll with
+  student ID; the section and roll hints sit under their pair of fields instead of in a narrow column.
+- All dropdowns start with the same "Choose · বেছে নিন"; the school box's placeholder is short enough
+  not to be cut off; the student-ID Bangla label fits on one line so the roll and ID boxes line up.
+- Bangla second lines are never smaller than about 13px (hints, errors and the header were ~12px).
+- Guardian name and relation take the full width, so the relation chips sit on one line.
+- The success screen uses the full width and the WikiScholar ID no longer breaks across two lines.
+
+### Removed
+- **Date of birth**, everywhere: the form, the server, the summary, the confirmation email
+  (`{date_of_birth}` placeholder; lines using it in a customised email are removed by migration
+  `registration.0007`), the dashboard detail/edit pages and the CSV export. Migration
+  `registration.0006` **drops the column and its stored values**: back up before migrating.
+
 ## 2026-10-03
 
 ### Changed

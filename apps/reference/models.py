@@ -43,9 +43,22 @@ class District(SoftDeleteModel):
 
 
 class Upazila(SoftDeleteModel):
+    """An area inside a district: the form's "Upazila / Area". Most rows are upazilas (blank `group`).
+    City corporations have no upazila, so their thanas are rows too, grouped by city corporation
+    (`group` = "Dhaka North City Corporation", …), and so are cantonments (`group` = "Cantonment")
+    and one "Other area" per district (`group` = "Other") for anyone who can't find their area.
+    Students and schools point at any of them the same way."""
+    CANTONMENT = "Cantonment"
+    OTHER = "Other"
+    # Headings for groups that aren't a city corporation: (English, Bangla)
+    GROUP_LABELS = {"": ("Upazilas", "উপজেলা"), CANTONMENT: ("Cantonments", "সেনানিবাস"),
+                    OTHER: ("Not in the list", "তালিকায় নেই")}
+
     district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="upazilas")
     name = models.CharField(max_length=80)
     name_bn = models.CharField(max_length=80, blank=True)
+    group = models.CharField(max_length=60, blank=True)     # blank = an upazila
+    group_bn = models.CharField(max_length=60, blank=True)  # Bangla of `group`
 
     class Meta:
         db_table = "upazilas"
@@ -58,6 +71,27 @@ class Upazila(SoftDeleteModel):
 
     def __str__(self):
         return self.name
+
+    @property
+    def group_label(self):
+        return self.GROUP_LABELS.get(self.group, (self.group, self.group_bn))[0]
+
+    @property
+    def group_label_bn(self):
+        return self.GROUP_LABELS.get(self.group, (self.group, self.group_bn))[1]
+
+    @property
+    def display_name(self):
+        """The name with its city corporation, e.g. "Mohammadpur (Dhaka North City Corporation)"."""
+        if self.group and self.group not in (self.CANTONMENT, self.OTHER):
+            return f"{self.name} ({self.group})"
+        return self.name
+
+    @property
+    def sort_key(self):
+        """Order in lists: city-corporation thanas, cantonments, upazilas, then "Other area"."""
+        rank = {"": 2, self.CANTONMENT: 1, self.OTHER: 3}.get(self.group, 0)
+        return (rank, self.group.casefold(), self.name.casefold())
 
 
 class School(SoftDeleteModel):

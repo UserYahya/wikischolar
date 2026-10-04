@@ -100,7 +100,7 @@ pip install -r requirements.txt
 python manage.py check_host            # must end with "This host can run WikiScholar."
 python manage.py migrate
 python manage.py createcachetable
-python manage.py seed_reference        # 6 regions, 64 districts, upazilas
+python manage.py seed_reference        # 6 regions, 64 districts, 503 upazilas + thanas, cantonments, "Other area"
 python manage.py collectstatic --noinput
 python manage.py create_super_admin --email you@wikimedia.org.bd --name "Your Name"
 ```
@@ -162,6 +162,16 @@ Dashboard → **Email & SMS settings**:
    python manage.py check_host
    ```
 3. Setup Python App → **Restart**. Read `CHANGELOG.md` for what changed and any new `.env` settings.
+
+**Updating to the October 2026 version (2026-10-05):**
+* **Back up the database first.** Migration `registration.0006` **drops the date-of-birth column**:
+  the stored dates are deleted and cannot be brought back without the backup.
+* In `.env`: set `WS_POLICY_URL=https://wikischolar.bd/youth-policy` (an old value there overrides
+  the new default) and add `WS_PUBLIC_URL=https://<this app's address>` (e.g.
+  `https://register.wikischolar.bd`) so the logo shows in emails.
+* `migrate` also adds the 9 missing upazilas, the city-corporation thanas, the cantonments and an
+  "Other area" per district (migration `reference.0004`); no `seed_reference` run is needed.
+* `collectstatic` is required (new logo, icons, CSS and JS).
 
 ## 9. Backups
 

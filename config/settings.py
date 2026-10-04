@@ -179,8 +179,10 @@ WIKISCHOLAR = {
     "REPLY_TO": env("WS_REPLY_TO", "info@wikischolar.bd"),
     # The programme's main website; the form's "Back to wikischolar.bd" link points here.
     "SITE_URL": env("WS_SITE_URL", "https://wikischolar.bd"),
+    # This registration site's own public address. Emails load the logo from here.
+    "PUBLIC_URL": env("WS_PUBLIC_URL", "https://register.wikischolar.bd"),
     "POLICY_VERSION": env("WS_POLICY_VERSION", "2026-01"),
-    "POLICY_URL": env("WS_POLICY_URL", "https://wikimedia.org.bd/youth-safety-policy"),
+    "POLICY_URL": env("WS_POLICY_URL", "https://wikischolar.bd/youth-policy"),
     "OTP_TTL_MINUTES": int(env("WS_OTP_TTL_MINUTES", "10")),
     "OTP_MAX_ATTEMPTS": int(env("WS_OTP_MAX_ATTEMPTS", "5")),
     "OTP_VERIFIED_WINDOW_MINUTES": int(env("WS_OTP_VERIFIED_WINDOW_MINUTES", "60")),

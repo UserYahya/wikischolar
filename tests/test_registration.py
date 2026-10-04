@@ -1,5 +1,4 @@
 import re
-from datetime import date
 
 from django.conf import settings
 from django.core import mail
@@ -102,7 +101,7 @@ class RegistrationFlowTests(WSTestCase):
     def test_text_must_be_english(self):
         vid = self.verify_email()
         for field, value in [("student_name", "রহিম উদ্দিন"), ("guardian_name", "করিম"), ("school_name", "তাসলিমা একাডেমি"),
-                             ("class_roll", "১২ক"), ("student_id_sid", "আইডি-৯")]:
+                             ("section", "ক"), ("student_id_sid", "আইডি-৯")]:
             r = self.post_json("/api/registration/submit/", self.payload(vid, school_id=None, **{field: value}))
             self.assertEqual(r.status_code, 400, field)
             self.assertIn("English", r.json()["errors"][field][0], field)
@@ -116,18 +115,15 @@ class RegistrationFlowTests(WSTestCase):
         st = Student.objects.get(wikischolar_id=s["wikischolar_id"])
         self.assertEqual((st.class_roll, st.student_id_sid, st.phone), ("23", "SID-45", "01712345678"))
 
-    def test_date_of_birth_is_british(self):
+    def test_date_of_birth_is_not_collected(self):
         with self.captureOnCommitCallbacks(execute=True):
-            s = self.register(date_of_birth="১৪/০৩/২০১১")
-        st = Student.objects.get(wikischolar_id=s["wikischolar_id"])
-        self.assertEqual(st.date_of_birth, date(2011, 3, 14))
-        self.assertEqual(s["date_of_birth"], "14/03/2011")
-        self.assertIn("Date of birth: 14/03/2011", mail.outbox[-1].body)
-        vid = self.verify_email("other@gmail.com")
-        for bad in ["03/14/2011", "31/02/2011", "14-03-2011"]:
-            r = self.post_json("/api/registration/submit/", self.payload(vid, email="other@gmail.com", date_of_birth=bad))
-            self.assertEqual(r.json()["errors"]["date_of_birth"],
-                             ["Enter the date as dd/mm/yyyy, for example 14/03/2012."], bad)
+            s = self.register(date_of_birth="14/03/2011")  # an old client sending it is simply ignored
+        self.assertNotIn("date_of_birth", s)
+        self.assertNotIn("Date of birth", mail.outbox[-1].body)
+        self.assertFalse(hasattr(Student.objects.get(wikischolar_id=s["wikischolar_id"]), "date_of_birth"))
+        page = self.client.get("/").content.decode()
+        self.assertNotIn("date_of_birth", page)
+        self.assertNotIn("Date of birth", page)
 
     def test_messages_and_emails_are_english(self):
         vid = self.verify_email()

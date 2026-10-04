@@ -34,7 +34,9 @@ def _key(text):
     return " ".join((text or "").split()).casefold()
 
 
-TEMPLATE_HEADER = ["District", "Upazila", "School name"]
+TEMPLATE_HEADER = ["District", "Upazila / Area", "School name"]
+# The area column may be headed "Upazila / Area" (template), "Upazila" (older templates) or "Area".
+AREA_COLUMNS = ("upazila / area", "upazila/area", "upazila", "area", "thana")
 
 
 def _csv(rows):
@@ -50,13 +52,15 @@ def template_csv():
 
 
 def locations_csv(district=None):
-    """Reference list of every upazila (all, or one district's) with its district, in English and
-    Bangla, so the template can be filled in with the spellings the import recognises."""
-    upazilas = Upazila.objects.select_related("district").order_by("district__name", "name")
+    """Reference list of every upazila and area (city-corporation thanas, cantonments, "Other area";
+    all, or one district's) with its district, in English and Bangla, so the template can be filled in
+    with the spellings the import recognises."""
+    upazilas = Upazila.objects.select_related("district")
     if district:
         upazilas = upazilas.filter(district=district)
-    return _csv([["District", "Upazila", "District (Bangla)", "Upazila (Bangla)"]]
-                + [[u.district.name, u.name, u.district.name_bn, u.name_bn] for u in upazilas])
+    upazilas = sorted(upazilas, key=lambda u: (u.district.name.casefold(), u.sort_key))
+    return _csv([["District", "Upazila / Area", "Group", "District (Bangla)", "Upazila / Area (Bangla)"]]
+                + [[u.district.name, u.name, u.group_label, u.district.name_bn, u.name_bn] for u in upazilas])
 
 
 def read_rows(data):
@@ -69,11 +73,11 @@ def read_rows(data):
         text = data.decode("cp1252", errors="replace")  # Excel "CSV" on Windows
     reader = csv.reader(io.StringIO(text))
     header = [_key(h) for h in next(reader, [])]
-    try:
-        di, ui = header.index("district"), header.index("upazila")
-    except ValueError:
-        raise ImportFileError("The first row must be the column headings: District, Upazila, School name. "
-                              "Download the template to start from the right layout.") from None
+    di = header.index("district") if "district" in header else None
+    ui = next((header.index(c) for c in AREA_COLUMNS if c in header), None)
+    if di is None or ui is None:
+        raise ImportFileError("The first row must be the column headings: District, Upazila / Area, School name. "
+                              "Download the template to start from the right layout.")
     ni = next((header.index(c) for c in NAME_COLUMNS if c in header), None)
     if ni is None:
         raise ImportFileError("There is no “School name” column.")
@@ -108,8 +112,8 @@ def plan(rows):
             continue
         upz = upazilas.get((district.pk, _key(row["upazila"])))
         if not upz:
-            row.update(result=ERROR, message=f"No upazila “{row['upazila']}” in {district.name}." if row["upazila"]
-                       else "The upazila is missing.")
+            row.update(result=ERROR, message=f"No upazila or area “{row['upazila']}” in {district.name}."
+                       if row["upazila"] else "The upazila / area is missing.")
             continue
         row.update(district=district.name, upazila=upz.name, upazila_id=upz.pk)
         try:

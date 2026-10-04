@@ -6,7 +6,7 @@
 > For how the app works today, how to install it and how to change it, read
 > [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md). Dated changes: [`CHANGELOG.md`](CHANGELOG.md).
 
-### Implementation status (last updated 2026-09-24, evening)
+### Implementation status (last updated 2026-10-05)
 
 | Area | Status |
 |---|---|
@@ -19,6 +19,8 @@
 | Student batches (split a filtered list into groups of N) | **Built** (added later, 10.2) |
 | Email & SMS credentials managed from the dashboard | **Built** (added later, 10.3) |
 | Guardian declaration on the form; OTP/confirmation wording editable by a Super Admin | **Built** (added later, 10.1 / 10.3) |
+| October 2026 form update: Bangla beside every English text, section, numbers-only roll, "how did you hear" survey, **date of birth removed**, HTML emails, grouped dashboard menu | **Built** (10.1 / 10.2) |
+| City-corporation thanas, cantonments and "Other area" in the upazila list ("Upazila / Area") | **Built** (10.1): no area of Bangladesh is left out |
 | Secure query interface for advanced users (5.2) | **Not built**: the filter panel covers the listed filters |
 | Field-level encryption at rest (6) | **Not built**: TLS, disk encryption and least privilege are assumed; stored provider secrets are encrypted |
 | Phase 2+ modules (Section 9) | **Not started**; the module registry and architecture are ready for them |
@@ -385,6 +387,13 @@ Features and decisions added while building and testing the MVP. Each is live an
 | **Required guardian declaration** at the start ("I am the guardian of the student named below and I am filling in this form on their behalf"), stored with a timestamp, shown in the summary, confirmation, dashboard (filter + export) | Youth Safety Policy: the guardian fills in the form |
 | **Answers never lost**: draft kept in the browser tab, browser Back/Forward move between steps, finished steps clickable | users lost data with the browser's Back button |
 | WikiScholar ID year = **programme year** (`WS_ID_YEAR`, now 2027) | IDs start `WS-2027-` |
+| **Upazila / Area**: the thanas of all 13 city corporations, the 31 cantonments and an "Other area (not listed)" per district join the 503 upazilas, grouped in the dropdown | city corporations have no upazila; nobody should be unable to choose their area |
+| **Bangla beside every English text** on the form (labels, hints, buttons, options, messages), smaller and in natural Bangla; answers stay English | guardians read Bangla more easily; the data stays one script |
+| **Date of birth removed** from the form, database (column dropped), emails, dashboard and export | no longer needed (supersedes field 2 in 4.1 and its rule in 4.2) |
+| **Section** (optional, with instructions) and **class roll numbers only** | classes with sections; rolls are numbers |
+| **"How did you hear about WikiScholar?"** dropdown (7 options) in step 4, counted on the dashboard Overview | know which outreach works |
+| English logo in the header; site icon; Youth Safety Policy link now `https://wikischolar.bd/youth-policy` | new branding and policy page |
+| **HTML emails** (logo, card, OTP code box, details table) with the plain text kept as the second part | emails get noticed and are easier to read |
 
 ### 10.2 Admin dashboard
 | Change | Why |
@@ -396,6 +405,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | Students → **Message history** filter (received / not sent yet / not delivered) | send only to the students a batch missed |
 | Reliable bulk sending: chunked from the browser with automatic continuation, rows claimed once (`SKIP LOCKED`), braces in text no longer crash, works on pooled DB connections, clear provider errors, explanation when 0 recipients (opt-in) | bulk email failed on the first cPanel install while OTP worked |
 | Admin edits follow the same English-only and class rules; school and location names are English-only | consistent data |
+| Sidebar tools in **collapsible groups** (Students, Schools & places, Messaging, Administration) with the logo on top | the menu had grown to 11 links |
 
 ### 10.3 Email & SMS settings (Super Admin)
 | Change | Why |

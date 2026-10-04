@@ -34,21 +34,41 @@ Analytics) will plug into the same app.
 ### Public registration form (`/`)
 | Step | Collects | Rules |
 |---|---|---|
-| 1. Student & guardian | **required guardian declaration** (Youth Safety Policy: the guardian fills in the form: "I am the guardian of the student named below and I am filling in this form on their behalf"), name, date of birth, gender, guardian name, relation (Father / Mother / Other + typed relation) | "Other" requires the typed relation; the declaration is stored as `filled_by = guardian` + `guardian_declared_at` |
-| 2. School details | district → region (automatic) → upazila, class, school (typeahead), class roll and/or student ID (labelled "(if any)": many students have none) | class 6–10 only; roll **or** SID required; while typing, **only approved (verified) schools** of the chosen upazila are suggested; a school not in the list is added as *pending* for staff to approve |
+| 1. Student & guardian | **required guardian declaration** (Youth Safety Policy: the guardian fills in the form: "I am the guardian of the student named below and I am filling in this form on their behalf"), name, gender, guardian name, relation (Father / Mother / Other + typed relation). **Date of birth is not collected** (removed in October 2026, column dropped) | "Other" requires the typed relation; the declaration is stored as `filled_by = guardian` + `guardian_declared_at` |
+| 2. School details | district → region (automatic) → **upazila / area**, school (typeahead), class + **section** (optional: "only if the class has sections"), class roll and/or student ID (labelled "(if any)": many students have none) | the area must be in the district; class 6–10 only; roll **or** SID required; **class roll is numbers only** (Bangla digits become 0–9, other characters are dropped as you type and refused by the server); section is English text; while typing, **only approved (verified) schools** of the chosen area are suggested; a school not in the list is added as *pending* for staff to approve |
 | 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk; **one action at a time**: "Send verification code", then "Verify code", is the solid button, and "Next step" only appears once the email is verified (until then the bar says "Verify your email to continue.", and Enter sends the code); **one email per student**: an address already used by an active student is refused on "Send verification code" ("already registered… use a different email address") and again on submit |
-| 4. Consent & submit | Youth Safety Policy consent, optional email updates opt-in | consent required |
+| 4. Consent & submit | **"How did you hear about WikiScholar?"** dropdown (Social media · Google or YouTube ad · Notice on Wikipedia · Teacher or school announcement · Banner · Wikipedia volunteers came to our school · Somewhere else), Youth Safety Policy consent (links to `WS_POLICY_URL`, default `https://wikischolar.bd/youth-policy`), optional email updates opt-in | survey answer and consent required; the answers are counted on the dashboard Overview |
 
+* **Upazila / Area: no area of Bangladesh is left out.** City corporations have no upazila, so the
+  list after choosing a district holds, as grouped options (`<optgroup>`), in this order: the
+  **thanas of the district's city corporation(s)** (metropolitan police thanas, headed e.g. "Dhaka
+  North City Corporation · ঢাকা উত্তর সিটি কর্পোরেশন"; Dhaka's thanas are split between North and
+  South by which corporation covers most of each thana; Mymensingh, Narayanganj and Cumilla have no
+  metropolitan police, so the city corporation itself is one option; so is **Bogura**, the 13th city
+  corporation, gazetted May 2026; 105 thanas in all; a thana sharing its name with an upazila of the
+  district is left out because the upazila covers it), **cantonments** (31), the
+  **upazilas** (all 503, including the eight created in June–July 2026), and last **"Other area (not listed)"** (one per district) so nobody is
+  blocked; staff then move those students (dashboard Overview warns, *Area type* filter finds them).
+  All are rows of the `upazilas` table told apart by `group` (blank = upazila), so students,
+  schools, the composite district key, school search and the CSV import work unchanged. A hint under
+  the field explains it in English and Bangla.
 * **English only.** Every free-text value must be English letters, digits and basic punctuation.
   Bangla digits are converted to 0–9 automatically; other scripts are refused, in the browser
   and on the server.
-* **Dates are British style, dd/mm/yyyy, everywhere** (date of birth on the form and in the
-  dashboard editor, the dashboard's "Registered between" filter). Browsers' own date pickers look
+* **Bangla beside the English.** Every label, hint, button, option and message on the public form
+  has a smaller Bangla line (`.bn`, own line) or note (`.bn-inline`, buttons and chips) in natural
+  Bangla; dropdown options read "English · বাংলা" (districts and upazilas use their `name_bn`).
+  Labels in `register.html` carry their Bangla in the template. Messages from Python (form and API
+  errors) and those built in `register.js` are looked up by their exact English text in
+  `apps/registration/bangla.py`, which the page embeds as `#bnMessages`. **Adding a message?** Add
+  its Bangla to `bangla.MESSAGES`; `tests/test_form_update_oct2026.py` fails if a server or script
+  message has none.
+* **Dates are British style, dd/mm/yyyy, everywhere** (the dashboard's "Registered between"
+  filter; the form no longer asks for a date). Browsers' own date pickers look
   and behave differently on every phone, so each date is a plain text box (number keypad on
   phones, slashes added while typing, Bangla digits accepted) with a calendar button that opens
   [Air Datepicker](https://github.com/t1m0n/air-datepicker) (MIT, no dependencies, copied into
-  `static/vendor/air-datepicker/`, no CDN) as the same centred popup on every device. The birth-date
-  calendar opens on a year grid. Mark an input with `data-datefield` (optional `data-min`/`data-max`
+  `static/vendor/air-datepicker/`, no CDN) as the same centred popup on every device. Mark an input with `data-datefield` (optional `data-min`/`data-max`
   = `today`, `yesterday` or a date; `data-view="years"`) and include `_datefield_assets.html` in the
   page's `{% block head %}`; `static/js/datefield.js` does the rest. On the server,
   `apps.core.utils.parse_date` / `BritishDateField` read dd/mm/yyyy (and still yyyy-mm-dd, so old
@@ -58,8 +78,9 @@ Analytics) will plug into the same app.
   The draft is cleared after a successful registration.
 * **Anti-abuse:** honeypot field, rate limits (OTP per email/IP, registrations per IP, logins),
   OTP stored only as an HMAC, 10-minute expiry, lockout after 5 wrong codes.
-* **Header:** slim white bar with the WikiScholar logo (`static/img/wikischolar-logo.png`, also the
-  favicon), "A Wikimedia Bangladesh programme" and a **"← Back to wikischolar.bd"** pill button
+* **Header:** slim white bar with the English WikiScholar logo
+  (`static/img/wikischolar-logo-en.png`; the Bangla logo is kept in `docs/brand/`), "A Wikimedia
+  Bangladesh programme" (with Bangla) and a **"← Back to wikischolar.bd"** pill button
   (`WS_SITE_URL`; shortened to "← wikischolar.bd" on phones); the success screen has the same link.
 * **Approving schools** makes them suggestible: Dashboard → Schools → a pending school → *Mark
   verified* (or bulk-load a verified list with `import_schools CSV --status verified`).
@@ -72,10 +93,11 @@ Analytics) will plug into the same app.
   active students or merged schools point to it. *Removed* in the status filter lists them with
   *Restore* (refused if the same name was added since).
 * **Importing schools from CSV** (Dashboard → Schools → *Import CSV*, needs `schools.edit`):
-  *Download template* gives the headings `District,Upazila,School name` (a lower-case `name` column
-  also works); fill in one school per row; rows without a school name are ignored. *District &
-  upazila list* (all districts or one) lists every upazila with its district in English and Bangla,
-  spelled as the import expects. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
+  *Download template* gives the headings `District,Upazila / Area,School name` (older templates'
+  `Upazila`, or `Area`, and a lower-case `name` column also work); fill in one school per row; rows
+  without a school name are ignored. *District & upazila / area list* (all districts or one) lists
+  every upazila, thana, cantonment and "Other area" with its district and group in English and
+  Bangla, spelled as the import expects. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
   district/upazila matched in English or Bangla ignoring case) and choose *Verified* or *Pending*.
   A preview shows each row as *will be added*, *similar* (added only if ticked), *already listed*,
   *repeated in the file* or *error* (unknown district/upazila, not English, too long). Nothing is
@@ -83,10 +105,16 @@ Analytics) will plug into the same app.
   `school.imported` audit entry records the count and the new school IDs; source is *Bulk import*.
 
 ### Admin dashboard (`/dashboard/`)
-* **Overview**: totals, daily registrations, students per region/district, warnings (e.g.
-  "Emails are not being delivered").
-* **Students**: filters (region, district, upazila, school, class, gender, date range, opt-in,
-  text search, sort), **split into batches** of N students (view / CSV / message each batch),
+* **Sidebar**: the WikiScholar logo, then the tools in **collapsible groups** (*Overview*;
+  *Students*: All students, Archived records; *Schools & places*: Schools, Duplicate schools,
+  Regions & districts; *Messaging*: Messages, System emails, Email & SMS settings;
+  *Administration*: Admins, Audit log). The group holding the current page opens by itself; a
+  group the admin can open only one tool of shows as a plain link. Modules choose the group with
+  `register_nav(..., group="…")` (`apps/core/registry.py`).
+* **Overview**: totals, daily registrations, students per region/district, **how students heard
+  about WikiScholar** (survey answers), warnings (e.g. "Emails are not being delivered").
+* **Students**: filters (region, district, upazila / area, **area type** (upazila, city-corporation
+  thana, cantonment, "Other area"), school, class, gender, date range, opt-in, text search, sort), **split into batches** of N students (view / CSV / message each batch),
   CSV export (Excel-friendly), student detail with full edit history, edit, archive/restore.
 * **Messages**: compose bulk email/SMS to a filtered group or a batch. Every send is a **named
   batch** (name required, English) with `{name}` and `{wikischolar_id}` placeholders.
@@ -105,14 +133,24 @@ Analytics) will plug into the same app.
 * **Schools**: verify pending schools, rename (old name kept as an alias), aliases, duplicate
   finder and merge.
 * **Regions & districts**: the district → region mapping is data, editable here; a student's
-  region is always derived from their district, so a reassignment moves everyone instantly.
+  region is always derived from their district, so a reassignment moves everyone instantly. A
+  district's page lists its upazilas and areas with their group; *Add* takes an optional group
+  (an existing city corporation, Cantonment or Other).
 * **Audit log**: every view of a student record, edit, export, message, login and setting change.
 * **Admins** (Super Admin): create admins, change roles, deactivate.
 * **System emails** (Super Admin): edit the subject and text of the **OTP email** and the
   **registration confirmation** with placeholders (`{code}`, `{student_name}`, `{wikischolar_id}`,
   `{details}`, …); refuses text without required placeholders (`{code}`, `{wikischolar_id}`) or
-  with unknown ones; live preview with sample data; *Send test to me*; *Reset to default*
-  (nothing deleted). Changes are audited. Any language is allowed in this text.
+  with unknown ones; live preview with sample data (the designed HTML email, plain text below);
+  *Send test to me*; *Reset to default* (nothing deleted). Changes are audited. Any language is
+  allowed in this text.
+* **HTML emails**: every email (OTP, confirmation, bulk messages, test emails) is sent as a
+  designed HTML email (logo, white card, footer with the website and contact address) **plus**
+  the plain text for mail apps without HTML. Admins still write plain text; links and email
+  addresses become clickable. System emails show some placeholders richly: `{code}` in a large
+  box, `{wikischolar_id}` highlighted, `{details}` as a table (`html_values` on `SystemEmail`;
+  layout in `apps/notifications/html_email.py` and `templates/notifications/email.html`). The logo
+  is loaded from `WS_PUBLIC_URL`.
 * **Students** also shows and filters **who filled in the form** (student / guardian), and exports it.
 * **Email & SMS settings** (Super Admin): email provider (Brevo SMTP relay, Brevo HTTPS API for
   hosts that block SMTP, Google Mail/Workspace, other SMTP, console), From name/address,
@@ -170,7 +208,8 @@ Dependency direction: `dashboard → registration → reference → core`, and
 2. Cross-module work goes through `services.py` (example: a school merge lives in
    `reference.services`, but moving the students is delegated to
    `registration.services.reassign_school`).
-3. Dashboard menu items are registered with `apps.core.registry.register_nav(...)` in the
+3. Dashboard menu items are registered with `apps.core.registry.register_nav(...)` (optionally with a
+   `group=` name, shown as a collapsible sidebar section) in the
    module's `AppConfig.ready()`; permissions are codes in `apps/core/permissions.py`.
 4. Every state change writes `audit_logs` (via `apps.core.audit.record`); student field changes
    also write `edit_history`.
@@ -196,9 +235,14 @@ These are enforced in code **and** in the database; changes must keep them true.
 * **Class** is `"6"`–`"10"` (DB check constraint `student_class_6_to_10`).
 * **Guardian relation** `father` / `mother` / `other`; `guardian_relation_other` must be filled
   exactly when relation is `other` (DB check).
-* **Roll or SID**: at least one of `class_roll`, `student_id_sid` (DB check).
+* **Roll or SID**: at least one of `class_roll`, `student_id_sid` (DB check). New rolls are
+  digits only (form check; older rows may still hold letters).
+* **Survey answer** `heard_from` is one of the `HeardFrom` choices, or empty for students who
+  registered before the question existed (DB check `student_heard_from_valid`).
 * **Phone** matches `^01[3-9][0-9]{8}$` (DB check); stored without country code.
-* **Upazila belongs to the district** (composite foreign key).
+* **Upazila (area) belongs to the district** (composite foreign key). Areas are `upazilas` rows;
+  `group` is blank for an upazila, a city corporation's name for its thanas, `Cantonment`, or `Other`
+  ("Other area (not listed)", one per district). Names are unique per district.
 * **English-only text**: `apps.core.utils.english_text()`; `manage.py find_non_english` lists
   older non-English values.
 * **Region is never stored on a student**; it is derived from `district.region` at read time.
@@ -351,9 +395,10 @@ The app reads real environment variables first, then a `.env` file next to `mana
 | `NOTIFY_WEBHOOK_TOKEN` | *(empty)* | shared secret for delivery-report webhooks (empty = webhooks refused) |
 | `DB_DISABLE_SERVER_SIDE_CURSORS` | on when `DB_HOST` contains `pooler` | needed behind PgBouncer-style pooled connections |
 | `WS_ID_PREFIX` / `WS_ID_YEAR` | `WS` / `2027` | student ID format `WS-2027-000001` |
-| `WS_CONTACT_EMAIL`, `WS_POLICY_URL`, `WS_POLICY_VERSION` | `info@wikischolar.bd`, … | shown on the form / stored with consent |
+| `WS_CONTACT_EMAIL`, `WS_POLICY_URL`, `WS_POLICY_VERSION` | `info@wikischolar.bd`, `https://wikischolar.bd/youth-policy`, `2026-01` | shown on the form / stored with consent |
 | `WS_REPLY_TO` | `info@wikischolar.bd` | Reply-to of every email when Email settings has none |
 | `WS_SITE_URL` | `https://wikischolar.bd` | target of the form's "Back to …" link |
+| `WS_PUBLIC_URL` | `https://register.wikischolar.bd` | this app's own public address; the logo in HTML emails is loaded from here (empty = text wordmark instead) |
 | `WS_OTP_TTL_MINUTES` / `WS_OTP_MAX_ATTEMPTS` / `WS_OTP_VERIFIED_WINDOW_MINUTES` | `10` / `5` / `60` | OTP rules |
 | `WS_OTP_DEBUG_ECHO` | `0` | dev only: show the OTP on the form |
 | `WS_SCHOOL_AUTO_RESOLVE` / `WS_SCHOOL_DUPLICATE` | `0.8` / `0.5` | trigram thresholds |
@@ -372,7 +417,7 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `check_host` | pre-flight: Python, PostgreSQL version (13+), `pg_trgm`, production settings, migrations, cache |
 | `migrate` | create/update tables (run after every code update) |
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
-| `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts, upazilas (idempotent; keeps dashboard edits) |
+| `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts, 503 upazilas and the other areas (city-corporation thanas, cantonments, "Other area"; idempotent; keeps dashboard edits). On an existing database, migration `reference.0004` adds new areas from the seed by itself |
 | `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
@@ -413,7 +458,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-118 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+177 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
@@ -422,7 +467,12 @@ covers the header/logo/back link, approved-only school suggestions, reply-to on 
 batches, chunked sending, the send_queued job, braces in messages, pooled connections, the Brevo
 webhook, not-delivered filters, recipients CSV and the Message history filter. `tests/test_system_emails.py` covers the guardian declaration (form, DB
 check, dashboard, export) and editable system emails (permissions, validation, use in real emails,
-reset, test send). External calls (SMTP,
+reset, test send). `tests/test_form_update_oct2026.py` covers the October 2026 form update: Bangla on
+the form (and that every message has a translation), section, numbers-only roll, the survey, no
+date of birth, HTML emails, grouped navigation and the favicon. `tests/test_areas.py` covers
+"Upazila / Area" (grouped API order, registering with a thana, dashboard grouping, the Area type
+filter, adding a grouped area, the import) and checks that `data/reference_seed.json` has 503
+upazilas, all 13 city corporations, the cantonments and an "Other area" in every district. External calls (SMTP,
 MiM SMS) are mocked; no real messages are sent.
 
 ---
@@ -437,14 +487,17 @@ WikiScholar … Roadmap.md          original spec + status + what was added late
 config/settings.py, urls.py       settings (all from env / .env), root URLs
 apps/core/                        admins, roles, audit, IDs, shared utils, crypto, nav registry
 apps/reference/                   regions, districts, upazilas, schools (+ lookup API)
-apps/registration/                students, OTP, public form (templates/registration/), emails.py (system email defaults)
-apps/notifications/               email/SMS providers, batches, logs, settings
+apps/registration/                students, OTP, public form (templates/registration/), emails.py (system email defaults),
+                                  bangla.py (Bangla for every form label/message)
+apps/notifications/               email/SMS providers, batches, logs, settings, html_email.py + templates/notifications/email.html
 apps/dashboard/                   staff UI: views/, templates/dashboard/, filters.py, forms.py
 static/css, static/js             public.css, dashboard.css, datefield.css, register.js, cascade.js, datefield.js
 static/vendor/air-datepicker/     date picker library (MIT), copied unchanged from npm
 templates/public_base.html        public page shell
+templates/_favicons.html          site icon links (public pages and dashboard)
+static/img/                       logos (English, Bangla) and site icons; full-size originals in docs/brand/
 templates/_datefield_assets.html  CSS/JS for dd/mm/yyyy date fields (include in {% block head %})
-data/reference_seed.json          regions/districts/upazilas seed
+data/reference_seed.json          regions/districts/upazilas/areas seed (sources and rules in its _comment)
 tests/                            test suite (base.py has fixtures and helpers)
 docs/                             architecture, database, cPanel deployment, env template
 ```
@@ -457,7 +510,10 @@ docs/                             architecture, database, cPanel deployment, env
   reports, so their emails stay "Sent" unless rejected.
 * **SMS delivery reports** are not polled yet: SMS show "sent", not "delivered". A periodic job
   calling `MimSmsProvider.delivery_status()` (MiM `/V2/DlrApi`, ~5 min after sending) would fix it.
-* **Duplicate-student detection** (same name + date of birth + school) and a review screen.
+* **Duplicate-student detection** (same name + guardian + school, now that date of birth is not
+  collected) and a review screen.
+* **Paurashavas (municipalities)** could become their own area group the same way (a `group` value
+  plus seed rows), with no code change; they are inside upazilas today, so nobody is left out.
 * **Two-factor login** for admins.
 * **Saved queries / query builder** beyond the filter panel.
 * **Field-level encryption** of phone, email and guardian name at rest.
@@ -506,7 +562,7 @@ Hard rules:
 
 ### Example prompts
 * "Add a Duplicate students page to the dashboard that lists students with the same name,
-  date of birth and school, with a merge action that keeps the older WikiScholar ID. Follow
+  guardian name and school, with a merge action that keeps the older WikiScholar ID. Follow
   PROJECT_GUIDE.md."
 * "Add a periodic command that polls MiM SMS delivery reports for SMS sent in the last 24 hours
   and marks notification_logs as delivered or failed."

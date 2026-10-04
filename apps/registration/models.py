@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from apps.core.models import SoftDeleteModel
 
-from .choices import CLASS_CHOICES, CLASS_VALUES, FilledBy, Gender, GuardianRelation
+from .choices import CLASS_CHOICES, CLASS_VALUES, FilledBy, Gender, GuardianRelation, HeardFrom
 
 PHONE_REGEX = r"^01[3-9][0-9]{8}$"
 
@@ -32,7 +32,6 @@ class Student(SoftDeleteModel):
     filled_by = models.CharField(max_length=10, choices=FilledBy.choices, default=FilledBy.STUDENT)
     guardian_declared_at = models.DateTimeField(null=True, blank=True)  # when the guardian ticked the declaration
     student_name = models.CharField(max_length=150)
-    date_of_birth = models.DateField()
     gender = models.CharField(max_length=12, choices=Gender.choices)
     guardian_name = models.CharField(max_length=150)
     guardian_relation = models.CharField(max_length=10, choices=GuardianRelation.choices)
@@ -45,8 +44,9 @@ class Student(SoftDeleteModel):
     school_name_as_entered = models.CharField(max_length=255)
     school_resolution = models.CharField(max_length=10, choices=SchoolResolution.choices)
     current_class = models.CharField(max_length=2, choices=CLASS_CHOICES, db_index=True)
-    class_roll = models.CharField(max_length=20, blank=True)
+    class_roll = models.CharField(max_length=20, blank=True)  # digits only (checked by the form)
     student_id_sid = models.CharField(max_length=40, blank=True)
+    section = models.CharField(max_length=20, blank=True)  # optional: only classes that have sections
 
     # Step 3 — contact
     phone = models.CharField(max_length=11, db_index=True)
@@ -57,6 +57,9 @@ class Student(SoftDeleteModel):
     policy_consent_at = models.DateTimeField()
     policy_version = models.CharField(max_length=20)
     updates_opt_in = models.BooleanField(default=False)
+
+    # Survey: how the family heard about WikiScholar (blank for students registered before it was asked)
+    heard_from = models.CharField(max_length=20, choices=HeardFrom.choices, blank=True)
 
     source_ip = models.GenericIPAddressField(null=True, blank=True)
 
@@ -80,6 +83,7 @@ class Student(SoftDeleteModel):
                 condition=(Q(filled_by=FilledBy.GUARDIAN) & Q(guardian_declared_at__isnull=False))
                 | (Q(filled_by=FilledBy.STUDENT) & Q(guardian_declared_at__isnull=True)),
                 name="student_guardian_declaration"),
+            models.CheckConstraint(condition=Q(heard_from__in=["", *HeardFrom.values]), name="student_heard_from_valid"),
         ]
 
     def __str__(self):

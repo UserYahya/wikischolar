@@ -20,7 +20,7 @@
   </ul>
   <form method="post" id="confirmImport">{% csrf_token %}
     <div class="scroll"><table class="data">
-      <thead><tr><th class="num">Row</th><th>District</th><th>Upazila</th><th>School name</th><th>Result</th></tr></thead>
+      <thead><tr><th class="num">Row</th><th>District</th><th>Upazila / Area</th><th>School name</th><th>Result</th></tr></thead>
       <tbody>{% for r in planned %}
         <tr class="import-{{ r.result }}">
           <td class="num">{{ r.line }}</td><td>{{ r.district }}</td><td>{{ r.upazila }}</td><td>{{ r.name }}</td>
@@ -47,12 +47,12 @@
     <p><a class="btn primary" href="{% url 'dashboard:school_import_template' %}">Download template (CSV)</a></p>
     <p>Add one school per row under the three headings, for example:</p>
     <div class="scroll"><table class="data compact">
-      <thead><tr><th>District</th><th>Upazila</th><th>School name</th></tr></thead>
+      <thead><tr><th>District</th><th>Upazila / Area</th><th>School name</th></tr></thead>
       <tbody><tr><td>Gazipur</td><td>Tongi</td><td>Tongi Pilot High School</td></tr></tbody>
     </table></div>
     <p class="hint">School names must be in English. Up to {{ max_rows }} schools and 1 MB per file. Save as CSV (in Excel: <em>CSV UTF-8</em>).</p>
-    <h3>District &amp; upazila list</h3>
-    <p class="hint">District and upazila must be spelled as in this list (English or Bangla; capitals don't matter). Copy them from here into the template.</p>
+    <h3>District &amp; upazila / area list</h3>
+    <p class="hint">District and upazila / area (including city-corporation thanas and cantonments) must be spelled as in this list (English or Bangla; capitals don't matter). Copy them from here into the template.</p>
     <form method="get" action="{% url 'dashboard:school_import_locations' %}" class="toolbar">
       <select name="district" aria-label="District">
         <option value="">All districts</option>

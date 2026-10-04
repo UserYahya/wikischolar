@@ -2,7 +2,9 @@
    All reference data (districts, regions, upazilas, schools) is fetched from
    the API; nothing about the district→region mapping lives in this file.
    Answers are kept as a draft in sessionStorage (this tab only) and each step is a
-   browser history entry, so Back — the form's or the browser's — never loses data. */
+   browser history entry, so Back — the form's or the browser's — never loses data.
+   Every message is shown in English with a smaller Bangla line; the Bangla comes from
+   apps/registration/bangla.py (the page embeds it as #bnMessages), looked up by the English text. */
 (() => {
   "use strict";
   const $ = (s, r = document) => r.querySelector(s);
@@ -13,6 +15,18 @@
   // Must match apps/registration/validators.py (_ENGLISH)
   const ENGLISH = /^[A-Za-z0-9 .,'()&/-]*$/;
   const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const BN = (() => { try { return JSON.parse($("#bnMessages").textContent); } catch (_) { return {}; } })();
+  const fillVars = (text, vars = {}) => text.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+  // English + Bangla: as HTML on its own line (errors, hints), inline (buttons), or "English · বাংলা" (options).
+  function bi(en, vars) {
+    const bn = BN[en];
+    return esc(fillVars(en, vars)) + (bn ? `<span class="bn" lang="bn">${esc(fillVars(bn, vars))}</span>` : "");
+  }
+  function biInline(en, vars) {
+    const bn = BN[en];
+    return esc(fillVars(en, vars)) + (bn ? ` <span class="bn-inline" lang="bn">${esc(fillVars(bn, vars))}</span>` : "");
+  }
+  const biText = (en, vars) => fillVars(en, vars) + (BN[en] ? ` · ${fillVars(BN[en], vars)}` : "");
 
   const MSG = {
     required: "This field is required.",
@@ -20,8 +34,7 @@
     english: "Please write this in English (A-Z letters and 0-9 digits only).",
     phone: "Enter a valid Bangladeshi mobile number (for example 01712345678).",
     email: "Enter a valid email address.",
-    dob: "Date of birth must be in the past.",
-    dobFormat: "Enter the date as dd/mm/yyyy, for example 14/03/2012.",
+    roll: "Write the class roll in numbers only (for example 12).",
     rollOrSid: "Fill in either the class roll or the student ID.",
     relationOther: "Write the student's relation to the guardian.",
     declaration: "Tick the guardian declaration: the form must be filled in by the student's guardian.",
@@ -32,16 +45,16 @@
     schoolNew: "This will be added as a new school; our team will verify it later.",
   };
   const STEP_FIELDS = {
-    1: ["guardian_declaration", "student_name", "date_of_birth", "gender", "guardian_name", "guardian_relation",
+    1: ["guardian_declaration", "student_name", "gender", "guardian_name", "guardian_relation",
         "guardian_relation_other"],
-    2: ["district", "upazila", "school_name", "current_class", "class_roll", "student_id_sid"],
+    2: ["district", "upazila", "school_name", "current_class", "class_roll", "student_id_sid", "section"],
     3: ["phone", "email", "email_otp"],
-    4: ["policy_consent"],
+    4: ["heard_from", "policy_consent"],
   };
-  const DRAFT_FIELDS = ["guardian_declaration", "student_name", "date_of_birth", "gender", "guardian_name",
+  const DRAFT_FIELDS = ["guardian_declaration", "student_name", "gender", "guardian_name",
     "guardian_relation", "guardian_relation_other", "district", "upazila", "current_class", "school_name", "school_id",
-    "class_roll", "student_id_sid", "phone", "email", "policy_consent", "updates_opt_in"];
-  const DRAFT_KEY = "ws_registration_draft_v1";
+    "class_roll", "student_id_sid", "section", "phone", "email", "heard_from", "policy_consent", "updates_opt_in"];
+  const DRAFT_KEY = "ws_registration_draft_v2";
   const state = { step: 1, verificationId: null, verifiedEmail: null, districts: new Map(), typoConfirmed: false,
                   done: false, restoring: false };
 
@@ -59,7 +72,7 @@
   // ---------- errors ----------
   function setError(name, msg) {
     const el = $(`[data-err="${name}"]`);
-    if (el) el.textContent = msg || "";
+    if (el) el.innerHTML = msg ? bi(msg) : "";
     $$(`[name="${name}"]`).forEach((i) => i.type !== "radio" ? i.setAttribute("aria-invalid", msg ? "true" : "false") : null);
   }
   const clearErrors = (names) => names.forEach((n) => setError(n, ""));
@@ -103,7 +116,7 @@
       li.classList.toggle("complete", k < n);
       $(".n", li).textContent = k < n ? "✓" : String(k);
       // finished steps can be reopened by clicking them
-      if (k < n) { li.setAttribute("role", "button"); li.tabIndex = 0; li.title = "Go back to this step"; }
+      if (k < n) { li.setAttribute("role", "button"); li.tabIndex = 0; li.title = biText("Go back to this step"); }
       else { li.removeAttribute("role"); li.removeAttribute("tabindex"); li.removeAttribute("title"); }
     });
     $("#back").hidden = n === 1;
@@ -125,21 +138,17 @@
     const fail = (name, msg) => { setError(name, msg); ok = false; };
     for (const name of STEP_FIELDS[n]) {
       const v = val(name);
-      if (["guardian_declaration", "class_roll", "student_id_sid", "email_otp", "policy_consent"].includes(name)) continue;
+      if (["guardian_declaration", "class_roll", "student_id_sid", "section", "email_otp", "policy_consent"].includes(name)) continue;
       if (name === "guardian_relation_other" && val("guardian_relation") !== "other") continue;
       if (!v) fail(name, name === "guardian_relation_other" ? MSG.relationOther
-        : ["gender", "guardian_relation", "district", "upazila", "current_class"].includes(name) ? MSG.choose : MSG.required);
+        : ["gender", "guardian_relation", "district", "upazila", "current_class", "heard_from"].includes(name) ? MSG.choose : MSG.required);
     }
     STEP_FIELDS[n].forEach((name) => {
       const el = $(`[name="${name}"][data-english]`);
       if (el && el.value && !ENGLISH.test(en(el.value))) fail(name, MSG.english);
     });
     if (n === 1 && !val("guardian_declaration")) fail("guardian_declaration", MSG.declaration);
-    if (n === 1 && val("date_of_birth")) {
-      const d = window.WSDate.parse(val("date_of_birth"));
-      if (!d) fail("date_of_birth", MSG.dobFormat);
-      else if (d >= new Date(new Date().toDateString())) fail("date_of_birth", MSG.dob);
-    }
+    if (n === 2 && val("class_roll") && !/^\d+$/.test(en(val("class_roll")))) fail("class_roll", MSG.roll);
     if (n === 2 && !val("class_roll") && !val("student_id_sid")) {
       fail("class_roll", MSG.rollOrSid); fail("student_id_sid", MSG.rollOrSid);
     }
@@ -190,6 +199,13 @@
     }
     if (el.matches("[data-english]")) setError(el.name, ENGLISH.test(el.value) ? "" : MSG.english);
   }));
+  // Class roll: numbers only. Bangla digits become 0-9; anything else is dropped as you type, with a note.
+  $$("[data-digits]").forEach((el) => el.addEventListener("input", () => {
+    const fixed = en(el.value).replace(/\D/g, "");
+    const typedOther = fixed !== en(el.value);
+    if (fixed !== el.value) el.value = fixed;
+    setError(el.name, typedOther ? MSG.roll : "");
+  }));
 
   // ---------- guardian declaration (required) ----------
   $("#guardian_declaration").addEventListener("change", () => setError("guardian_declaration", ""));
@@ -210,22 +226,34 @@
   const districtSel = $("#district"), upazilaSel = $("#upazila"), regionOut = $("#region");
   async function loadDistricts() {
     const { ok, data } = await api("/api/reference/districts/");
-    if (!ok) { districtSel.innerHTML = `<option value="">${MSG.network}</option>`; return; }
-    districtSel.innerHTML = `<option value="">Choose a district</option>` +
+    if (!ok) { districtSel.innerHTML = `<option value="">${esc(biText(MSG.network))}</option>`; return; }
+    districtSel.innerHTML = `<option value="">${esc(biText("Choose"))}</option>` +
       data.districts.sort((a, b) => a.name.localeCompare(b.name, "en"))
-        .map((d) => { state.districts.set(String(d.id), d); return `<option value="${d.id}">${esc(d.name)}</option>`; }).join("");
+        .map((d) => { state.districts.set(String(d.id), d); return `<option value="${d.id}">${esc(place(d))}</option>`; }).join("");
   }
+  // "Dhaka · ঢাকা": place names in English with their Bangla name
+  const place = (p) => p.name + (p.name_bn ? ` · ${p.name_bn}` : "");
   async function loadUpazilas() {
     const d = state.districts.get(districtSel.value);
-    regionOut.textContent = d ? (d.region ? d.region.name : "No region assigned") : "Shown after you choose a district";
+    regionOut.innerHTML = d ? (d.region ? esc(place(d.region)) : bi("No region assigned")) : bi("Shown after you choose a district");
     regionOut.classList.toggle("empty", !d || !d.region);
     upazilaSel.disabled = true;
-    upazilaSel.innerHTML = `<option value="">${d ? "Loading…" : "Choose a district first"}</option>`;
+    upazilaSel.innerHTML = `<option value="">${esc(biText(d ? "Loading…" : "Choose a district first"))}</option>`;
     if (!d) return;
     const { ok, data } = await api(`/api/reference/districts/${d.id}/upazilas/`);
-    if (!ok) { upazilaSel.innerHTML = `<option value="">${MSG.network}</option>`; return; }
-    upazilaSel.innerHTML = `<option value="">Choose an upazila</option>` +
-      data.upazilas.map((u) => `<option value="${u.id}">${esc(u.name)}</option>`).join("");
+    if (!ok) { upazilaSel.innerHTML = `<option value="">${esc(biText(MSG.network))}</option>`; return; }
+    // Areas come grouped and in order (city-corporation thanas, cantonments, upazilas, "Other area"):
+    // each group becomes an <optgroup> headed "Dhaka North City Corporation · ঢাকা উত্তর সিটি কর্পোরেশন".
+    let html = `<option value="">${esc(biText("Choose"))}</option>`, open = null;
+    data.upazilas.forEach((u) => {
+      if (u.group !== open) {
+        if (open !== null) html += "</optgroup>";
+        html += `<optgroup label="${esc(u.group + (u.group_bn ? ` · ${u.group_bn}` : ""))}">`;
+        open = u.group;
+      }
+      html += `<option value="${u.id}">${esc(place(u))}</option>`;
+    });
+    upazilaSel.innerHTML = html + (open !== null ? "</optgroup>" : "");
     upazilaSel.disabled = false;
   }
   districtSel.addEventListener("change", async () => { resetSchool(true); await loadUpazilas(); saveDraft(); });
@@ -235,18 +263,19 @@
   const schoolIn = $("#school_name"), schoolId = $("#school_id"), list = $("#schoolList"), schoolHint = $("#schoolHint");
   let timer = null, items = [], active = -1, lastQuery = "";
   function resetSchool(disable) {
-    schoolIn.value = ""; schoolId.value = ""; schoolHint.textContent = ""; closeList();
+    schoolIn.value = ""; schoolId.value = ""; setHint(""); closeList();
     schoolIn.disabled = disable;
-    schoolIn.placeholder = disable ? "Choose an upazila first" : "Type the school name in English";
+    schoolIn.placeholder = biText(disable ? "Choose the area first" : "Type in English");
   }
+  function setHint(msg) { schoolHint.innerHTML = msg ? bi(msg) : ""; schoolHint.dataset.msg = msg; }
   function closeList() { list.hidden = true; schoolIn.setAttribute("aria-expanded", "false"); active = -1; }
   function render() {
     const q = schoolIn.value.trim();
     list.innerHTML = items.map((s, i) =>
       `<li role="option" id="opt${i}" data-i="${i}" aria-selected="${i === active}">
-         <span>${esc(s.name)}</span>${s.verified ? "" : '<span class="tag">being verified</span>'}</li>`).join("") +
+         <span>${esc(s.name)}</span>${s.verified ? "" : `<span class="tag">${esc(biText("being verified"))}</span>`}</li>`).join("") +
       (q ? `<li role="option" class="add" id="opt${items.length}" data-i="${items.length}" aria-selected="${active === items.length}">
-             Not in the list? Add it as new: “${esc(q)}”</li>` : "");
+             <span>${bi("Not in the list? Add it as new: “{name}”", { name: q })}</span></li>` : "");
     list.hidden = !q && !items.length;
     schoolIn.setAttribute("aria-expanded", String(!list.hidden));
     schoolIn.setAttribute("aria-activedescendant", active >= 0 ? `opt${active}` : "");
@@ -255,17 +284,17 @@
     if (i < items.length) {
       schoolId.value = items[i].id;
       schoolIn.value = items[i].name;
-      schoolHint.textContent = MSG.schoolPicked;
+      setHint(MSG.schoolPicked);
     } else {
       schoolId.value = "";
-      schoolHint.textContent = MSG.schoolNew;
+      setHint(MSG.schoolNew);
     }
     setError("school_name", ENGLISH.test(schoolIn.value) ? "" : MSG.english);
     closeList();
     saveDraft();
   }
   schoolIn.addEventListener("input", () => {
-    schoolId.value = ""; schoolHint.textContent = "";
+    schoolId.value = ""; setHint("");
     clearTimeout(timer);
     const q = schoolIn.value.trim();
     if (!q) { items = []; closeList(); return; }
@@ -288,7 +317,7 @@
   list.addEventListener("mousedown", (e) => { const li = e.target.closest("li"); if (li) { e.preventDefault(); choose(Number(li.dataset.i)); } });
   schoolIn.addEventListener("blur", () => setTimeout(() => {
     closeList();
-    if (schoolIn.value.trim() && !schoolId.value && !schoolHint.textContent) schoolHint.textContent = MSG.schoolNew;
+    if (schoolIn.value.trim() && !schoolId.value && !schoolHint.dataset.msg) setHint(MSG.schoolNew);
     saveDraft();
   }, 120));
 
@@ -304,8 +333,8 @@
   const isVerified = () => state.verificationId && state.verifiedEmail === emailIn.value.trim().toLowerCase();
   let typoTimer = null, typoSeq = 0, sendAfterTypo = false;
   function showTypo(data, { fromSend = false } = {}) {
-    $("#typoText").textContent = data.message;
-    $("#typoFix").textContent = `Use ${data.suggested_email}`;
+    $("#typoText").innerHTML = bi("Did you mean {email}?", { email: data.suggested_email });
+    $("#typoFix").innerHTML = biInline("Use {email}", { email: data.suggested_email });
     $("#typoFix").dataset.email = data.suggested_email;
     typoBox.hidden = false;
     sendAfterTypo = fromSend;
@@ -340,10 +369,10 @@
     btn.disabled = true;
     clearInterval(cooldown);
     let left = sec;
-    btn.textContent = `Send a new code (${left}s)`;
+    btn.innerHTML = biInline("Send a new code ({s}s)", { s: left });
     cooldown = setInterval(() => {
       left -= 1;
-      btn.textContent = left > 0 ? `Send a new code (${left}s)` : "Send a new code";
+      btn.innerHTML = left > 0 ? biInline("Send a new code ({s}s)", { s: left }) : biInline("Send a new code");
       if (left <= 0) { clearInterval(cooldown); btn.disabled = false; }
     }, 1000);
   }
@@ -361,10 +390,10 @@
         $("#verifyOtp").disabled = true;
         setError("email_otp", "This code has expired. Send a new one.");
         clearInterval(cooldown);
-        $("#resendOtp").disabled = false; $("#resendOtp").textContent = "Send a new code";
+        $("#resendOtp").disabled = false; $("#resendOtp").innerHTML = biInline("Send a new code");
         return;
       }
-      el.textContent = `Code expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+      el.innerHTML = biInline("Code expires in {time}", { time: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` });
       el.classList.toggle("soon", left <= 60);
     };
     tick();
@@ -382,9 +411,8 @@
       if (!ok) { setError("email", data.message || MSG.network); return; }
       state.verificationId = data.verification_id;
       $("#otpEntry").hidden = false;
-      $("#otpHint").textContent = `We sent a 6-digit code by email to ${email}. ` +
-        "Can't find it? Check your Spam or Junk folder." +
-        (data.debug_code ? ` [dev mode: ${data.debug_code}]` : "");
+      $("#otpHint").innerHTML = bi("We sent a 6-digit code by email to {email}. Can't find it? Check your Spam or Junk folder.", { email }) +
+        (data.debug_code ? ` <span>[dev mode: ${esc(data.debug_code)}]</span>` : "");
       $("#email_otp").value = ""; $("#email_otp").focus();
       btn.hidden = true;
       startCooldown();
@@ -459,12 +487,13 @@
     const btn = $("#submit"); btn.disabled = true; btn.setAttribute("aria-busy", "true");
     const payload = {
       guardian_declaration: val("guardian_declaration"),
-      student_name: val("student_name"), date_of_birth: val("date_of_birth"), gender: val("gender"),
+      student_name: val("student_name"), gender: val("gender"),
       guardian_name: val("guardian_name"), guardian_relation: val("guardian_relation"),
       guardian_relation_other: val("guardian_relation") === "other" ? val("guardian_relation_other") : "",
       district: val("district"), upazila: val("upazila"), school_name: val("school_name"),
       school_id: val("school_id") || null, current_class: val("current_class"),
-      class_roll: val("class_roll"), student_id_sid: val("student_id_sid"),
+      class_roll: en(val("class_roll")), student_id_sid: val("student_id_sid"), section: val("section"),
+      heard_from: val("heard_from"),
       phone: normPhone(val("phone")), email: val("email").toLowerCase(),
       verification_id: state.verificationId, policy_consent: val("policy_consent"),
       updates_opt_in: val("updates_opt_in"), website: val("website"),
@@ -482,12 +511,12 @@
         }
         if (firstStep && firstStep !== 4) showStep(firstStep);
       } else {
-        $("#formErr").textContent = data.message || MSG.network;
+        $("#formErr").innerHTML = bi(data.message || MSG.network);
         if (data.error === "email_not_verified") {
           state.verifiedEmail = null; $("#verifiedNote").hidden = true; $("#sendOtp").hidden = false; showStep(3);
         }
       }
-    } catch (_) { $("#formErr").textContent = MSG.network; }
+    } catch (_) { $("#formErr").innerHTML = bi(MSG.network); }
     finally { btn.removeAttribute("aria-busy"); updateSubmit(); }
   });
 
@@ -500,12 +529,13 @@
     $("#doneEmail").textContent = s.email;
     const rows = [
       ["Filled in by", s.filled_by],
-      ["Name", s.student_name], ["Date of birth", s.date_of_birth], ["Gender", s.gender], ["Guardian", s.guardian],
-      ["District", s.district], ["Region", s.region || "—"], ["Upazila", s.upazila],
+      ["Name", s.student_name], ["Gender", s.gender], ["Guardian", s.guardian],
+      ["District", s.district], ["Region", s.region || "—"], ["Upazila / Area", s.upazila],
       ["School", s.school + (s.school_pending ? " (being verified)" : "")], ["Class", s.current_class],
-      ["Class roll", s.class_roll || "—"], ["Student ID", s.student_id_sid || "—"], ["Mobile", s.phone],
+      ["Section", s.section || "—"], ["Class roll", s.class_roll || "—"], ["Student ID", s.student_id_sid || "—"],
+      ["Mobile", s.phone], ["Heard about WikiScholar from", s.heard_from || "—"],
     ];
-    $("#summary").innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+    $("#summary").innerHTML = rows.map(([k, v]) => `<dt>${bi(k)}</dt><dd>${esc(v)}</dd>`).join("");
     const done = $("#done"); done.hidden = false; done.focus();
   }
 
@@ -515,9 +545,9 @@
   async function restore(draft) {
     state.restoring = true;
     const f = draft.fields || {};
-    ["guardian_declaration", "student_name", "date_of_birth", "gender", "guardian_name", "guardian_relation",
-     "guardian_relation_other", "current_class", "class_roll", "student_id_sid", "phone", "email", "policy_consent",
-     "updates_opt_in"].forEach((n) => setField(n, f[n]));
+    ["guardian_declaration", "student_name", "gender", "guardian_name", "guardian_relation",
+     "guardian_relation_other", "current_class", "class_roll", "student_id_sid", "section", "phone", "email",
+     "heard_from", "policy_consent", "updates_opt_in"].forEach((n) => setField(n, f[n]));
     syncRelation();
     if (f.guardian_relation === "other") setField("guardian_relation_other", f.guardian_relation_other);
     if (f.district && state.districts.has(String(f.district))) {
@@ -529,7 +559,7 @@
           resetSchool(false);
           schoolIn.value = f.school_name || "";
           schoolId.value = f.school_id || "";
-          if (schoolIn.value) schoolHint.textContent = schoolId.value ? MSG.schoolPicked : MSG.schoolNew;
+          if (schoolIn.value) setHint(schoolId.value ? MSG.schoolPicked : MSG.schoolNew);
         }
       }
     }
@@ -548,6 +578,11 @@
   }
 
   (async () => {
+    regionOut.innerHTML = bi("Shown after you choose a district");
+    upazilaSel.innerHTML = `<option value="">${esc(biText("Choose a district first"))}</option>`;
+    districtSel.innerHTML = `<option value="">${esc(biText("Loading…"))}</option>`;
+    schoolIn.placeholder = biText("Choose the area first");
+    $("#resendOtp").innerHTML = biInline("Send a new code");
     await loadDistricts();
     const draft = loadDraft();
     const step = draft ? await restore(draft) : 1;

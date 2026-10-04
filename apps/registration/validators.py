@@ -1,7 +1,6 @@
 import re
 
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 from apps.core.utils import english_text, to_en_digits  # noqa: F401 (english_text is re-exported for forms)
 
@@ -25,12 +24,15 @@ def validate_phone(value):
         raise ValidationError("Enter a valid Bangladeshi mobile number (for example 01712345678).", code="phone")
 
 
-def validate_past_date(value):
-    today = timezone.localdate()
-    if value >= today:
-        raise ValidationError("Date of birth must be in the past.", code="dob_future")
-    if value.year < today.year - 30:
-        raise ValidationError("Please check the date of birth.", code="dob_too_old")
+ROLL_DIGITS_MESSAGE = "Write the class roll in numbers only (for example 12)."
+
+
+def roll_number(raw):
+    """Class roll: digits only (Bangla digits become 0-9). Empty is allowed; the form needs roll or SID."""
+    value = "".join(to_en_digits(raw or "").split())
+    if value and not (value.isascii() and value.isdigit()):
+        raise ValidationError(ROLL_DIGITS_MESSAGE, code="roll_digits")
+    return value
 
 
 # ---- Email typo detection (warning, never a block) ------------------------ #

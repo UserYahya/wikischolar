@@ -26,7 +26,8 @@ class GuardianDeclarationTests(WSTestCase):
     def test_required_checkbox_is_at_the_start_of_the_form(self):
         page = self.client.get("/").content.decode()
         self.assertIn('name="guardian_declaration" id="guardian_declaration" required', page)
-        self.assertIn("I am the <strong>guardian (parent)</strong> of the student named below", page)
+        self.assertIn("I am the <strong>guardian</strong> of the student named below", page)
+        self.assertNotIn("guardian (parent)", page)
         self.assertNotIn("Leave this unticked", page)
         self.assertLess(page.index('name="guardian_declaration"'), page.index('name="student_name"'))
 
@@ -89,7 +90,9 @@ class SystemEmailTests(WSTestCase):
         self.client.force_login(self.super)
         r = self.client.get(self.url)
         self.assertEqual([c["email"].key for c in r.context["cards"]], [OTP_FIELDS, CONF_FIELDS])
-        self.assertContains(r, "Your WikiScholar verification code is 123456")  # preview with sample data
+        self.assertContains(r, "Your WikiScholar verification code is:")  # preview with sample data
+        self.assertContains(r, "123456")
+        self.assertContains(r, 'class="email-preview"')
         self.assertContains(r, "WikiScholar registration complete: WS-2027-000123")
         self.assertContains(r, "Default text")
 

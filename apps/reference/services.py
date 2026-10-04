@@ -29,6 +29,16 @@ def upazila_in_district(upazila_id, district_id):
     return Upazila.objects.filter(pk=upazila_id, district_id=district_id).first()
 
 
+def sort_areas(upazilas):
+    """A district's areas in list order: city-corporation thanas (by corporation), cantonments,
+    upazilas, then "Other area". Templates group them with {% regroup … by group_label %}."""
+    return sorted(upazilas, key=lambda u: u.sort_key)
+
+
+def areas_of(district_id):
+    return sort_areas(Upazila.objects.filter(district_id=district_id or 0))
+
+
 @transaction.atomic
 def assign_district_region(district, region, *, request):
     before = {"region": district.region.code if district.region_id else None}

@@ -7,9 +7,10 @@
   <p class="muted">Region: {% if district.region %}{{ district.region.name }}{% else %}<strong>Unassigned</strong>{% endif %} · change it on the <a href="{% url 'dashboard:locations' %}">locations page</a>.</p>
 </div></header>
 <section>
-  <h2>Upazilas <span class="count">{{ upazilas|length }}</span></h2>
+  <h2>Upazilas &amp; areas <span class="count">{{ upazilas|length }}</span></h2>
+  <p class="hint">City-corporation thanas, cantonments and “Other area” are listed with their group; the form shows them under these headings.</p>
   <div class="scroll"><table class="data compact">
-    <thead><tr><th>Name</th><th class="num">Schools</th><th class="num">Students</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Group</th><th class="num">Schools</th><th class="num">Students</th><th></th></tr></thead>
     <tbody>
     {% for u in upazilas %}
       <tr>
@@ -21,18 +22,23 @@
             <button class="btn small">Save</button>
           </form>
         {% else %}{{ u.name }} <span lang="bn" class="muted">{{ u.name_bn }}</span>{% endif %}</td>
+        <td>{% if u.group %}{{ u.group_label }}{% else %}<span class="muted">Upazila</span>{% endif %}</td>
         <td class="num"><a href="{% url 'dashboard:schools' %}?district={{ district.pk }}&upazila={{ u.pk }}">{{ u.sc }}</a></td>
         <td class="num">{{ u.s }}</td>
         <td><a href="{% url 'dashboard:students' %}?district={{ district.pk }}&upazila={{ u.pk }}">Students</a></td>
       </tr>
-    {% empty %}<tr><td colspan="4" class="empty">No upazilas.</td></tr>{% endfor %}
+    {% empty %}<tr><td colspan="5" class="empty">No upazilas.</td></tr>{% endfor %}
     </tbody>
   </table></div>
   {% if can_edit %}
   <form method="post" class="toolbar">{% csrf_token %}<input type="hidden" name="op" value="add_upazila">
     <input name="name" placeholder="New upazila (English)" aria-label="New upazila name" required>
     <input name="name_bn" placeholder="বাংলা নাম" aria-label="Bangla name" lang="bn">
-    <button class="btn">Add upazila</button>
+    <select name="group" aria-label="Group">
+      <option value="">Upazila</option>
+      {% for g, g_bn in other_groups %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+    </select>
+    <button class="btn">Add</button>
   </form>
   {% endif %}
 </section>

@@ -1,0 +1,3 @@
+{# <option>s for a district's areas, grouped: city-corporation thanas, cantonments, upazilas, "Other area". #}
+{# `areas` must be in list order (reference.services.sort_areas / areas_of); `selected` is the chosen id. #}
+{% regroup areas by group_label as groups %}{% for g in groups %}<optgroup label="{{ g.grouper }}">{% for u in g.list %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == selected|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>{% endfor %}</optgroup>{% endfor %}

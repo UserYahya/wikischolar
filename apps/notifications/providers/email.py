@@ -1,7 +1,8 @@
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.core.mail.message import make_msgid
 
+from ..html_email import render_html
 from .base import Provider, SendResult
 
 
@@ -16,16 +17,18 @@ class DjangoMailProvider(Provider):
     (Brevo / Gmail / any SMTP) when active; otherwise Django's EMAIL_BACKEND from env."""
     name = "django-mail"
 
-    def send(self, destination, body, subject=""):
+    def send(self, destination, body, subject="", html=None):
+        """Sends the text as the plain part plus a branded HTML part (`html`, or built from the text)."""
         from ..models import EmailSettings
         cfg = EmailSettings.active()
         from_email = cfg.from_header if cfg else settings.DEFAULT_FROM_EMAIL
         domain = (cfg.from_email if cfg else from_email).rsplit("@", 1)[-1].strip("> ") or "wikischolar.bd"
         msg_id = make_msgid(domain=domain)
         reply_to = reply_to_address(cfg)
-        msg = EmailMessage(subject=subject, body=body, from_email=from_email, to=[destination],
-                           headers={"Message-ID": msg_id}, connection=cfg.connection() if cfg else None,
-                           reply_to=[reply_to] if reply_to else None)
+        msg = EmailMultiAlternatives(subject=subject, body=body, from_email=from_email, to=[destination],
+                                     headers={"Message-ID": msg_id}, connection=cfg.connection() if cfg else None,
+                                     reply_to=[reply_to] if reply_to else None)
+        msg.attach_alternative(html or render_html(body, subject=subject), "text/html")
         try:
             msg.send(fail_silently=False)
         except Exception as exc:  # isolate provider failures from the caller

@@ -48,6 +48,10 @@ permission codes in `apps/core/permissions.py`.
 | 15 | Header looked bad; subject box too large | new slim header; hashed static file names; grid fix |
 | 16 | Private GitHub repository without private info | https://github.com/UserYahya/wikischolar (private) |
 | 17 | Warn when an email is already registered | "Send verification code" refuses a used address (409); re-checked on submit; archived students free it |
+| 18 | City corporations have no upazila: how to fit them in (plan only, then built in #21) | agreed: extra rows in `upazilas` with a `group` (thanas per city corporation, cantonments, "Other area" per district), label "Upazila / Area", minimal structural change |
+| 19 | October 2026 list of ten: logos and favicon, HTML emails, grouped dashboard menu, Bangla beside every form text, "guardian" wording, remove date of birth, numbers-only roll, optional section, "how did you hear" survey, new Youth Policy link | all done (CHANGELOG 2026-10-05); date-of-birth column dropped |
+| 20 | Keep only the English logo in the header; review the form's design/UX | Bangla logo kept in `docs/brand/`; review fixed a wrong Bangla label, a focus box, step 2 order, small Bangla text, cut-off placeholders, the success screen |
+| 21 | Build the upazila/thana plan | 105 thanas of 13 city corporations, 31 cantonments, "Other area"; research found 503 upazilas (8 created in Jun–Jul 2026) and Bogura City Corporation (May 2026) |
 
 ## 4. cPanel deployment problems met (and fixes)
 
@@ -66,6 +70,9 @@ Other lessons:
 
 - A local preview once tried real SMTP. It failed with `535`, so nothing was sent. Local previews must use the
   console backend.
+- Facts that change (upazila counts, city corporations, police thanas) were researched on the web and
+  spot-checked against news reports; the coverage test in `tests/test_areas.py` pins the counts, so update
+  it together with the seed when new units are created.
 - Manifest static storage raised errors for a missing file. `ForgivingManifestStorage` falls back to the plain
   name instead.
 

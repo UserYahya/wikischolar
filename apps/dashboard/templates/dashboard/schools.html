@@ -17,12 +17,12 @@
     <option value="removed" {% if f.status == "removed" %}selected{% endif %}>Removed</option>
   </select>
   <select name="district" aria-label="District" onchange="this.form.upazila && (this.form.upazila.value='')"><option value="">All districts</option>{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == f.district %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
-  {% if upazilas %}<select name="upazila" aria-label="Upazila"><option value="">All upazilas</option>{% for u in upazilas %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == f.upazila %}selected{% endif %}>{{ u.name }}</option>{% endfor %}</select>{% endif %}
+  {% if upazilas %}<select name="upazila" aria-label="Upazila or area"><option value="">All upazilas and areas</option>{% include "dashboard/_area_options.html" with areas=upazilas selected=f.upazila %}</select>{% endif %}
   <button class="btn">Filter</button>
 </form>
 {% if page.object_list %}
 <div class="scroll"><table class="data">
-  <thead><tr><th>School</th><th>Upazila</th><th>District</th><th>Status</th><th>Source</th><th class="num">Students</th></tr></thead>
+  <thead><tr><th>School</th><th>Upazila / Area</th><th>District</th><th>Status</th><th>Source</th><th class="num">Students</th></tr></thead>
   <tbody>{% for s in page %}<tr>
     <td><a href="{% url 'dashboard:school' s.pk %}">{{ s.name }}</a></td><td>{{ s.upazila.name }}</td><td>{{ s.district.name }}</td>
     <td>{% if s.is_deleted %}<span class="status">Removed</span>{% else %}<span class="tag {% if s.verification_status == 'verified' %}ok{% endif %}">{{ s.get_verification_status_display }}</span>{% endif %}</td>

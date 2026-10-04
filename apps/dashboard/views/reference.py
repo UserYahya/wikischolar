@@ -48,7 +48,7 @@ def school_list(request):
     page, qstring = paginate(request, qs.order_by("verification_status", "name"))
     return render(request, "dashboard/schools.html", {
         "page": page, "qstring": qstring, "districts": District.objects.all(),
-        "upazilas": Upazila.objects.filter(district_id=district) if district else [],
+        "upazilas": ref.areas_of(district) if district else [],
         "f": {"status": status, "district": district, "upazila": upazila, "q": q},
         "can_edit": request.user.has_perm_code("schools.edit"),
     })
@@ -88,7 +88,7 @@ def school_add(request):
                     return redirect("dashboard:school", pk=school.pk)
     return render(request, "dashboard/school_add.html", {
         "d": data, "errors": errors, "same": same, "similar": similar, "districts": District.objects.all(),
-        "upazilas": Upazila.objects.filter(district_id=data["district"]) if data["district"].isdigit() else [],
+        "upazilas": ref.areas_of(data["district"]) if data["district"].isdigit() else [],
     })
 
 
@@ -304,7 +304,11 @@ def district_detail(request, pk):
                 if name is None:
                     return redirect("dashboard:district", pk=pk)
                 if op == "add_upazila" and name:
-                    u = Upazila.objects.create(district=district, name=name,
+                    # Optional group: one already used anywhere (a city corporation, Cantonment, Other)
+                    groups = dict(_area_groups())
+                    group = request.POST.get("group", "")
+                    group = group if group in groups else ""
+                    u = Upazila.objects.create(district=district, name=name, group=group, group_bn=groups.get(group, ""),
                                                name_bn=request.POST.get("name_bn", "").strip())
                     audit.record("reference.upazila_created", request=request, entity=u, after=audit.snapshot(u))
                     messages.success(request, f"Upazila “{u.name}” added.")
@@ -323,4 +327,11 @@ def district_detail(request, pk):
     upazilas = district.upazilas.annotate(s=Count("students", distinct=True, filter=Q(students__is_deleted=False)),
                                          sc=Count("schools", distinct=True, filter=~Q(schools__verification_status="merged")))
     return render(request, "dashboard/district_detail.html", {
-        "district": district, "upazilas": upazilas, "can_edit": request.user.has_perm_code("reference.edit")})
+        "district": district, "upazilas": ref.sort_areas(upazilas), "other_groups": _area_groups(),
+        "can_edit": request.user.has_perm_code("reference.edit")})
+
+
+def _area_groups():
+    """[(group, group_bn), ...] of the area groups in use (city corporations, Cantonment, Other)."""
+    rows = Upazila.objects.exclude(group="").values_list("group", "group_bn").distinct().order_by("group")
+    return list(dict(rows).items())

@@ -57,7 +57,7 @@
   <h2>District → region assignment <span class="count">{{ districts|length }}</span></h2>
   <form method="post">{% csrf_token %}<input type="hidden" name="op" value="assign">
     <div class="scroll"><table class="data compact">
-      <thead><tr><th>District</th><th>Bangla</th><th>Region</th><th class="num">Upazilas</th><th class="num">Students</th></tr></thead>
+      <thead><tr><th>District</th><th>Bangla</th><th>Region</th><th class="num">Upazilas &amp; areas</th><th class="num">Students</th></tr></thead>
       <tbody>
       {% for d in districts %}
         <tr {% if not d.region_id %}class="unassigned"{% endif %}>

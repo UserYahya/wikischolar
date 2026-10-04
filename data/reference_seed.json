@@ -1,5 +1,5 @@
 {
- "_comment": "Seed data only. Loaded by `manage.py seed_reference`. After seeding, region assignment is managed in the database via the admin dashboard; re-running the seed never overwrites dashboard edits unless --reset-region-assignments is passed. Upazila data: nuhil/bangladesh-geocode (MIT).",
+ "_comment": "Seed data only. Loaded by `manage.py seed_reference` (and, for districts that already exist, by migration reference.0004). After seeding, region assignment is managed in the database via the admin dashboard; re-running the seed never overwrites dashboard edits unless --reset-region-assignments is passed. Each district has `upazilas` (503 in all, as of the 8 Jul 2026 notification) and `areas`: the form's other \"Upazila / Area\" choices, each with a `group`: the metropolitan police thanas of the 13 city corporations (group = the city corporation; Dhaka's DMP thanas go under Dhaka North or Dhaka South by which corporation covers most of the thana; Mymensingh, Narayanganj, Cumilla and Bogura have no metropolitan police, so the city corporation itself is the area; a thana with the same name as an upazila of the district is left out because the upazila covers it), cantonments (group = Cantonment) and one \"Other area (not listed)\" per district (group = Other). Upazila data: nuhil/bangladesh-geocode (MIT). Thanas and cantonments: https://en.wikipedia.org/wiki/Upazilas_of_Bangladesh; https://bangladesh.gov.bd/views/upazila-list; https://dhakatribune.com/bangladesh/nation/2017/11/20/shayestaganj-habiganj-become-upazila; https://en.wikipedia.org/wiki/Shayestaganj_Upazila; https://www.thedailystar.net/news/governance/news/govt-approves-bogura-city-corporation-five-new-upazilas-four-districts-4170111; https://www.tbsnews.net/bangladesh/govt-approves-bogura-city-corporation-five-new-upazilas-1432741; https://thedailycampus.com/national/257508; https://en.wikipedia.org/wiki/Bhully_Upazila; https://bn.wikipedia.org/wiki/মোকামতলা_উপজেলা; https://www.dhakatribune.com/bangladesh/development/414062/nicar-approves-three-new-upazilas-one-police; https://www.thedailystar.net/news/bangladesh/news/purbachal-new-town-come-under-dhaka-district-4213641; https://www.deshrupantor.com/702591/",
  "regions": [
   {
    "code": "dhaka",
@@ -75,6 +75,14 @@
      "name": "Sarankhola",
      "name_bn": "শরণখোলা"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -111,6 +119,26 @@
      "name": "Thanchi",
      "name_bn": "থানচি"
     }
+   ],
+   "areas": [
+    {
+     "name": "Bandarban Cantonment",
+     "name_bn": "বান্দরবান সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Alikadam Cantonment",
+     "name_bn": "আলীকদম সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -142,6 +170,14 @@
     {
      "name": "Taltali",
      "name_bn": "তালতলি"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -191,6 +227,38 @@
      "name": "Wazirpur",
      "name_bn": "উজিরপুর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Kotwali",
+     "name_bn": "কোতোয়ালী",
+     "group": "Barishal City Corporation",
+     "group_bn": "বরিশাল সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Airport",
+     "name_bn": "বিমানবন্দর",
+     "group": "Barishal City Corporation",
+     "group_bn": "বরিশাল সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kawnia",
+     "name_bn": "কাউনিয়া",
+     "group": "Barishal City Corporation",
+     "group_bn": "বরিশাল সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Bandar",
+     "name_bn": "বন্দর",
+     "group": "Barishal City Corporation",
+     "group_bn": "বরিশাল সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -227,6 +295,14 @@
      "name": "Tazumuddin",
      "name_bn": "তজুমদ্দিন"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -260,6 +336,10 @@
      "name_bn": "কাহালু"
     },
     {
+     "name": "Mokamtola",
+     "name_bn": "মোকামতলা"
+    },
+    {
      "name": "Nondigram",
      "name_bn": "নন্দিগ্রাম"
     },
@@ -282,6 +362,32 @@
     {
      "name": "Sonatala",
      "name_bn": "সোনাতলা"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Bogura City Corporation",
+     "name_bn": "বগুড়া সিটি কর্পোরেশন",
+     "group": "Bogura City Corporation",
+     "group_bn": "বগুড়া সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Bogura Cantonment",
+     "name_bn": "বগুড়া সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Jahangirabad Cantonment",
+     "name_bn": "জাহাঙ্গীরাবাদ সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -327,6 +433,14 @@
      "name": "Sarail",
      "name_bn": "সরাইল"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -367,6 +481,14 @@
      "name": "Shahrasti",
      "name_bn": "শাহরাস্তি"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -395,6 +517,14 @@
      "name": "Shibganj",
      "name_bn": "শিবগঞ্জ"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -422,6 +552,10 @@
     {
      "name": "Fatikchhari",
      "name_bn": "ফটিকছড়ি"
+    },
+    {
+     "name": "Fatikchhari North",
+     "name_bn": "ফটিকছড়ি উত্তর"
     },
     {
      "name": "Hathazari",
@@ -463,6 +597,116 @@
      "name": "Sitakunda",
      "name_bn": "সীতাকুন্ড"
     }
+   ],
+   "areas": [
+    {
+     "name": "Kotwali",
+     "name_bn": "কোতোয়ালী",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Sadarghat",
+     "name_bn": "সদরঘাট",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Chawkbazar",
+     "name_bn": "চকবাজার",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Bakalia",
+     "name_bn": "বাকলিয়া",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Panchlaish",
+     "name_bn": "পাঁচলাইশ",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Chandgaon",
+     "name_bn": "চান্দগাঁও",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Bayazid Bostami",
+     "name_bn": "বায়েজিদ বোস্তামী",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Khulshi",
+     "name_bn": "খুলশী",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Double Mooring",
+     "name_bn": "ডবলমুরিং",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Pahartali",
+     "name_bn": "পাহাড়তলী",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Akbar Shah",
+     "name_bn": "আকবর শাহ",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Halishahar",
+     "name_bn": "হালিশহর",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Bandar",
+     "name_bn": "বন্দর",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "EPZ",
+     "name_bn": "ইপিজেড",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Patenga",
+     "name_bn": "পতেঙ্গা",
+     "group": "Chattogram City Corporation",
+     "group_bn": "চট্টগ্রাম সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Chattogram Cantonment",
+     "name_bn": "চট্টগ্রাম সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Halishahar Cantonment",
+     "name_bn": "হালিশহর সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -487,6 +731,14 @@
      "name": "Jibannagar",
      "name_bn": "জীবননগর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -495,6 +747,10 @@
    "name_bn": "কুমিল্লা",
    "region": "chittagong",
    "upazilas": [
+    {
+     "name": "Bangra",
+     "name_bn": "বাঙ্গরা"
+    },
     {
      "name": "Barura",
      "name_bn": "বরুড়া"
@@ -563,6 +819,26 @@
      "name": "Titas",
      "name_bn": "তিতাস"
     }
+   ],
+   "areas": [
+    {
+     "name": "Cumilla City Corporation",
+     "name_bn": "কুমিল্লা সিটি কর্পোরেশন",
+     "group": "Cumilla City Corporation",
+     "group_bn": "কুমিল্লা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Cumilla Cantonment",
+     "name_bn": "কুমিল্লা সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -588,6 +864,10 @@
      "name_bn": "কুতুবদিয়া"
     },
     {
+     "name": "Matamuhuri",
+     "name_bn": "মাতামুহুরী"
+    },
+    {
      "name": "Moheshkhali",
      "name_bn": "মহেশখালী"
     },
@@ -606,6 +886,20 @@
     {
      "name": "Ukhiya",
      "name_bn": "উখিয়া"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Ramu Cantonment",
+     "name_bn": "রামু সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -634,6 +928,332 @@
     {
      "name": "Savar",
      "name_bn": "সাভার"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Uttara East",
+     "name_bn": "উত্তরা পূর্ব",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Uttara West",
+     "name_bn": "উত্তরা পশ্চিম",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Turag",
+     "name_bn": "তুরাগ",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Uttarkhan",
+     "name_bn": "উত্তরখান",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Dakshinkhan",
+     "name_bn": "দক্ষিণখান",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Airport",
+     "name_bn": "বিমানবন্দর",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Khilkhet",
+     "name_bn": "খিলক্ষেত",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Vatara",
+     "name_bn": "ভাটারা",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Badda",
+     "name_bn": "বাড্ডা",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Gulshan",
+     "name_bn": "গুলশান",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Banani",
+     "name_bn": "বনানী",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Rampura",
+     "name_bn": "রামপুরা",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Hatirjheel",
+     "name_bn": "হাতিরঝিল",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Tejgaon",
+     "name_bn": "তেজগাঁও",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Tejgaon Industrial Area",
+     "name_bn": "তেজগাঁও শিল্পাঞ্চল",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Sher-e-Bangla Nagar",
+     "name_bn": "শেরেবাংলা নগর",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Mohammadpur",
+     "name_bn": "মোহাম্মদপুর",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Adabor",
+     "name_bn": "আদাবর",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Darus Salam",
+     "name_bn": "দারুস সালাম",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Mirpur Model",
+     "name_bn": "মিরপুর মডেল",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Pallabi",
+     "name_bn": "পল্লবী",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Rupnagar",
+     "name_bn": "রূপনগর",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Shah Ali",
+     "name_bn": "শাহ আলী",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kafrul",
+     "name_bn": "কাফরুল",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Bhashantek",
+     "name_bn": "ভাষানটেক",
+     "group": "Dhaka North City Corporation",
+     "group_bn": "ঢাকা উত্তর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Ramna Model",
+     "name_bn": "রমনা মডেল",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Shahbagh",
+     "name_bn": "শাহবাগ",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kalabagan",
+     "name_bn": "কলাবাগান",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "New Market",
+     "name_bn": "নিউ মার্কেট",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Dhanmondi",
+     "name_bn": "ধানমন্ডি",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Hazaribagh",
+     "name_bn": "হাজারীবাগ",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Motijheel",
+     "name_bn": "মতিঝিল",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Paltan Model",
+     "name_bn": "পল্টন মডেল",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Shahjahanpur",
+     "name_bn": "শাহজাহানপুর",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Sabujbagh",
+     "name_bn": "সবুজবাগ",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Mugda",
+     "name_bn": "মুগদা",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Khilgaon",
+     "name_bn": "খিলগাঁও",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Wari",
+     "name_bn": "ওয়ারী",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Gendaria",
+     "name_bn": "গেন্ডারিয়া",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Shyampur",
+     "name_bn": "শ্যামপুর",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kadamtali",
+     "name_bn": "কদমতলী",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Demra",
+     "name_bn": "ডেমরা",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Jatrabari",
+     "name_bn": "যাত্রাবাড়ী",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kotwali",
+     "name_bn": "কোতোয়ালী",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Sutrapur",
+     "name_bn": "সূত্রাপুর",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Bangshal",
+     "name_bn": "বংশাল",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Chawkbazar",
+     "name_bn": "চকবাজার",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Lalbagh",
+     "name_bn": "লালবাগ",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kamrangirchar",
+     "name_bn": "কামরাঙ্গীরচর",
+     "group": "Dhaka South City Corporation",
+     "group_bn": "ঢাকা দক্ষিণ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Dhaka Cantonment",
+     "name_bn": "ঢাকা সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Mirpur Cantonment",
+     "name_bn": "মিরপুর সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Savar Cantonment",
+     "name_bn": "সাভার সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Postogola Cantonment",
+     "name_bn": "পোস্তগোলা সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -695,6 +1315,20 @@
      "name": "Parbatipur",
      "name_bn": "পার্বতীপুর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Kholahati Cantonment",
+     "name_bn": "খোলাহাটি সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -739,6 +1373,14 @@
      "name": "Saltha",
      "name_bn": "সালথা"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -770,6 +1412,14 @@
     {
      "name": "Sonagazi",
      "name_bn": "সোনাগাজী"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -807,6 +1457,14 @@
      "name": "Sundarganj",
      "name_bn": "সুন্দরগঞ্জ"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -835,6 +1493,62 @@
      "name": "Sreepur",
      "name_bn": "শ্রীপুর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Basan",
+     "name_bn": "বাসন",
+     "group": "Gazipur City Corporation",
+     "group_bn": "গাজীপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Konabari",
+     "name_bn": "কোনাবাড়ী",
+     "group": "Gazipur City Corporation",
+     "group_bn": "গাজীপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kashimpur",
+     "name_bn": "কাশিমপুর",
+     "group": "Gazipur City Corporation",
+     "group_bn": "গাজীপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Gacha",
+     "name_bn": "গাছা",
+     "group": "Gazipur City Corporation",
+     "group_bn": "গাজীপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Pubail",
+     "name_bn": "পূবাইল",
+     "group": "Gazipur City Corporation",
+     "group_bn": "গাজীপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Tongi East",
+     "name_bn": "টঙ্গী পূর্ব",
+     "group": "Gazipur City Corporation",
+     "group_bn": "গাজীপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Tongi West",
+     "name_bn": "টঙ্গী পশ্চিম",
+     "group": "Gazipur City Corporation",
+     "group_bn": "গাজীপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Rajendrapur Cantonment",
+     "name_bn": "রাজেন্দ্রপুর সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -862,6 +1576,14 @@
     {
      "name": "Tungipara",
      "name_bn": "টুংগীপাড়া"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -902,6 +1624,18 @@
     {
      "name": "Nabiganj",
      "name_bn": "নবীগঞ্জ"
+    },
+    {
+     "name": "Shayestaganj",
+     "name_bn": "শায়েস্তাগঞ্জ"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -938,6 +1672,14 @@
     {
      "name": "Sarishabari",
      "name_bn": "সরিষাবাড়ী"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -979,6 +1721,20 @@
      "name": "Sharsha",
      "name_bn": "শার্শা"
     }
+   ],
+   "areas": [
+    {
+     "name": "Jashore Cantonment",
+     "name_bn": "যশোর সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1002,6 +1758,14 @@
     {
      "name": "Rajapur",
      "name_bn": "রাজাপুর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1035,6 +1799,14 @@
      "name": "Shailkupa",
      "name_bn": "শৈলকুপা"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1062,6 +1834,14 @@
     {
      "name": "Panchbibi",
      "name_bn": "পাঁচবিবি"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1107,6 +1887,26 @@
      "name": "Ramgarh",
      "name_bn": "রামগড়"
     }
+   ],
+   "areas": [
+    {
+     "name": "Khagrachari Cantonment",
+     "name_bn": "খাগড়াছড়ি সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Dighinala Cantonment",
+     "name_bn": "দীঘিনালা সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1150,6 +1950,68 @@
     {
      "name": "Terokhada",
      "name_bn": "তেরখাদা"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Khulna Sadar",
+     "name_bn": "খুলনা সদর",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Sonadanga",
+     "name_bn": "সোনাডাঙ্গা",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Khalishpur",
+     "name_bn": "খালিশপুর",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Daulatpur",
+     "name_bn": "দৌলতপুর",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Khan Jahan Ali",
+     "name_bn": "খানজাহান আলী",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Labanchara",
+     "name_bn": "লবণচরা",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Harintana",
+     "name_bn": "হরিণটানা",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Aranghata",
+     "name_bn": "আড়ংঘাটা",
+     "group": "Khulna City Corporation",
+     "group_bn": "খুলনা সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Jahanabad Cantonment",
+     "name_bn": "জাহানাবাদ সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1211,6 +2073,20 @@
      "name": "Tarail",
      "name_bn": "তাড়াইল"
     }
+   ],
+   "areas": [
+    {
+     "name": "Mithamain Cantonment",
+     "name_bn": "মিঠামইন সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1255,6 +2131,14 @@
      "name": "Ulipur",
      "name_bn": "উলিপুর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1287,6 +2171,14 @@
      "name": "Mirpur",
      "name_bn": "মিরপুর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1295,6 +2187,10 @@
    "name_bn": "লক্ষ্মীপুর",
    "region": "chittagong",
    "upazilas": [
+    {
+     "name": "Chandraganj",
+     "name_bn": "চন্দ্রগঞ্জ"
+    },
     {
      "name": "Kamalnagar",
      "name_bn": "কমলনগর"
@@ -1314,6 +2210,14 @@
     {
      "name": "Ramgati",
      "name_bn": "রামগতি"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1343,6 +2247,14 @@
      "name": "Patgram",
      "name_bn": "পাটগ্রাম"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1371,6 +2283,14 @@
      "name": "Shibchar",
      "name_bn": "শিবচর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1394,6 +2314,14 @@
     {
      "name": "Sreepur",
      "name_bn": "শ্রীপুর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1431,6 +2359,14 @@
      "name": "Singiar",
      "name_bn": "সিংগাইর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1450,6 +2386,14 @@
     {
      "name": "Mujibnagar",
      "name_bn": "মুজিবনগর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1487,6 +2431,14 @@
      "name": "Sreemangal",
      "name_bn": "শ্রীমঙ্গল"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1518,6 +2470,14 @@
     {
      "name": "Tongibari",
      "name_bn": "টংগীবাড়ি"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1572,12 +2532,36 @@
      "name_bn": "ফুলপুর"
     },
     {
+     "name": "South Gafargaon",
+     "name_bn": "দক্ষিণ গফরগাঁও"
+    },
+    {
      "name": "Tarakanda",
      "name_bn": "তারাকান্দা"
     },
     {
      "name": "Trishal",
      "name_bn": "ত্রিশাল"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Mymensingh City Corporation",
+     "name_bn": "ময়মনসিংহ সিটি কর্পোরেশন",
+     "group": "Mymensingh City Corporation",
+     "group_bn": "ময়মনসিংহ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Mymensingh Cantonment",
+     "name_bn": "ময়মনসিংহ সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1631,6 +2615,14 @@
      "name": "Sapahar",
      "name_bn": "সাপাহার"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1650,6 +2642,14 @@
     {
      "name": "Narail Sadar",
      "name_bn": "নড়াইল সদর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1678,6 +2678,20 @@
     {
      "name": "Sonargaon",
      "name_bn": "সোনারগাঁ"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Narayanganj City Corporation",
+     "name_bn": "নারায়ণগঞ্জ সিটি কর্পোরেশন",
+     "group": "Narayanganj City Corporation",
+     "group_bn": "নারায়ণগঞ্জ সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1710,6 +2724,14 @@
     {
      "name": "Shibpur",
      "name_bn": "শিবপুর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1746,6 +2768,20 @@
     {
      "name": "Singra",
      "name_bn": "সিংড়া"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Qadirabad Cantonment",
+     "name_bn": "কাদিরাবাদ সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1795,6 +2831,14 @@
      "name": "Purbadhala",
      "name_bn": "পূর্বধলা"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1826,6 +2870,20 @@
     {
      "name": "Syedpur",
      "name_bn": "সৈয়দপুর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Saidpur Cantonment",
+     "name_bn": "সৈয়দপুর সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1871,6 +2929,14 @@
      "name": "Subarnachar",
      "name_bn": "সুবর্ণচর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1915,6 +2981,14 @@
      "name": "Sujanagar",
      "name_bn": "সুজানগর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -1942,6 +3016,14 @@
     {
      "name": "Tetulia",
      "name_bn": "তেতুলিয়া"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -1983,6 +3065,20 @@
      "name": "Rangabali",
      "name_bn": "রাঙ্গাবালী"
     }
+   ],
+   "areas": [
+    {
+     "name": "Barishal Cantonment",
+     "name_bn": "বরিশাল সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2019,6 +3115,14 @@
      "name": "Zianagar",
      "name_bn": "জিয়ানগর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2046,6 +3150,14 @@
     {
      "name": "Rajbari Sadar",
      "name_bn": "রাজবাড়ী সদর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -2090,6 +3202,86 @@
     {
      "name": "Tanore",
      "name_bn": "তানোর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Boalia",
+     "name_bn": "বোয়ালিয়া",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Rajpara",
+     "name_bn": "রাজপাড়া",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Chandrima",
+     "name_bn": "চন্দ্রিমা",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Motihar",
+     "name_bn": "মতিহার",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Katakhali",
+     "name_bn": "কাটাখালী",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Belpukur",
+     "name_bn": "বেলপুকুর",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Shah Makhdum",
+     "name_bn": "শাহমখদুম",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Airport",
+     "name_bn": "বিমানবন্দর",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Kashiadanga",
+     "name_bn": "কাশিয়াডাঙ্গা",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Damkura",
+     "name_bn": "দামকুড়া",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Karnahar",
+     "name_bn": "কর্ণহার",
+     "group": "Rajshahi City Corporation",
+     "group_bn": "রাজশাহী সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Rajshahi Cantonment",
+     "name_bn": "রাজশাহী সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -2139,6 +3331,26 @@
      "name": "Rangamati Sadar",
      "name_bn": "রাঙ্গামাটি সদর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Rangamati Cantonment",
+     "name_bn": "রাঙ্গামাটি সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Kaptai Cantonment",
+     "name_bn": "কাপ্তাই সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2179,6 +3391,56 @@
      "name": "Taragonj",
      "name_bn": "তারাগঞ্জ"
     }
+   ],
+   "areas": [
+    {
+     "name": "Kotwali",
+     "name_bn": "কোতোয়ালী",
+     "group": "Rangpur City Corporation",
+     "group_bn": "রংপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Tajhat",
+     "name_bn": "তাজহাট",
+     "group": "Rangpur City Corporation",
+     "group_bn": "রংপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Mahiganj",
+     "name_bn": "মাহিগঞ্জ",
+     "group": "Rangpur City Corporation",
+     "group_bn": "রংপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Parshuram",
+     "name_bn": "পরশুরাম",
+     "group": "Rangpur City Corporation",
+     "group_bn": "রংপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Haragach",
+     "name_bn": "হারাগাছ",
+     "group": "Rangpur City Corporation",
+     "group_bn": "রংপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Hazirhat",
+     "name_bn": "হাজীরহাট",
+     "group": "Rangpur City Corporation",
+     "group_bn": "রংপুর সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Rangpur Cantonment",
+     "name_bn": "রংপুর সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2215,6 +3477,14 @@
      "name": "Tala",
      "name_bn": "তালা"
     }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2247,6 +3517,20 @@
      "name": "Zajira",
      "name_bn": "জাজিরা"
     }
+   ],
+   "areas": [
+    {
+     "name": "Padma Cantonment",
+     "name_bn": "পদ্মা সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2274,6 +3558,14 @@
     {
      "name": "Sreebordi",
      "name_bn": "শ্রীবরদী"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -2318,6 +3610,14 @@
     {
      "name": "Ullapara",
      "name_bn": "উল্লাপাড়া"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -2374,6 +3674,14 @@
     {
      "name": "Tahirpur",
      "name_bn": "তাহিরপুর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   },
@@ -2435,6 +3743,50 @@
      "name": "Zakiganj",
      "name_bn": "জকিগঞ্জ"
     }
+   ],
+   "areas": [
+    {
+     "name": "Kotwali",
+     "name_bn": "কোতোয়ালী",
+     "group": "Sylhet City Corporation",
+     "group_bn": "সিলেট সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Jalalabad",
+     "name_bn": "জালালাবাদ",
+     "group": "Sylhet City Corporation",
+     "group_bn": "সিলেট সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Shah Paran",
+     "name_bn": "শাহপরাণ",
+     "group": "Sylhet City Corporation",
+     "group_bn": "সিলেট সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Moglabazar",
+     "name_bn": "মোগলাবাজার",
+     "group": "Sylhet City Corporation",
+     "group_bn": "সিলেট সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Airport",
+     "name_bn": "বিমানবন্দর",
+     "group": "Sylhet City Corporation",
+     "group_bn": "সিলেট সিটি কর্পোরেশন"
+    },
+    {
+     "name": "Jalalabad Cantonment",
+     "name_bn": "জালালাবাদ সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2491,6 +3843,26 @@
      "name": "Tangail Sadar",
      "name_bn": "টাঙ্গাইল সদর"
     }
+   ],
+   "areas": [
+    {
+     "name": "Ghatail Cantonment",
+     "name_bn": "ঘাটাইল সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Jamuna Cantonment",
+     "name_bn": "যমুনা সেনানিবাস",
+     "group": "Cantonment",
+     "group_bn": "সেনানিবাস"
+    },
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
+    }
    ]
   },
   {
@@ -2502,6 +3874,10 @@
     {
      "name": "Baliadangi",
      "name_bn": "বালিয়াডাঙ্গী"
+    },
+    {
+     "name": "Bhully",
+     "name_bn": "ভূল্লী"
     },
     {
      "name": "Haripur",
@@ -2516,8 +3892,20 @@
      "name_bn": "রাণীশংকৈল"
     },
     {
+     "name": "Ruhia",
+     "name_bn": "রুহিয়া"
+    },
+    {
      "name": "Thakurgaon Sadar",
      "name_bn": "ঠাকুরগাঁও সদর"
+    }
+   ],
+   "areas": [
+    {
+     "name": "Other area (not listed)",
+     "name_bn": "অন্য এলাকা (তালিকায় নেই)",
+     "group": "Other",
+     "group_bn": "অন্যান্য"
     }
    ]
   }

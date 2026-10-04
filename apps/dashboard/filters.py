@@ -4,6 +4,7 @@ from django.db.models import Q
 from apps.core.utils import DATE_FORMAT, parse_date
 from apps.notifications import services as notify
 from apps.notifications.models import NotificationLog
+from apps.reference.models import Upazila
 from apps.registration.choices import FilledBy
 from apps.registration.models import Student
 
@@ -12,10 +13,13 @@ SORTS = {
     "district": "district__name", "school": "school__name", "class": "current_class",
 }
 MULTI = ("district", "region", "class", "gender")
-SINGLE = ("upazila", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
+SINGLE = ("upazila", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
           "msg_batch", "msg_batch_mode")
 # Params that narrow the list (sort and batching only reorder or split it).
-NARROWING = MULTI + ("upazila", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch")
+NARROWING = MULTI + ("upazila", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch")
+# Area type filter: what kind of "Upazila / Area" the student chose. "other" finds students to move.
+AREA_KINDS = {"upazila": "Upazila", "city": "City-corporation thana", "cantonment": "Cantonment",
+              "other": "Other area (not listed)"}
 # Message history filter: students a message batch was sent to, not sent to, or not delivered to.
 MSG_BATCH_MODES = {"sent": "Received", "not_sent": "Not sent", "not_delivered": "Not delivered"}
 MAX_BATCH_SIZE = 100_000
@@ -84,6 +88,14 @@ def apply(p, qs=None):
         qs = qs.filter(updates_opt_in=True)
     if p["filled_by"] in FilledBy.values:
         qs = qs.filter(filled_by=p["filled_by"])
+    if p["area_kind"] == "upazila":
+        qs = qs.filter(upazila__group="")
+    elif p["area_kind"] == "cantonment":
+        qs = qs.filter(upazila__group=Upazila.CANTONMENT)
+    elif p["area_kind"] == "other":
+        qs = qs.filter(upazila__group=Upazila.OTHER)
+    elif p["area_kind"] == "city":
+        qs = qs.exclude(upazila__group__in=["", Upazila.CANTONMENT, Upazila.OTHER])
     if p["msg_batch"]:
         if p["msg_batch_mode"] == "not_sent":
             qs = qs.exclude(pk__in=notify.student_ids_in_batch(p["msg_batch"]))
@@ -115,7 +127,7 @@ def batches(p, total):
 def describe(snap):
     """Human-readable [(label, text)] for a stored filter snapshot. Snapshots keep IDs
     (stable across renames); names are resolved at display time."""
-    from apps.reference.models import District, Region, School, Upazila
+    from apps.reference.models import District, Region, School
     from apps.registration.choices import Gender
 
     def names(model, ids):
@@ -132,7 +144,7 @@ def describe(snap):
     if snap.get("district"):
         out.append(("District", names(District, snap["district"])))
     if snap.get("upazila"):
-        out.append(("Upazila", names(Upazila, snap["upazila"])))
+        out.append(("Upazila / Area", names(Upazila, snap["upazila"])))
     if snap.get("school"):
         out.append(("School", names(School, snap["school"])))
     if snap.get("class"):
@@ -142,6 +154,8 @@ def describe(snap):
         out.append(("Gender", ", ".join(str(labels.get(g, g)) for g in snap["gender"])))
     if snap.get("from") or snap.get("to"):
         out.append(("Registered", f"{_date_label(snap.get('from') or '') or '…'} to {_date_label(snap.get('to') or '') or '…'}"))
+    if snap.get("area_kind") in AREA_KINDS:
+        out.append(("Area type", AREA_KINDS[snap["area_kind"]]))
     if snap.get("filled_by") in FilledBy.values:
         out.append(("Filled in by", FilledBy(snap["filled_by"]).label))
     if snap.get("opt_in") == "1":

@@ -12,8 +12,8 @@ from django.views.decorators.http import require_GET, require_POST
 from apps.core import ratelimit
 from apps.core.utils import client_ip
 
-from . import services
-from .choices import CLASS_CHOICES, Gender, GuardianRelation
+from . import bangla, services
+from .choices import Gender, GuardianRelation, HeardFrom
 from .forms import RegistrationForm
 from .validators import suggest_email_domain
 
@@ -46,7 +46,10 @@ def _err(code, status=400, **extra):
 @ensure_csrf_cookie
 def register_page(request):
     return render(request, "registration/register.html", {
-        "genders": Gender.choices, "relations": GuardianRelation.choices, "classes": CLASS_CHOICES,
+        "genders": bangla.with_bangla(Gender.choices, bangla.GENDERS),
+        "relations": bangla.with_bangla(GuardianRelation.choices, bangla.RELATIONS),
+        "classes": bangla.class_choices(), "heard_from": bangla.with_bangla(HeardFrom.choices, bangla.HEARD_FROM),
+        "bangla_messages": bangla.MESSAGES,
         "otp_ttl": settings.WIKISCHOLAR["OTP_TTL_MINUTES"],
     })
 

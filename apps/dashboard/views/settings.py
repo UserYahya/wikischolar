@@ -119,7 +119,9 @@ def system_emails(request):
             return redirect(f"{reverse('dashboard:system_emails')}#{email.key}")
         preview_subject, preview_body = notify.render_system_email(email.key, email.sample)
         cards.append({"email": email, "form": form, "row": row, "customized": bool(row and row.is_customized),
-                      "preview_subject": preview_subject, "preview_body": preview_body})
+                      "preview_subject": preview_subject, "preview_body": preview_body,
+                      "preview_html": notify.render_system_email_html(email.key, email.sample,
+                                                                      base_url=request.build_absolute_uri("/"))})
 
     if request.method == "POST" and op in ("reset", "test"):
         email = next((e for e in notify.system_emails() if e.key == key), None)

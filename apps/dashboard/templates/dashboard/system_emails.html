@@ -36,7 +36,10 @@
         {% endfor %}</tbody>
       </table>
       <h3>Preview <small class="muted">(saved text, sample data)</small></h3>
-      <div class="message-body"><p><strong>Subject:</strong> {{ c.preview_subject }}</p><pre>{{ c.preview_body }}</pre></div>
+      <p class="message-body"><strong>Subject:</strong> {{ c.preview_subject }}</p>
+      <iframe class="email-preview" sandbox srcdoc="{{ c.preview_html }}" title="How “{{ c.email.label }}” looks in an inbox" loading="lazy"></iframe>
+      <details class="text-part"><summary>Plain-text version</summary><pre>{{ c.preview_body }}</pre></details>
+      <p class="hint">Every email is sent with this designed (HTML) version and the plain text, for mail apps that don't show designs.</p>
       <div class="row">
         <form method="post">{% csrf_token %}<input type="hidden" name="op" value="test"><input type="hidden" name="key" value="{{ c.email.key }}">
           <button class="btn">Send test to {{ user.email }}</button></form>
