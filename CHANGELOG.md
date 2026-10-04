@@ -63,7 +63,17 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 - The OTP email's default text puts the code on its own line.
 - `docs/schema.sql` regenerated (it was missing tables added since September).
 
+### Added (success screen)
+- **Print / Save as PDF** button on the success screen. It opens the browser's print dialog
+  (where "Save as PDF" is offered, on phones too); a print stylesheet prints just the logo and the
+  registration card, and the file name defaults to "WikiScholar registration WS-…". The summary now
+  shows **Registered on** (dd/mm/yyyy).
+
 ### Fixed (form design review)
+- The success screen's "← Back to wikischolar.bd" button was broken (a link holding the stacked
+  Bangla line); every `.btn` is now an inline-flex box, so links and buttons look the same.
+- The success card and the HTML emails lost their coloured top strip: the card now has a check-mark
+  heading and the ID in a quiet panel; emails are a plain white card under the logo.
 - The guardian relation chip "Other" showed the Bangla for "Somewhere else"; each choice list now has
   its own translations.
 - Opening a step (or restoring a draft) drew a thick yellow focus box around the step heading.

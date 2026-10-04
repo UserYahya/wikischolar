@@ -82,6 +82,12 @@ Analytics) will plug into the same app.
   (`static/img/wikischolar-logo-en.png`; the Bangla logo is kept in `docs/brand/`), "A Wikimedia
   Bangladesh programme" (with Bangla) and a **"← Back to wikischolar.bd"** pill button
   (`WS_SITE_URL`; shortened to "← wikischolar.bd" on phones); the success screen has the same link.
+* **Success screen**: a check mark and "Registration complete", the WikiScholar ID in a quiet panel
+  ("Keep this ID safe"), the confirmation-email note, every detail (with "Registered on") and two
+  buttons: **Print / Save as PDF** (`window.print()`; a print stylesheet in `public.css` prints only
+  the logo and this card, and the page title `WikiScholar registration WS-…` becomes the PDF's file
+  name; phones offer "Save as PDF" in their print dialog) and "← Back to wikischolar.bd". No PDF
+  library or server work is involved.
 * **Approving schools** makes them suggestible: Dashboard → Schools → a pending school → *Mark
   verified* (or bulk-load a verified list with `import_schools CSV --status verified`).
 * **Adding and removing schools** (Dashboard → Schools, needs `schools.edit`): *Add school* picks
@@ -458,7 +464,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-177 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+180 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a

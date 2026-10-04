@@ -133,7 +133,9 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .check { display: flex; gap: .75rem; align-items: flex-start; padding: .9rem 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .check input { width: 1.3rem; height: 1.3rem; margin-top: .25rem; accent-color: var(--green); flex: none; }
 
-.btn { font: 600 1rem/1 var(--body); border-radius: var(--radius-field); padding: .8rem 1.3rem; min-height: 2.9rem; cursor: pointer;
+/* inline-flex column: the same box for <button> and <a>, with the Bangla note stacked under the English */
+.btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  text-decoration: none; font: 600 1rem/1 var(--body); border-radius: var(--radius-field); padding: .8rem 1.3rem; min-height: 2.9rem; cursor: pointer;
   border: 1.5px solid var(--green); background: var(--white); color: var(--green); }
 .btn:hover { background: var(--tint); }
 .btn.primary { background: var(--green); color: var(--white); }
@@ -147,12 +149,24 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .nav-note { margin: 0; color: var(--muted); font-size: .9rem; align-self: center; }
 #back { margin-right: auto; }
 
-.done { grid-area: sheet; background: var(--white); border: 1px solid var(--line); border-top: 6px solid var(--green); border-radius: 10px; padding: 2rem 2.25rem; }
+.done { grid-area: sheet; background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 2rem 2.25rem; }
 .done:focus { outline: none; }
-.done-lead { margin: 0; font: 600 1.25rem/1.3 var(--display); color: var(--deep); }
-.wsid { margin: .25rem 0 1rem; font: 800 clamp(1.8rem, 6vw, 3.4rem)/1.1 var(--display); font-stretch: 112%; letter-spacing: .02em;
-  white-space: nowrap; }
-.done dl { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.25rem; margin: 1.5rem 0; padding: 1.25rem 0; border-block: 1px solid var(--line); }
+.done-head { display: flex; align-items: center; gap: .85rem; margin-bottom: 1.25rem; }
+.done-icon { flex: none; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%;
+  background: var(--tint); color: var(--green); }
+.done-lead { margin: 0; font: 650 1.5rem/1.25 var(--display); color: var(--ink); }
+.done-lead .bn { font: 500 .62em/1.4 var(--display); color: var(--muted); margin-top: .1rem; }
+/* The ID: a quiet panel, like a printed slip */
+.id-card { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 1rem 1.25rem 1.1rem; margin: 0 0 1.25rem; }
+.id-label { margin: 0; font-size: .9rem; font-weight: 600; color: var(--muted); }
+.wsid { margin: .2rem 0 .35rem; font: 800 clamp(1.8rem, 6vw, 3rem)/1.1 var(--display); font-stretch: 112%; letter-spacing: .02em;
+  white-space: nowrap; color: var(--ink); }
+.id-note { margin: 0; font-size: .9rem; color: var(--muted); }
+.id-note .bn { font-size: .95em; }
+.done-email { margin: 0; }
+.done-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0 0 1.25rem; }
+.done .contact { margin: 0; font-size: .9rem; color: var(--muted); }
+.done dl { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.25rem; margin: 1.25rem 0; padding: 1.25rem 0; border-block: 1px solid var(--line); }
 .done dt { color: var(--muted); }
 .done dd { margin: 0; font-weight: 500; }
 /* After registering: the success card takes the whole width (it has its own contact line) */
@@ -185,3 +199,21 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .declare legend { font-weight: 600; font-size: .95rem; padding: 0 .35rem; }
 .declare .check { border-bottom: 0; padding: .5rem 0 .25rem; }
 .declare-note { margin: .35rem 0 0; font-size: .92rem; color: var(--muted); }
+
+/* Print / Save as PDF from the success screen: the logo and the success card only */
+.print-only { display: none; }
+@media print {
+  @page { margin: 14mm; }
+  html, body { background: #fff; }
+  body { font-size: 11pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .masthead { border: 0; }
+  .masthead-inner { padding: 0 0 6mm; max-width: none; }
+  .site-links, .intro, .rail, .sheet, .done-actions, .step { display: none !important; }
+  .reg { display: block; padding: 0; max-width: none; }
+  .done { border: 0; padding: 0; max-width: none !important; }
+  .done-head, .id-card, .done dl > * { break-inside: avoid; }
+  .done dl { grid-template-columns: max-content 1fr; gap: .25rem 1.25rem; }
+  .done dd { margin: 0; }
+  .print-only { display: block; margin: 4mm 0 0; font-size: 9pt; color: var(--muted); }
+  a { color: inherit; text-decoration: none; }
+}

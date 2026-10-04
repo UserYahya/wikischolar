@@ -534,10 +534,16 @@
       ["School", s.school + (s.school_pending ? " (being verified)" : "")], ["Class", s.current_class],
       ["Section", s.section || "—"], ["Class roll", s.class_roll || "—"], ["Student ID", s.student_id_sid || "—"],
       ["Mobile", s.phone], ["Heard about WikiScholar from", s.heard_from || "—"],
+      ["Registered on", s.registered_on || "—"],
     ];
     $("#summary").innerHTML = rows.map(([k, v]) => `<dt>${bi(k)}</dt><dd>${esc(v)}</dd>`).join("");
+    // The title becomes the PDF's file name when saved from the print dialog.
+    document.title = `WikiScholar registration ${s.wikischolar_id}`;
+    $("#printNote").textContent = `WikiScholar registration ${s.wikischolar_id} · ${location.host} · ${s.registered_on || ""}`;
     const done = $("#done"); done.hidden = false; done.focus();
   }
+
+  $("#printDone").addEventListener("click", () => window.print());
 
   function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 

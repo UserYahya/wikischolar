@@ -394,6 +394,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | **"How did you hear about WikiScholar?"** dropdown (7 options) in step 4, counted on the dashboard Overview | know which outreach works |
 | English logo in the header; site icon; Youth Safety Policy link now `https://wikischolar.bd/youth-policy` | new branding and policy page |
 | **HTML emails** (logo, card, OTP code box, details table) with the plain text kept as the second part | emails get noticed and are easier to read |
+| Success screen: **Print / Save as PDF** (browser print with a print stylesheet; no PDF library), "Registered on" date, cleaner card without a coloured strip | families keep a copy of the WikiScholar ID |
 
 ### 10.2 Admin dashboard
 | Change | Why |

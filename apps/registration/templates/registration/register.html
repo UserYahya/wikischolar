@@ -217,15 +217,28 @@
     </div>
   </form>
 
+  {# Success screen. It is also the printout: "Print / Save as PDF" prints just this card under the logo. #}
   <section class="done" id="done" hidden tabindex="-1" aria-live="polite">
-    <p class="done-lead">Registration complete <span class="bn-inline" lang="bn">নিবন্ধন সম্পন্ন হয়েছে</span></p>
-    <p class="wsid" id="wsid"></p>
-    <p>This is your WikiScholar ID. A confirmation email with these details has been sent to <strong id="doneEmail"></strong>.
-      <span class="bn" lang="bn">এটি আপনার উইকিস্কলার আইডি। এই তথ্যসহ একটি নিশ্চিতকরণ ইমেইল ওপরের ঠিকানায় পাঠানো হয়েছে।</span></p>
+    <div class="done-head">
+      <span class="done-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <h2 class="done-lead">Registration complete <span class="bn" lang="bn">নিবন্ধন সম্পন্ন হয়েছে</span></h2>
+    </div>
+    <div class="id-card">
+      <p class="id-label">Your WikiScholar ID <span class="bn-inline" lang="bn">আপনার উইকিস্কলার আইডি</span></p>
+      <p class="wsid" id="wsid"></p>
+      <p class="id-note">Keep this ID safe: you'll need it for every WikiScholar activity.
+        <span class="bn" lang="bn">আইডিটি সংরক্ষণ করুন: উইকিস্কলারের প্রতিটি কাজে এটি লাগবে।</span></p>
+    </div>
+    <p class="done-email">A confirmation email with these details has been sent to <strong id="doneEmail"></strong>.
+      <span class="bn" lang="bn">এই তথ্যসহ একটি নিশ্চিতকরণ ইমেইল ওই ঠিকানায় পাঠানো হয়েছে।</span></p>
     <dl id="summary"></dl>
+    <div class="done-actions">
+      <button type="button" class="btn primary" id="printDone">Print / Save as PDF <span class="bn-inline" lang="bn">প্রিন্ট / পিডিএফ সংরক্ষণ</span></button>
+      <a class="btn quiet" href="{{ SITE_URL }}">&larr; Back to {{ SITE_HOST }} <span class="bn-inline" lang="bn">ওয়েবসাইটে ফিরে যান</span></a>
+    </div>
     <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a>
       <span class="bn" lang="bn">কোনো প্রশ্ন থাকলে এই ঠিকানায় যোগাযোগ করুন</span></p>
-    <p><a class="btn" href="{{ SITE_URL }}">&larr; Back to {{ SITE_HOST }} <span class="bn-inline" lang="bn">ওয়েবসাইটে ফিরে যান</span></a></p>
+    <p class="print-only" id="printNote"></p>
   </section>
 </main>
 {{ bangla_messages|json_script:"bnMessages" }}

@@ -57,6 +57,19 @@ class FormFieldTests(WSTestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("img/favicon-32.png", r["Location"])
 
+    def test_success_screen_has_print_and_back_buttons(self):
+        page = self.client.get("/").content.decode()
+        self.assertIn('id="printDone"', page)
+        self.assertIn("Print / Save as PDF", page)
+        self.assertIn('<a class="btn quiet" href="https://wikischolar.bd">', page)
+        css = open("static/css/public.css", encoding="utf-8").read()
+        self.assertIn("@media print", css)
+        self.assertNotIn("border-top: 6px solid", css)  # no coloured strip on the success card
+
+    def test_summary_has_registration_date(self):
+        s = self.register()
+        self.assertRegex(s["registered_on"], r"^\d{2}/\d{2}/\d{4}$")
+
     def test_policy_link_points_to_youth_policy(self):
         self.assertIn('href="https://wikischolar.bd/youth-policy"', self.client.get("/").content.decode())
 
@@ -129,6 +142,9 @@ class HtmlEmailTests(WSTestCase):
         self.assertIn("<table", html)
         self.assertIn("Tongi Government High School", html)
         self.assertNotIn("{details}", html)
+
+    def test_email_card_has_no_coloured_strip(self):
+        self.assertNotIn("border-top:5px", html_email.render_html("Hello"))
 
     def test_html_escapes_and_links(self):
         out = html_email.text_to_html("Hi <b>you</b>\nsee https://wikischolar.bd/x and mail info@wikischolar.bd")

@@ -78,6 +78,7 @@ MESSAGES = {
     "District": "জেলা", "Region": "অঞ্চল", "Upazila / Area": "উপজেলা / এলাকা", "School": "বিদ্যালয়", "Class": "শ্রেণি",
     "Section": "শাখা", "Class roll": "রোল নম্বর", "Student ID": "শিক্ষার্থী আইডি", "Mobile": "মোবাইল",
     "Heard about WikiScholar from": "উইকিস্কলারের কথা জেনেছেন",
+    "Registered on": "নিবন্ধনের তারিখ",
 }
 
 # Choice labels, shown next to the English in chips and dropdowns. One dict per choice list: several

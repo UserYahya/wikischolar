@@ -135,6 +135,7 @@ def summary(student):
         "phone": student.phone,
         "email": student.email,
         "filled_by": student.get_filled_by_display(),
+        "registered_on": timezone.localtime(student.created_at).strftime("%d/%m/%Y"),
     }
 
 
