@@ -35,12 +35,15 @@ services:
 
   web:
     <<: *app
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py seed_reference &&
-             exec gunicorn config.wsgi:application --bind 0.0.0.0:8000
-             --worker-class gthread --workers 3 --threads 4 --timeout 120
-             --max-requests 2000 --max-requests-jitter 200 --access-logfile -"
+    # Kept as one shell line: a folded YAML block keeps line breaks on indented lines,
+    # which would cut the gunicorn options off.
+    command:
+      - sh
+      - -c
+      - >-
+        python manage.py migrate --noinput &&
+        python manage.py seed_reference &&
+        exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --worker-class gthread --workers 3 --threads 4 --timeout 120 --max-requests 2000 --max-requests-jitter 200 --access-logfile -
 
   worker:
     # Sends queued bulk messages for batches larger than WS_INLINE_DISPATCH_MAX. Run exactly one.

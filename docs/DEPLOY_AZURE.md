@@ -24,7 +24,7 @@ Throughout, `dc` is short for `docker compose -f docker-compose.prod.yml`, run f
 ## A. Azure portal
 
 1. **Network security group** (VM → Networking), inbound rules:
-   - `22/tcp`: source **My IP address** only.
+   - SSH: this VM's sshd listens on **`2232/tcp`** only (moved off 22/443, password login disabled). Rule source: **My IP address** only.
    - `80,443/tcp`: source = Cloudflare's IP ranges (paste the IPv4 list from <https://www.cloudflare.com/ips-v4>, comma-separated, into one rule).
    - Delete any rule that allows 80/443/8000/5432 from `Any`.
 2. **Static public IP**: VM → Networking → the public IP → Configuration → *Static*.
@@ -40,7 +40,19 @@ Throughout, `dc` is short for `docker compose -f docker-compose.prod.yml`, run f
 
 ## C. Prepare the VM
 
-SSH in: `ssh -i ~/.ssh/wikischolar-reg-azure.pem azureuser@<VM IP>`
+SSH in: `ssh -p 2232 -i ~/.ssh/wikischolar-reg-azure.pem <user>@<VM IP>`, or add to `~/.ssh/config`:
+```
+Host wikischolar
+    HostName <VM IP>
+    Port 2232
+    User <user>
+    IdentityFile ~/.ssh/wikischolar-reg-azure.pem
+```
+and use `ssh wikischolar` (and `scp file wikischolar:/path`).
+
+> Port 443 must be free on the VM for Caddy: if sshd was moved to 443 earlier, move it to 2232 first
+> (`Port` in `/etc/ssh/sshd_config` **and** `ListenStream` in `/etc/systemd/system/ssh.socket.d/override.conf` on Ubuntu 24.04,
+> then `sudo systemctl daemon-reload && sudo systemctl restart ssh.socket`; test a new login before closing the old one).
 
 9. Install OS updates and tools:
    ```bash
