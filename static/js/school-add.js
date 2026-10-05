@@ -6,6 +6,7 @@
   const form = document.getElementById("addSchool");
   if (!form) return;
   const upazila = document.getElementById("id_upazila"), nameIn = document.getElementById("id_name");
+  const district = document.getElementById("id_district");
   const list = document.getElementById("schoolList"), schoolUrl = form.dataset.schoolUrl;
   let items = [], active = -1, timer = null, seq = 0;
 
@@ -16,14 +17,16 @@
     if (items.length) {
       const head = document.createElement("li");
       head.className = "head"; head.setAttribute("role", "presentation");
-      head.textContent = "Already listed in this upazila or area — open it instead of adding";
+      head.textContent = "Already listed in this district — open it instead of adding";
       list.append(head);
     }
     items.forEach((s, i) => {
       const li = document.createElement("li");
       li.id = `opt${i}`; li.dataset.i = i; li.setAttribute("role", "option"); li.setAttribute("aria-selected", String(i === active));
       const name = document.createElement("span"); name.textContent = s.name; li.append(name);
-      if (!s.verified) { const t = document.createElement("span"); t.className = "tag"; t.textContent = "pending"; li.append(t); }
+      const tags = document.createElement("span"); tags.className = "tags";
+      tags.textContent = s.area + (s.verified ? "" : " · pending");  // the school's area (same names exist across areas)
+      li.append(tags);
       list.append(li);
     });
     const add = document.createElement("li");
@@ -57,7 +60,9 @@
     timer = setTimeout(async () => {
       const mine = ++seq;
       try {
-        const r = await fetch(`/api/reference/schools/?upazila=${encodeURIComponent(upazila.value)}&q=${encodeURIComponent(q)}&pending=1`,
+        // The whole district, the chosen area first: shows a school filed under a neighbouring area too
+        const r = await fetch(`/api/reference/schools/?district=${encodeURIComponent(district.value)}` +
+                              `&upazila=${encodeURIComponent(upazila.value)}&q=${encodeURIComponent(q)}&pending=1`,
                               { headers: { Accept: "application/json" }, credentials: "same-origin" });
         const data = r.ok ? await r.json() : { schools: [] };
         if (mine !== seq || nameIn.value.trim() !== q) return;

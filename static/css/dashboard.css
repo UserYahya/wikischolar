@@ -215,6 +215,7 @@ details > summary { cursor: pointer; color: var(--green); font-weight: 500; }
 .combo-list li[aria-selected="true"], .combo-list li[role=option]:hover { background: var(--tint); }
 .combo-list li.head { cursor: default; padding: .25rem .6rem; font-size: .75rem; font-weight: 600; color: var(--muted); }
 .combo-list li.add { border-top: 1px dashed var(--line); margin-top: .25rem; color: var(--deep); font-weight: 600; }
+.combo-list li .tags { font-size: .75rem; color: var(--muted); white-space: nowrap; align-self: center; }
 .notice .plain { margin: .5rem 0 .75rem; }
 td.nowrap { white-space: nowrap; }
 .data tr:has(input, select, button) > td { vertical-align: middle; }

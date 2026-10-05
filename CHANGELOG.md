@@ -5,6 +5,18 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-06
 
+### Changed (school suggestions)
+- **School suggestions cover the whole district**, not just the chosen upazila / area: a student
+  may attend a school in another upazila or thana of their district, and a school filed under a
+  neighbouring area (e.g. a Sadar upazila next to a city thana) is now found. Each suggestion shows
+  its area, so schools with the same name can be told apart, and schools in the student's own area
+  rank first. A picked school may be in any area of the district; a typed (not picked) name is still
+  matched only within the chosen area, and a new school is filed there.
+- Dashboard: the student editor accepts a school anywhere in the student's district and always
+  lists the current school (with its area if elsewhere), so saving other changes never switches it;
+  the Add school typeahead searches the whole district and shows each school's area.
+- API: `/api/reference/schools/?district=&upazila=&q=`; `?upazila=` alone still lists one area.
+
 ### Added
 - **Cloudflare Turnstile (optional).** With `WS_TURNSTILE_SITE_KEY` and `WS_TURNSTILE_SECRET_KEY`
   set, a Turnstile check (usually invisible) appears above "Send verification code" and on the

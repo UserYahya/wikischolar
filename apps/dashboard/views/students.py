@@ -135,8 +135,17 @@ def student_edit(request, wsid):
         "s": student, "form": form,
         "districts": District.objects.all(),
         "upazilas": ref.areas_of(district_id),
-        "schools": School.objects.filter(upazila_id=upazila_id or 0, merged_into__isnull=True),
+        "schools": _school_choices(upazila_id, student.school),
     })
+
+
+def _school_choices(upazila_id, current):
+    """The editor's school list: schools of the selected upazila / area, plus the student's current
+    school when it is in another area (so saving other changes never switches the school)."""
+    schools = list(School.objects.filter(upazila_id=upazila_id or 0, merged_into__isnull=True).select_related("upazila"))
+    if current and all(s.pk != current.pk for s in schools):
+        schools.insert(0, current)
+    return schools
 
 
 @require_POST

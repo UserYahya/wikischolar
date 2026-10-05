@@ -27,7 +27,7 @@
              placeholder="{% if d.upazila %}Type the name in English{% else %}Choose an upazila or area first{% endif %}">
       <ul id="schoolList" class="combo-list" role="listbox" aria-label="Schools already listed" hidden></ul></div>
       {% if errors.name %}<ul class="errorlist"><li>{{ errors.name }}</li></ul>{% endif %}
-      <p class="hint" id="nameHelp">Schools already listed in the upazila or area appear as you type. If yours is there, open it instead of adding it again.</p></div>
+      <p class="hint" id="nameHelp">Schools already listed anywhere in the district appear as you type, with their area (this area first). If yours is there, open it instead of adding it again.</p></div>
   </div>
 
   {% if same %}

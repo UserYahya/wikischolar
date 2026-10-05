@@ -274,7 +274,7 @@
     const q = schoolIn.value.trim();
     list.innerHTML = items.map((s, i) =>
       `<li role="option" id="opt${i}" data-i="${i}" aria-selected="${i === active}">
-         <span>${esc(s.name)}</span>${s.verified ? "" : `<span class="tag">${esc(biText("being verified"))}</span>`}</li>`).join("") +
+         <span>${esc(s.name)}</span><span class="tag${s.same_area ? " here" : ""}">${esc(place({ name: s.area, name_bn: s.area_bn }))}</span></li>`).join("") +
       (q ? `<li role="option" class="add" id="opt${items.length}" data-i="${items.length}" aria-selected="${active === items.length}">
              <span>${bi("Not in the list? Add it as new: “{name}”", { name: q })}</span></li>` : "");
     list.hidden = !q && !items.length;
@@ -301,7 +301,9 @@
     if (!q) { items = []; closeList(); return; }
     timer = setTimeout(async () => {
       lastQuery = q;
-      const { ok, data } = await api(`/api/reference/schools/?upazila=${encodeURIComponent(upazilaSel.value)}&q=${encodeURIComponent(q)}`);
+      // The whole district is searched (a student may attend a school in another area); their own area first.
+      const { ok, data } = await api(`/api/reference/schools/?district=${encodeURIComponent(districtSel.value)}` +
+        `&upazila=${encodeURIComponent(upazilaSel.value)}&q=${encodeURIComponent(q)}`);
       if (q !== lastQuery) return;
       items = ok ? data.schools : [];
       active = -1; render();

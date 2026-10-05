@@ -392,6 +392,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | **Bangla beside every English text** on the form (labels, hints, buttons, options, messages), smaller and in natural Bangla; answers stay English | guardians read Bangla more easily; the data stays one script |
 | **Date of birth removed** from the form, database (column dropped), emails, dashboard and export | no longer needed (supersedes field 2 in 4.1 and its rule in 4.2) |
 | **Section** (optional, with instructions) and **class roll numbers only** | classes with sections; rolls are numbers |
+| School suggestions from the **whole district** (own area first, area shown); a picked school may be in another area | students attend schools outside their own upazila / thana; schools filed under a neighbouring area were missed |
 | **"How did you hear about WikiScholar?"** dropdown (7 options) in step 4, counted on the dashboard Overview | know which outreach works |
 | English logo in the header; site icon; Youth Safety Policy link now `https://wikischolar.bd/youth-policy` | new branding and policy page |
 | **HTML emails** (logo, card, OTP code box, details table) with the plain text kept as the second part | emails get noticed and are easier to read |

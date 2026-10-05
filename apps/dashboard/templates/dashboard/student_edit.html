@@ -22,8 +22,8 @@
     <div><label for="id_upazila">Upazila / Area</label>
       <select name="upazila" id="id_upazila" data-cascade="upazila">{% include "dashboard/_area_options.html" with areas=upazilas selected=form.upazila.value %}</select>{{ form.upazila.errors }}</div>
     <div class="span2"><label for="id_school">School</label>
-      <select name="school" id="id_school" data-cascade="school">{% for sc in schools %}<option value="{{ sc.pk }}" {% if sc.pk|stringformat:"s" == form.school.value|stringformat:"s" %}selected{% endif %}>{{ sc.name }}{% if sc.verification_status == "pending" %} (pending){% endif %}</option>{% endfor %}</select>{{ form.school.errors }}
-      <p class="hint">Only schools in the selected upazila or area are listed. Add a missing school from the Schools page.</p></div>
+      <select name="school" id="id_school" data-cascade="school">{% for sc in schools %}<option value="{{ sc.pk }}" {% if sc.pk|stringformat:"s" == form.school.value|stringformat:"s" %}selected{% endif %}>{{ sc.name }}{% if sc.upazila_id|stringformat:"s" != form.upazila.value|stringformat:"s" %} ({{ sc.upazila.name }}){% endif %}{% if sc.verification_status == "pending" %} (pending){% endif %}</option>{% endfor %}</select>{{ form.school.errors }}
+      <p class="hint">Schools in the selected upazila or area are listed, plus the current school (its area in brackets if it is elsewhere in the district). Add a missing school from the Schools page.</p></div>
     <div><label for="id_class_roll">Class roll</label>{{ form.class_roll }}<p class="hint">Numbers only.</p>{{ form.class_roll.errors }}</div>
     <div><label for="id_student_id_sid">Student ID (SID)</label>{{ form.student_id_sid }}{{ form.student_id_sid.errors }}</div>
     <div><label for="id_section">Section</label>{{ form.section }}{{ form.section.errors }}<p class="hint">Leave empty if the class has no sections.</p></div>

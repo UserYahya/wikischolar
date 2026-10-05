@@ -142,7 +142,7 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-191 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+198 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
 roll-or-SID, phone, upazila-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new
@@ -160,7 +160,8 @@ submission (10-minute expiry, 5 attempts, resend cooldown, rate-limited per emai
 bound to the browser session), Youth Safety Policy consent (timestamp + policy version
 stored), updates opt-in, summary screen with the WikiScholar ID, confirmation email.
 
-**Schools** — typeahead scoped to the chosen upazila using `pg_trgm` over names and aliases;
+**Schools** — typeahead over the whole district (the student's own upazila / area first, each school
+shown with its area) using `pg_trgm` over names and aliases;
 free text is kept exactly as typed (`school_name_as_entered`) *and* resolved to a school row
 (dual storage); unknown schools become `pending`; admins verify, rename, add aliases, and
 merge duplicates (students re-pointed with edit history, misspelling becomes an alias, the
