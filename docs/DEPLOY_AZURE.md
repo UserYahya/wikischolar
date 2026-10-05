@@ -35,8 +35,8 @@ Throughout, `dc` is short for `docker compose -f docker-compose.prod.yml`, run f
 
 5. **DNS**: `A  register  <VM public IP>`, **Proxied** (orange cloud).
 6. **SSL/TLS → Overview**: mode **Full (strict)**.
-7. **SSL/TLS → Origin Server → Create Certificate**, hostname `register.wikischolar.bd`, 15 years, PEM. Keep the *certificate* and *private key* open for step 12 (the key is shown only once).
-8. **Turnstile → Add widget**: domain `register.wikischolar.bd`, Managed mode. Copy the site key and secret key into `.env` (step 12). This keeps bots from triggering OTP emails and sign-in attempts.
+7. **SSL/TLS → Origin Server → Create Certificate**, hostnames `*.wikischolar.bd` and `wikischolar.bd` (the default) or just `registration.wikischolar.bd`, 15 years, PEM. Keep the *certificate* and *private key* open for step 12 (the key is shown only once).
+8. **Turnstile → Add widget**: domain `registration.wikischolar.bd`, Managed mode. Copy the site key and secret key into `.env` (step 12). This keeps bots from triggering OTP emails and sign-in attempts.
 
 ## C. Prepare the VM
 
@@ -105,7 +105,7 @@ and use `ssh wikischolar` (and `scp file wikischolar:/path`).
     ```
 14. Run the pre-flight check: `dc exec web python manage.py check_host`. Every line should be **OK**.
 15. Create the first admin: `dc exec web python manage.py create_super_admin --email you@wikimedia.org.bd --name "Your Name"` (it prompts for the password, minimum 12 characters).
-16. Test the site: open <https://register.wikischolar.bd>, run a full test registration (the OTP email must arrive), then sign in at `/dashboard/`.
+16. Test the site: open <https://registration.wikischolar.bd>, run a full test registration (the OTP email must arrive), then sign in at `/dashboard/`.
 
 ## E. Daily backups to Amazon S3
 
@@ -156,7 +156,7 @@ and use `ssh wikischolar` (and `scp file wikischolar:/path`).
 ## Verification checklist
 
 - [ ] `check_host` prints only OK.
-- [ ] `curl -sI https://register.wikischolar.bd` shows `200`, `strict-transport-security` and `cf-ray`.
+- [ ] `curl -sI https://registration.wikischolar.bd` shows `200`, `strict-transport-security` and `cf-ray`.
 - [ ] From your own computer, `curl -m 5 http://<VM IP>:8000` and `curl -m 5 -k https://<VM IP>` both fail (the VM accepts only Cloudflare).
 - [ ] Dashboard → Audit log shows **your** public IP for your sign-in (not a 172.x Docker or Cloudflare address).
 - [ ] Page source references hashed static files (`public.<hash>.css`).

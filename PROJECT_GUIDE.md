@@ -420,7 +420,7 @@ The app reads real environment variables first, then a `.env` file next to `mana
 | `WS_REPLY_TO` | `info@wikischolar.bd` | Reply-to of every email when Email settings has none |
 | `WS_SITE_URL` | `https://wikischolar.bd` | target of the form's "Back to …" link |
 | `WS_TURNSTILE_SITE_KEY` / `WS_TURNSTILE_SECRET_KEY` | *(empty: off)* | Cloudflare Turnstile on "Send verification code" and the dashboard sign-in; both needed. Cloudflare's always-pass test keys `1x00000000000000000000AA` / `1x0000000000000000000000000000000AA` work on localhost |
-| `WS_PUBLIC_URL` | `https://register.wikischolar.bd` | this app's own public address; the logo in HTML emails is loaded from here (empty = text wordmark instead) |
+| `WS_PUBLIC_URL` | `https://registration.wikischolar.bd` | this app's own public address; the logo in HTML emails is loaded from here (empty = text wordmark instead) |
 | `WS_OTP_TTL_MINUTES` / `WS_OTP_MAX_ATTEMPTS` / `WS_OTP_VERIFIED_WINDOW_MINUTES` | `10` / `5` / `60` | OTP rules |
 | `WS_OTP_DEBUG_ECHO` | `0` | dev only: show the OTP on the form |
 | `WS_SCHOOL_AUTO_RESOLVE` / `WS_SCHOOL_DUPLICATE` | `0.8` / `0.5` | trigram thresholds |
