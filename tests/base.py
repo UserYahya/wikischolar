@@ -49,11 +49,11 @@ class WSTestCase(TestCase):
 
     def payload(self, vid, **over):
         data = {
-            "student_name": "Rahim Uddin", "date_of_birth": "2011-03-14", "gender": "male",
+            "student_name": "Rahim Uddin", "gender": "male",
             "guardian_name": "Karim Uddin", "guardian_relation": "father",
             "district": self.gazipur.pk, "upazila": self.tongi.pk,
             "school_id": self.school.pk, "school_name": self.school.name,
-            "current_class": "8", "class_roll": "12", "student_id_sid": "",
+            "current_class": "8", "class_roll": "12", "student_id_sid": "", "section": "", "heard_from": "school",
             "phone": "01712345678", "email": "rahim@gmail.com", "updates_opt_in": True,
             "verification_id": vid, "policy_consent": True, "guardian_declaration": True, "website": "",
         }

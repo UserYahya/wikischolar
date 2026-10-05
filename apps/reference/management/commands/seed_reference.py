@@ -9,7 +9,8 @@ from apps.reference.models import District, Region, Upazila
 
 
 class Command(BaseCommand):
-    help = ("Seed regions, districts and upazilas from a JSON file. Idempotent. "
+    help = ("Seed regions, districts, upazilas and other areas (city-corporation thanas, cantonments, "
+            "\"Other area\") from a JSON file. Idempotent. "
             "Existing district→region assignments (edited in the dashboard) are kept "
             "unless --reset-region-assignments is given.")
 
@@ -25,7 +26,7 @@ class Command(BaseCommand):
             obj, _ = Region.all_objects.update_or_create(
                 code=r["code"], defaults={"name": r["name"], "name_bn": r.get("name_bn", ""), "sort_order": i})
             regions[r["code"]] = obj
-        new_d = new_u = kept = 0
+        new_d = new_u = new_a = kept = 0
         for d in data["districts"]:
             district = District.all_objects.filter(code=d["code"]).first()
             seed_region = regions.get(d.get("region"))
@@ -44,6 +45,15 @@ class Command(BaseCommand):
                 _, created = Upazila.all_objects.get_or_create(
                     district=district, name=u["name"], defaults={"name_bn": u.get("name_bn", "")})
                 new_u += created
+            # City-corporation thanas, cantonments and "Other area": areas with a group
+            for a in d.get("areas", []):
+                obj, created = Upazila.all_objects.get_or_create(
+                    district=district, name=a["name"],
+                    defaults={"name_bn": a.get("name_bn", ""), "group": a["group"], "group_bn": a.get("group_bn", "")})
+                if not created and not obj.group:  # an older copy without its group: add it
+                    obj.group, obj.group_bn = a["group"], a.get("group_bn", "")
+                    obj.save(update_fields=["group", "group_bn"])
+                new_a += created
         self.stdout.write(self.style.SUCCESS(
-            f"Seeded {len(regions)} regions, {new_d} new districts, {new_u} new upazilas. "
-            f"{kept} dashboard region assignments preserved."))
+            f"Seeded {len(regions)} regions, {new_d} new districts, {new_u} new upazilas, {new_a} new other areas "
+            f"(city-corporation thanas, cantonments, \"Other area\"). {kept} dashboard region assignments preserved."))

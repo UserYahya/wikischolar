@@ -1,4 +1,5 @@
-/* Dashboard student editor: district → upazila → school cascade (Add school: district → upazila).
+/* Dashboard student editor: district → upazila/area → school cascade (Add school: district → upazila/area).
+   Areas are grouped like the public form (city-corporation thanas, cantonments, upazilas, "Other area").
    Uses the same reference API as the public form, so region/district data
    always comes from the database. */
 (function () {
@@ -8,6 +9,7 @@
   const school = document.querySelector('[data-cascade="school"]');
   if (!district || !upazila) return;
 
+  // items: [{id, text, group?}]; consecutive items with the same group go in one <optgroup>.
   function fill(select, items, label) {
     select.replaceChildren();
     if (!items.length) {
@@ -17,7 +19,15 @@
       return;
     }
     select.add(new Option(`Choose ${label}…`, "", true, true));
-    items.forEach((it) => select.add(new Option(it.text, it.id)));
+    let group = null;
+    items.forEach((it) => {
+      if (it.group && (!group || group.label !== it.group)) {
+        group = document.createElement("optgroup");
+        group.label = it.group;
+        select.append(group);
+      }
+      (it.group ? group : select).append(new Option(it.text, it.id));
+    });
   }
 
   async function getJSON(url) {
@@ -42,9 +52,9 @@
     upazila.disabled = true;
     try {
       const data = await getJSON(`/api/reference/districts/${encodeURIComponent(district.value)}/upazilas/`);
-      fill(upazila, data.upazilas.map((u) => ({ id: u.id, text: u.name })), "upazila");
+      fill(upazila, data.upazilas.map((u) => ({ id: u.id, text: u.name, group: u.group })), "upazila or area");
     } catch (e) {
-      fill(upazila, [], "upazila");
+      fill(upazila, [], "upazila or area");
     } finally { upazila.disabled = false; }
     if (school) fill(school, [], "school");
   }

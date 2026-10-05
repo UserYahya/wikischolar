@@ -28,7 +28,9 @@ later consume the same JSON endpoints.
   `registration.services.reassign_school`, because registration owns `students`.
 * The dashboard has no models. Sidebar items go through `apps.core.registry.register_nav`
   (the dashboard registers the Phase 1 items in its `AppConfig.ready()`); a future Exam
-  module can register its own item the same way without editing dashboard templates.
+  module can register its own item the same way without editing dashboard templates. An item's
+  `group` puts it in a collapsible sidebar section (`nav_groups_for`); a new group appears by
+  itself.
 * Every state change goes through a service that writes `audit_logs`; student field changes
   also write `edit_history` rows grouped by a `change_set` UUID.
 
@@ -36,7 +38,8 @@ later consume the same JSON endpoints.
 
 1. The page loads districts (with their current region) from `/api/reference/districts/`.
    Picking a district shows its region — read from the DB at that moment.
-2. Upazilas load per district; school typeahead queries `/api/reference/schools/?upazila=&q=`
+2. Upazilas and the other areas (city-corporation thanas, cantonments, "Other area": `upazilas` rows
+   with a `group`) load per district, grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?upazila=&q=`
    (trigram similarity over normalised names and aliases, scoped to the upazila). The public form
    is offered **verified schools only**; signed-in staff (`?all=1`) also see pending ones. Pending
    schools are still matched on submit (step 5), so two students typing the same new school share
@@ -72,7 +75,10 @@ use the same mechanism (`EB-`, `SB-`).
 * Audit: logins, failed logins, logouts, record **views**, exports, edits, archives,
   merges, region changes, batch creation and resends. `audit_logs` is append-only in the DB.
 * Public endpoints: CSRF, rate limits (OTP per email/IP, submit per IP, API per IP, login per
-  IP), honeypot field, strict server-side validation.
+  IP), honeypot field, strict server-side validation, and optional Cloudflare Turnstile
+  (`apps/core/turnstile.py`, on when its two keys are set) checked by `send-otp` and the
+  dashboard sign-in form before anything else. Passwords: every admin can change their own;
+  a Super Admin can set another admin's (both audited, passwords never logged).
 * Transport/cookies: HTTPS redirect, HSTS, secure + HttpOnly session cookie (8 h), SameSite,
   `nosniff`, same-origin referrer, dashboard pages `noindex`.
 * Webhooks require a shared token (`NOTIFY_WEBHOOK_TOKEN`).
@@ -105,6 +111,17 @@ calls `render_system_email(key, values)`, which uses the Super Admin's saved wor
 `email_templates` when customised, else the default, and fills placeholders by plain replacement
 (no template language, so the text can't run code). Dashboard → System emails lists every
 registered email, validates placeholders, previews with the sample values and can send a test.
+
+**HTML part.** Every email leaves as plain text plus a designed HTML version
+(`EmailMultiAlternatives`; the Brevo API backend sends it as `htmlContent`).
+`notifications.send_system_email(key, kind, to, values)` builds both:
+`render_system_email_html` swaps each placeholder for a token, turns the text into paragraphs
+(escaped, links clickable) and puts the values back, using ready-made HTML for the placeholders
+named in the email's `html_values` (registration: the OTP code box, the highlighted ID, the
+details table). Bulk messages and other emails get the same layout from
+`DjangoMailProvider`, which builds the HTML from the text when none is given. Layout:
+`apps/notifications/html_email.py` + `templates/notifications/email.html` (tables and inline
+styles only, for mail apps); the logo URL comes from `WS_PUBLIC_URL`.
 
 ## Bulk messaging flow
 

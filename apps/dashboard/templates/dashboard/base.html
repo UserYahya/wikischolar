@@ -9,20 +9,32 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@100..112.5,400..800&family=Noto+Sans+Bengali:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  {% include "_favicons.html" %}
   {% block head %}{% endblock %}
 </head>
 <body>
 {% if user.is_authenticated %}
 <div class="shell">
   <aside class="side">
-    <a class="wordmark" href="{% url 'dashboard:home' %}">Wiki<span>Scholar</span></a>
+    <a class="side-logo" href="{% url 'dashboard:home' %}"><img src="{% static 'img/wikischolar-logo-en.png' %}" alt="WikiScholar" width="600" height="185"></a>
+    {# Related tools are grouped (apps.core.registry); a group opens by itself when it holds the current page. #}
     <nav aria-label="Dashboard">
       <ul>
-        {% for item in NAV %}<li><a href="{% url item.url_name %}" {% if request.resolver_match.view_name == item.url_name %}aria-current="page"{% endif %}>{{ item.label }}</a></li>{% endfor %}
+        {% with here=request.resolver_match.view_name %}{% for g in NAV_GROUPS %}
+        {% if g.label %}
+        <li><details class="nav-group" {% if here in g.url_names %}open{% endif %}>
+          <summary>{{ g.label }}</summary>
+          <ul>{% for item in g.items %}<li><a href="{% url item.url_name %}" {% if here == item.url_name %}aria-current="page"{% endif %}>{{ item.label }}</a></li>{% endfor %}</ul>
+        </details></li>
+        {% else %}{% for item in g.items %}
+        <li><a href="{% url item.url_name %}" {% if here == item.url_name %}aria-current="page"{% endif %}>{{ item.label }}</a></li>
+        {% endfor %}{% endif %}
+        {% endfor %}{% endwith %}
       </ul>
     </nav>
     <div class="who">
       <p>{{ user.full_name }}<br><small>{{ user.get_role_display }}</small></p>
+      <p><a class="link" href="{% url 'dashboard:password_change' %}" {% if request.resolver_match.view_name == "dashboard:password_change" %}aria-current="page"{% endif %}>Change password</a></p>
       <form method="post" action="{% url 'dashboard:logout' %}">{% csrf_token %}<button class="link">Sign out</button></form>
     </div>
   </aside>

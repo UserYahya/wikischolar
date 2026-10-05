@@ -13,6 +13,9 @@
   <div><p class="fig">{{ week }}</p><p>in the last 7 days</p></div>
   <div><p class="fig"><a href="{% url 'dashboard:schools' %}?status=pending">{{ pending_schools }}</a></p><p>schools awaiting review</p></div>
 </section>
+{% if other_area %}
+<p class="notice">{{ other_area }} student{{ other_area|pluralize }} chose “Other area (not listed)” as {{ other_area|pluralize:"their,their" }} upazila / area. <a href="{% url 'dashboard:students' %}?area_kind=other">Review and set the right area</a>; add the area on the district's page if it's missing.</p>
+{% endif %}
 {% if unassigned_districts %}
 <p class="notice">{{ unassigned_districts }} district{{ unassigned_districts|pluralize }} {{ unassigned_districts|pluralize:"has,have" }} no region. Registrants from {{ unassigned_districts|pluralize:"it,them" }} will see “no region assigned”. <a href="{% url 'dashboard:locations' %}">Assign regions</a></p>
 {% endif %}
@@ -31,6 +34,15 @@
     </table>
   </section>
 </div>
+<section>
+  <h2>How they heard about WikiScholar</h2>
+  {% if heard_answered %}
+  <table class="bars">
+    {% for label, n, pct in heard_from %}<tr><th>{{ label }}</th><td><span style="--w: {{ pct }}%"></span></td><td class="num">{{ n }}</td></tr>{% endfor %}
+  </table>
+  <p class="hint">{{ heard_answered }} answer{{ heard_answered|pluralize }}. Students who registered before this question was added are not counted.</p>
+  {% else %}<p class="empty">No answers yet. The registration form asks this in its last step.</p>{% endif %}
+</section>
 <section>
   <h2>Top districts</h2>
   {% if top_districts %}

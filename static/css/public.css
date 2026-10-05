@@ -23,7 +23,7 @@ a { color: var(--green); text-underline-offset: 3px; }
 .brand { display: inline-flex; line-height: 0; border-radius: 4px; }
 .brand img { height: 2.75rem; width: auto; display: block; }
 .site-links { display: flex; align-items: center; gap: 1.1rem; }
-.org { margin: 0; color: var(--muted); font-size: .85rem; padding-right: 1.1rem; border-right: 1px solid var(--line); }
+.org { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.35; padding-right: 1.1rem; border-right: 1px solid var(--line); }
 .back-site { display: inline-flex; align-items: center; gap: .35rem; padding: .45rem .95rem; border: 1.5px solid var(--line);
   border-radius: 999px; font-weight: 600; font-size: .9rem; line-height: 1.2; color: var(--deep); text-decoration: none; background: var(--white);
   transition: background-color .15s, border-color .15s; white-space: nowrap; }
@@ -76,11 +76,34 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .choices { display: flex; flex-wrap: wrap; gap: .5rem; }
 .chip { position: relative; }
 .chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.chip span { display: inline-block; padding: .45rem .9rem; border: 1.5px solid #B9C3BD; border-radius: 999px; }
+.chip > span { display: inline-block; padding: .45rem .9rem; border: 1.5px solid #B9C3BD; border-radius: 999px; }
 .chip input:checked + span { background: var(--green); border-color: var(--green); color: var(--white); }
 .chip input:focus-visible + span { outline: 3px solid var(--marigold); outline-offset: 2px; }
 
 .hint { margin: .35rem 0 0; font-size: .88rem; color: var(--muted); }
+.grid-hint { margin-top: -.6rem; }  /* a hint for the pair of fields above it */
+
+/* Bangla beside the English: a quieter second line (.bn) or a short inline note (.bn-inline) */
+.bn, .bn-inline { font-family: "Noto Sans Bengali", var(--body); font-weight: 400; }
+/* Bangla script reads smaller than Latin at the same size, so the second line stays ~13-14px, never below */
+.bn { display: block; font-size: .88em; line-height: 1.55; color: var(--muted); margin-top: .1rem; }
+.hint .bn, .err .bn, .declare-note .bn, .nav-note .bn, .contact .bn, .org .bn { font-size: .95em; }
+.bn-inline { font-size: .86em; color: var(--muted); }
+.bn strong { font-weight: 600; }
+.intro h1 .bn { font: 600 .5em/1.4 var(--display); margin-top: .35rem; color: var(--deep); }
+.intro p.bn { margin-top: .35rem; font-size: .95rem; }
+.step h2 .bn { font: 500 .58em/1.4 var(--display); color: var(--muted); margin-top: .15rem; }
+.rail .t .bn { font-size: .82em; }
+.rail li[aria-current="step"] .t .bn { font-weight: 400; }
+.err .bn { color: var(--error); opacity: .85; }
+/* Step headings get focus when a step opens (for screen readers); no focus box for that */
+.step h2:focus { outline: none; }
+.btn .bn-inline { display: block; color: inherit; opacity: .85; font-size: .78em; font-weight: 500; margin-top: .25rem; white-space: nowrap; line-height: 1.3; }
+.chip .bn-inline { margin-left: .15rem; }
+.chip input:checked + span .bn-inline { color: var(--white); opacity: .85; }
+.derived .bn { display: inline; margin: 0 0 0 .4rem; }
+.done dt .bn { font-size: .8em; }
+.survey { margin: 0 0 .5rem; }
 .label-note { font-weight: 400; font-size: .85em; color: var(--muted); }
 .err { margin: .3rem 0 0; font-size: .88rem; color: var(--error); }
 .err:empty { display: none; }
@@ -101,6 +124,8 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
 .otp { border-top: 1px solid var(--line); padding-top: 1.1rem; }
 .otp-entry { margin-top: .9rem; }
+.turnstile { margin: 0 0 .8rem; max-width: 22rem; min-height: 65px; }  /* Cloudflare's widget is 65px tall */
+.turnstile + .err { margin: -.4rem 0 .8rem; }
 .otp-entry input { max-width: 12rem; letter-spacing: .3em; font-weight: 600; }
 .otp-timer { margin: .5rem 0 0; font-size: .88rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .otp-timer.soon { color: var(--error); }
@@ -110,7 +135,9 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .check { display: flex; gap: .75rem; align-items: flex-start; padding: .9rem 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .check input { width: 1.3rem; height: 1.3rem; margin-top: .25rem; accent-color: var(--green); flex: none; }
 
-.btn { font: 600 1rem/1 var(--body); border-radius: var(--radius-field); padding: .8rem 1.3rem; min-height: 2.9rem; cursor: pointer;
+/* inline-flex column: the same box for <button> and <a>, with the Bangla note stacked under the English */
+.btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  text-decoration: none; font: 600 1rem/1 var(--body); border-radius: var(--radius-field); padding: .8rem 1.3rem; min-height: 2.9rem; cursor: pointer;
   border: 1.5px solid var(--green); background: var(--white); color: var(--green); }
 .btn:hover { background: var(--tint); }
 .btn.primary { background: var(--green); color: var(--white); }
@@ -124,14 +151,29 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .nav-note { margin: 0; color: var(--muted); font-size: .9rem; align-self: center; }
 #back { margin-right: auto; }
 
-.done { grid-area: sheet; background: var(--white); border: 1px solid var(--line); border-top: 6px solid var(--green); border-radius: 10px; padding: 2rem 2.25rem; }
+.done { grid-area: sheet; background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 2rem 2.25rem; }
 .done:focus { outline: none; }
-.done-lead { margin: 0; font: 600 1.25rem/1.3 var(--display); color: var(--deep); }
-.wsid { margin: .25rem 0 1rem; font: 800 clamp(2.2rem, 6vw, 3.4rem)/1.1 var(--display); font-stretch: 112%; letter-spacing: .02em; }
-.done dl { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.25rem; margin: 1.5rem 0; padding: 1.25rem 0; border-block: 1px solid var(--line); }
+.done-head { display: flex; align-items: center; gap: .85rem; margin-bottom: 1.25rem; }
+.done-icon { flex: none; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%;
+  background: var(--tint); color: var(--green); }
+.done-lead { margin: 0; font: 650 1.5rem/1.25 var(--display); color: var(--ink); }
+.done-lead .bn { font: 500 .62em/1.4 var(--display); color: var(--muted); margin-top: .1rem; }
+/* The ID: a quiet panel, like a printed slip */
+.id-card { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 1rem 1.25rem 1.1rem; margin: 0 0 1.25rem; }
+.id-label { margin: 0; font-size: .9rem; font-weight: 600; color: var(--muted); }
+.wsid { margin: .2rem 0 .35rem; font: 800 clamp(1.8rem, 6vw, 3rem)/1.1 var(--display); font-stretch: 112%; letter-spacing: .02em;
+  white-space: nowrap; color: var(--ink); }
+.id-note { margin: 0; font-size: .9rem; color: var(--muted); }
+.id-note .bn { font-size: .95em; }
+.done-email { margin: 0; }
+.done-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0 0 1.25rem; }
+.done .contact { margin: 0; font-size: .9rem; color: var(--muted); }
+.done dl { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.25rem; margin: 1.25rem 0; padding: 1.25rem 0; border-block: 1px solid var(--line); }
 .done dt { color: var(--muted); }
 .done dd { margin: 0; font-weight: 500; }
-.reg.is-done .sheet, .reg.is-done .rail ol { display: none; }
+/* After registering: the success card takes the whole width (it has its own contact line) */
+.reg.is-done .sheet, .reg.is-done .rail { display: none; }
+.reg.is-done .done { grid-column: 1 / -1; max-width: 46rem; }
 
 @media (max-width: 820px) {
   .reg { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "rail" "sheet"; gap: 1.25rem; padding-top: 1.5rem; }
@@ -159,3 +201,21 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .declare legend { font-weight: 600; font-size: .95rem; padding: 0 .35rem; }
 .declare .check { border-bottom: 0; padding: .5rem 0 .25rem; }
 .declare-note { margin: .35rem 0 0; font-size: .92rem; color: var(--muted); }
+
+/* Print / Save as PDF from the success screen: the logo and the success card only */
+.print-only { display: none; }
+@media print {
+  @page { margin: 14mm; }
+  html, body { background: #fff; }
+  body { font-size: 11pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .masthead { border: 0; }
+  .masthead-inner { padding: 0 0 6mm; max-width: none; }
+  .site-links, .intro, .rail, .sheet, .done-actions, .step { display: none !important; }
+  .reg { display: block; padding: 0; max-width: none; }
+  .done { border: 0; padding: 0; max-width: none !important; }
+  .done-head, .id-card, .done dl > * { break-inside: avoid; }
+  .done dl { grid-template-columns: max-content 1fr; gap: .25rem 1.25rem; }
+  .done dd { margin: 0; }
+  .print-only { display: block; margin: 4mm 0 0; font-size: 9pt; color: var(--muted); }
+  a { color: inherit; text-decoration: none; }
+}

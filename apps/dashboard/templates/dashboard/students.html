@@ -35,11 +35,11 @@
     </fieldset>
 
     {% if upazilas %}
-    <label for="upazila">Upazila</label>
-    <select id="upazila" name="upazila"><option value="">All upazilas</option>
-      {% for u in upazilas %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == p.upazila %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+    <label for="upazila">Upazila / Area</label>
+    <select id="upazila" name="upazila"><option value="">All upazilas and areas</option>
+      {% include "dashboard/_area_options.html" with areas=upazilas selected=p.upazila %}
     </select>
-    {% else %}<p class="hint">Pick exactly one district to filter by upazila.</p>{% endif %}
+    {% else %}<p class="hint">Pick exactly one district to filter by upazila or area.</p>{% endif %}
     {% if schools %}
     <label for="school">School</label>
     <select id="school" name="school"><option value="">All schools</option>
@@ -60,6 +60,10 @@
       <div class="row2"><input type="text" name="from" value="{{ p.from }}" aria-label="From" placeholder="dd/mm/yyyy" data-datefield data-max="today"><input type="text" name="to" value="{{ p.to }}" aria-label="To" placeholder="dd/mm/yyyy" data-datefield data-max="today"></div>
     </fieldset>
     <label class="inline"><input type="checkbox" name="opt_in" value="1" {% if p.opt_in == "1" %}checked{% endif %}> Opted in to email updates</label>
+    <label for="area_kind">Area type</label>
+    <select id="area_kind" name="area_kind"><option value="">Any</option>
+      {% for v, l in area_kinds.items %}<option value="{{ v }}" {% if v == p.area_kind %}selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
     <label for="filled_by">Form filled in by</label>
     <select id="filled_by" name="filled_by"><option value="">Anyone</option>
       {% for v, l in filled_by_choices %}<option value="{{ v }}" {% if v == p.filled_by %}selected{% endif %}>{{ l }}</option>{% endfor %}

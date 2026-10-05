@@ -2,7 +2,7 @@
 {% block title %}Sign in{% endblock %}
 {% block anon %}
 <main class="login">
-  <p class="login-logo"><img src="{% static 'img/wikischolar-logo.png' %}" alt="WikiScholar" width="512" height="158"></p>
+  <p class="login-logo"><img src="{% static 'img/wikischolar-logo-en.png' %}" alt="WikiScholar" width="600" height="185"></p>
   <h1>Admin sign in</h1>
   <form method="post" novalidate>
     {% csrf_token %}
@@ -12,8 +12,10 @@
     <label for="id_password">Password</label>
     <input id="id_password" name="password" type="password" autocomplete="current-password" required>
     <input type="hidden" name="next" value="{{ next }}">
+    {% if TURNSTILE_SITE_KEY %}<div class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}" data-size="flexible" data-theme="light"></div>{% endif %}
     <button class="btn primary">Sign in</button>
   </form>
   <p class="muted">Access is logged. Contact a Super Admin if you need an account.</p>
 </main>
 {% endblock %}
+{% block scripts %}{% if TURNSTILE_SITE_KEY and not user.is_authenticated %}<script src="{{ TURNSTILE_SCRIPT }}" async defer></script>{% endif %}{% endblock %}

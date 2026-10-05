@@ -1,7 +1,7 @@
 import io
 import os
 import tempfile
-from datetime import date, timedelta
+from datetime import timedelta
 
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -62,12 +62,12 @@ class StudentAdminTests(WSTestCase):
 
     def edit_data(self, **over):
         st = Student.objects.get(wikischolar_id=self.wsid)
-        data = {"student_name": st.student_name, "date_of_birth": st.date_of_birth.isoformat(), "gender": st.gender,
+        data = {"student_name": st.student_name, "gender": st.gender,
                 "guardian_name": st.guardian_name, "guardian_relation": st.guardian_relation,
                 "guardian_relation_other": st.guardian_relation_other,
                 "district": st.district_id, "upazila": st.upazila_id, "school": st.school_id,
                 "current_class": st.current_class, "class_roll": st.class_roll, "student_id_sid": st.student_id_sid,
-                "phone": st.phone, "email": st.email, "updates_opt_in": "on", "reason": "Parent called"}
+                "section": st.section, "phone": st.phone, "email": st.email, "updates_opt_in": "on", "reason": "Parent called"}
         data.update(over)
         return data
 
@@ -132,12 +132,16 @@ class StudentAdminTests(WSTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("student_name", r.context["form"].errors)
 
-    def test_edit_date_of_birth_is_british(self):
+    def test_edit_section_and_numeric_roll(self):
         r = self.client.get(f"/dashboard/students/{self.wsid}/edit/")
-        self.assertContains(r, 'value="14/03/2011"')
-        r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(date_of_birth="01/02/2010"))
+        self.assertNotContains(r, "Date of birth")
+        r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(section="B", class_roll="7"))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(Student.objects.get(wikischolar_id=self.wsid).date_of_birth, date(2010, 2, 1))
+        st = Student.objects.get(wikischolar_id=self.wsid)
+        self.assertEqual((st.section, st.class_roll), ("B", "7"))
+        r = self.client.post(f"/dashboard/students/{self.wsid}/edit/", self.edit_data(class_roll="7A"))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("class_roll", r.context["form"].errors)
 
     def test_registered_between_filter_reads_british_and_iso_dates(self):
         today = timezone.localdate()
@@ -314,17 +318,18 @@ class SchoolImportTests(WSTestCase):
         self.assertEqual(r["Content-Type"], "text/csv; charset=utf-8")
         self.assertIn("schools-import-template.csv", r["Content-Disposition"])
         self.assertTrue(r.content.startswith(b"\xef\xbb\xbf"))  # BOM for Excel
-        self.assertEqual(r.content.decode("utf-8-sig").splitlines(), ["District,Upazila,School name"])
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines(), ["District,Upazila / Area,School name"])
         r = self.upload(r.content.decode("utf-8") + "Gazipur,Tongi,Tongi Pilot School\n")
         self.assertEqual(r.context["counts"]["new"], 1)
 
     def test_district_and_upazila_list(self):
         r = self.client.get("/dashboard/schools/import/locations.csv")
         self.assertEqual(r.content.decode("utf-8-sig").splitlines(), [
-            "District,Upazila,District (Bangla),Upazila (Bangla)", "Gazipur,Kaliakair,গাজীপুর,কালিয়াকৈর",
-            "Gazipur,Tongi,গাজীপুর,টঙ্গী", "Jessore,Sharsha,যশোর,শার্শা"])
+            "District,Upazila / Area,Group,District (Bangla),Upazila / Area (Bangla)",
+            "Gazipur,Kaliakair,Upazilas,গাজীপুর,কালিয়াকৈর", "Gazipur,Tongi,Upazilas,গাজীপুর,টঙ্গী",
+            "Jessore,Sharsha,Upazilas,যশোর,শার্শা"])
         r = self.client.get(f"/dashboard/schools/import/locations.csv?district={self.jessore.pk}")
-        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,যশোর,শার্শা"])
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,Upazilas,যশোর,শার্শা"])
         self.assertIn("districts-and-upazilas-jessore.csv", r["Content-Disposition"])
 
     def test_preview_then_confirm(self):
@@ -340,7 +345,7 @@ class SchoolImportTests(WSTestCase):
                     "যশোর,শার্শা,Sharsha Model School,\n")           # Bangla place names are fine
         r = self.upload(csv_text)
         self.assertEqual(r.context["counts"], {"new": 2, "similar": 1, "exists": 1, "repeated": 1, "error": 3})
-        self.assertContains(r, "No upazila “Nowhere” in Gazipur.")
+        self.assertContains(r, "No upazila or area “Nowhere” in Gazipur.")
         self.assertContains(r, "Unknown district “Narnia”.")
         self.assertContains(r, "Same school as row 2.")
         self.assertEqual(School.objects.count(), 1)  # nothing saved yet
@@ -391,7 +396,7 @@ class SchoolImportTests(WSTestCase):
         call_command("import_schools", fh.name, stdout=out, stderr=err)
         os.unlink(fh.name)
         self.assertIn("1 created, 1 already existed, 0 repeated, 1 with errors.", out.getvalue())
-        self.assertIn("Row 4: No upazila “Nowhere” in Gazipur.", err.getvalue())
+        self.assertIn("Row 4: No upazila or area “Nowhere” in Gazipur.", err.getvalue())
         self.assertEqual(School.objects.get(name="Tongi Pilot School").source, "import")
 
 
@@ -406,7 +411,7 @@ class MessagingTests(WSTestCase):
         r = self.client.post("/dashboard/messages/compose/", {"name": "Test batch",
             "channel": "email", "subject": "Hello {name}", "body": "Your ID is {wikischolar_id}",
             "opted_in_only": "on", "confirm_count": 1})
-        self.assertEqual(r.status_code, 302, getattr(r, "context", None) and r.context["form"].errors)
+        self.assertEqual(r.status_code, 302, r.context and "form" in r.context and r.context["form"].errors)
         logs = NotificationLog.objects.filter(kind="bulk")
         self.assertEqual(logs.count(), 1)
         log = logs.get()

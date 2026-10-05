@@ -49,8 +49,10 @@ erDiagram
     upazilas {
       bigint id PK
       bigint district_id FK
-      text name
+      text name "unique per district"
       text name_bn
+      text group "blank = upazila; a city corporation, Cantonment or Other"
+      text group_bn
     }
     schools {
       bigint id PK
@@ -75,7 +77,6 @@ erDiagram
       text filled_by "student|guardian"
       timestamptz guardian_declared_at "set when a guardian declared"
       text student_name
-      date date_of_birth
       text gender
       text guardian_name
       text guardian_relation "father|mother|other"
@@ -86,14 +87,16 @@ erDiagram
       text school_name_as_entered "exactly as typed"
       text school_resolution
       text current_class "CHECK 6..10"
-      text class_roll
+      text class_roll "digits (form check)"
       text student_id_sid
+      text section "optional"
       text phone "CHECK BD mobile format"
       text email
       timestamptz email_verified_at
       timestamptz policy_consent_at
       text policy_version
       bool updates_opt_in
+      text heard_from "survey; CHECK choice or empty"
       bool is_deleted
     }
     email_verifications {
@@ -218,7 +221,7 @@ Redis; its rows are disposable).
 | | `upazilas` | Unique `(district_id, name)`; also unique `(id, district_id)` to support the composite FK. |
 | | `schools` | Canonical list + pending registrant entries; merged rows are kept and point to `merged_into_id`. |
 | | `school_aliases` | Alternate spellings; unique per school on the normalised text. |
-| Registration | `students` | Region is not stored — derived via `district.region_id`. |
+| Registration | `students` | Region is not stored — derived via `district.region_id`. No date of birth (column dropped in migration `registration.0006`, October 2026). `section` is optional; `heard_from` is the "How did you hear about WikiScholar?" answer (empty for older rows). |
 | | `email_verifications` | OTP attempts; UUID PK so IDs are unguessable. |
 | | `edit_history` | One row per changed field; rows from one save share `change_set`. Append-only. |
 | Notification | `email_batches`, `sms_batches` | One per bulk send, with an admin-chosen `name` (indexed, for search and the Students "Message history" filter); the filter used is stored as JSON. |
@@ -244,6 +247,8 @@ archived rows (`all_objects` shows them).
 * `student_phone_bd_format` — `phone ~ '^01[3-9][0-9]{8}$'` (stored normalised, 11 digits).
 * `student_roll_or_sid` / `student_roll_or_sid_not_blank` — class roll or SID must be non-blank.
 * `student_class_6_to_10` — `current_class IN ('6'..'10')`.
+* `student_heard_from_valid` — the survey answer `heard_from` is one of its choices, or empty for
+  students who registered before the question existed.
 * `student_guardian_declaration` — `filled_by = 'guardian'` exactly when `guardian_declared_at` is set.
 * `student_relation_other_text` — `guardian_relation_other` is non-blank exactly when
   `guardian_relation = 'other'`.
@@ -256,6 +261,9 @@ archived rows (`all_objects` shows them).
 * `school_merged_has_target` — `merged` status ⇔ `merged_into_id` set.
 * `notif_single_batch`, `notif_batch_matches_channel` — a log belongs to at most one batch, of
   its own channel.
+* `upazila_district_name_uniq` — an area name is unique within its district; city-corporation
+  thanas, cantonments and "Other area" are `upazilas` rows too (told apart by `group`), so they share
+  this rule and the composite key above.
 * Unique: `students.wikischolar_id`, `admins.email`, `regions.code`, `districts.code`,
   batch codes, `(scope, year)` in `id_sequences`.
 * Foreign keys to students, schools and places use `ON DELETE PROTECT` semantics.

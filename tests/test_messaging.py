@@ -23,7 +23,9 @@ def ws(**over):
 class PublicPageTests(WSTestCase):
     def test_header_has_logo_and_back_link_to_main_site(self):
         page = self.client.get("/").content.decode()
-        self.assertIn('img/wikischolar-logo.png', page)
+        self.assertIn('img/wikischolar-logo-en.png', page)
+        self.assertNotIn('img/wikischolar-logo-bn.png', page)  # English logo only in the header
+        self.assertIn('img/favicon-32.png', page)
         self.assertIn('alt="WikiScholar"', page)
         self.assertNotIn("Wiki<span>Scholar</span>", page)
         self.assertIn('href="https://wikischolar.bd"', page)
@@ -41,7 +43,9 @@ class PublicPageTests(WSTestCase):
         self.assertIn("Spam", page)
 
     def test_login_page_uses_logo(self):
-        self.assertContains(self.client.get("/dashboard/login/"), "img/wikischolar-logo.png")
+        r = self.client.get("/dashboard/login/")
+        self.assertContains(r, "img/wikischolar-logo-en.png")
+        self.assertContains(r, "img/favicon-32.png")
 
 
 class SchoolSuggestionTests(WSTestCase):

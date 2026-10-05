@@ -10,7 +10,7 @@
 </form>
 {% if pairs %}
 <div class="scroll"><table class="data pairs">
-  <thead><tr><th>School A</th><th>School B</th><th>Upazila</th><th class="num">Similarity</th><th>Merge</th></tr></thead>
+  <thead><tr><th>School A</th><th>School B</th><th>Upazila / Area</th><th class="num">Similarity</th><th>Merge</th></tr></thead>
   <tbody>{% for a, b, sim, na, nb in pairs %}<tr>
     <td><a href="{% url 'dashboard:school' a.pk %}">{{ a.name }}</a><br><small class="muted">{{ a.get_verification_status_display }} · {{ na }} student{{ na|pluralize }}</small></td>
     <td><a href="{% url 'dashboard:school' b.pk %}">{{ b.name }}</a><br><small class="muted">{{ b.get_verification_status_display }} · {{ nb }} student{{ nb|pluralize }}</small></td>

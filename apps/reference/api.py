@@ -6,7 +6,7 @@ from apps.core import ratelimit
 from apps.core.utils import client_ip
 
 from . import services
-from .models import District, Upazila
+from .models import District
 
 
 def _limited(request):
@@ -33,8 +33,11 @@ def upazilas(request, district_id):
         return JsonResponse({"error": "rate_limited"}, status=429)
     if not District.objects.filter(pk=district_id).exists():
         return JsonResponse({"error": "not_found"}, status=404)
-    rows = Upazila.objects.filter(district_id=district_id).order_by("name")
-    return JsonResponse({"upazilas": [{"id": u.pk, "name": u.name, "name_bn": u.name_bn} for u in rows]})
+    # Upazilas and the other areas (city-corporation thanas, cantonments, "Other area"), in list
+    # order; "group" / "group_bn" are the dropdown headings.
+    return JsonResponse({"upazilas": [
+        {"id": u.pk, "name": u.name, "name_bn": u.name_bn, "group": u.group_label, "group_bn": u.group_label_bn}
+        for u in services.areas_of(district_id)]})
 
 
 @require_GET

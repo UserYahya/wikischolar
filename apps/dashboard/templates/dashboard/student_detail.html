@@ -19,7 +19,6 @@
   <section>
     <h2>Student &amp; guardian</h2>
     <dl class="facts">
-      <dt>Date of birth</dt><dd>{{ s.date_of_birth|date:"j M Y" }}</dd>
       <dt>Gender</dt><dd>{{ s.get_gender_display }}</dd>
       <dt>Guardian</dt><dd>{{ s.guardian_name }} ({{ s.guardian_relation_label }})</dd>
       <dt>Form filled in by</dt><dd>{{ s.get_filled_by_display }}{% if s.guardian_declared_at %} <span class="tag ok">guardian declared {{ s.guardian_declared_at|date:"j M Y H:i" }}</span>{% endif %}</dd>
@@ -27,6 +26,7 @@
       <dt>Email</dt><dd>{{ s.email }} <span class="tag ok">verified {{ s.email_verified_at|date:"j M" }}</span></dd>
       <dt>Email updates</dt><dd>{{ s.updates_opt_in|yesno:"Opted in,Not opted in" }}</dd>
       <dt>Policy consent</dt><dd>{{ s.policy_consent_at|date:"j M Y H:i" }} (version {{ s.policy_version }})</dd>
+      <dt>Heard about WikiScholar from</dt><dd>{{ s.get_heard_from_display|default:"—" }}</dd>
     </dl>
   </section>
   <section>
@@ -34,10 +34,11 @@
     <dl class="facts">
       <dt>Region</dt><dd>{{ s.region.name|default:"No region assigned" }}</dd>
       <dt>District</dt><dd>{{ s.district.name }} <span class="muted">{{ s.district.name_bn }}</span></dd>
-      <dt>Upazila</dt><dd>{{ s.upazila.name }} <span class="muted">{{ s.upazila.name_bn }}</span></dd>
+      <dt>Upazila / Area</dt><dd>{{ s.upazila.name }} <span class="muted">{{ s.upazila.name_bn }}</span>{% if s.upazila.group %} <span class="tag">{{ s.upazila.group_label }}</span>{% endif %}</dd>
       <dt>School</dt><dd><a href="{% url 'dashboard:school' s.school_id %}">{{ s.school.name }}</a> <span class="tag">{{ s.school.get_verification_status_display }}</span></dd>
       <dt>Typed as</dt><dd>“{{ s.school_name_as_entered }}” <span class="muted">· {{ s.get_school_resolution_display }}</span></dd>
       <dt>Class</dt><dd>{{ s.get_current_class_display }}</dd>
+      <dt>Section</dt><dd>{{ s.section|default:"—" }}</dd>
       <dt>Class roll</dt><dd>{{ s.class_roll|default:"—" }}</dd>
       <dt>Student ID (SID)</dt><dd>{{ s.student_id_sid|default:"—" }}</dd>
       <dt>Registered</dt><dd>{{ s.created_at|date:"j M Y H:i" }}</dd>

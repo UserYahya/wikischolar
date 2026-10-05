@@ -9,7 +9,8 @@ from apps.core import audit
 from apps.core.models import AuditLog
 from apps.core.permissions import require_perm
 from apps.notifications import services as notify
-from apps.reference.models import District, Region, School, Upazila
+from apps.reference import services as ref
+from apps.reference.models import District, Region, School
 from apps.registration import services
 from apps.registration.choices import CLASS_CHOICES, FilledBy, Gender
 from apps.registration.models import Student
@@ -24,9 +25,9 @@ def _filter_context(p):
            "unassigned_districts": District.objects.filter(region__isnull=True),
            "classes": CLASS_CHOICES, "genders": Gender.choices, "p": p, "sorts": filters.SORTS,
            "msg_batches": notify.recent_batches(), "msg_batch_modes": filters.MSG_BATCH_MODES,
-           "filled_by_choices": FilledBy.choices}
+           "filled_by_choices": FilledBy.choices, "area_kinds": filters.AREA_KINDS}
     if len(p["district"]) == 1:
-        ctx["upazilas"] = Upazila.objects.filter(district_id=p["district"][0])
+        ctx["upazilas"] = ref.areas_of(p["district"][0])
     if p["upazila"]:
         ctx["schools"] = School.objects.filter(upazila_id=p["upazila"], merged_into__isnull=True)
     return ctx
@@ -63,17 +64,20 @@ class _Echo:
 
 EXPORT_COLUMNS = [
     ("wikischolar_id", lambda s: s.wikischolar_id), ("student_name", lambda s: s.student_name),
-    ("date_of_birth", lambda s: s.date_of_birth), ("gender", lambda s: s.gender),
+    ("gender", lambda s: s.gender),
     ("guardian_name", lambda s: s.guardian_name), ("guardian_relation", lambda s: s.guardian_relation),
     ("guardian_relation_other", lambda s: s.guardian_relation_other),
     ("filled_by", lambda s: s.filled_by),
     ("guardian_declared_at", lambda s: s.guardian_declared_at.isoformat() if s.guardian_declared_at else ""),
     ("region", lambda s: s.district.region.name if s.district.region_id else ""),
     ("district", lambda s: s.district.name), ("upazila", lambda s: s.upazila.name),
+    ("area_group", lambda s: s.upazila.group),
     ("school_id", lambda s: s.school_id), ("school", lambda s: s.school.name),
     ("school_name_as_entered", lambda s: s.school_name_as_entered), ("current_class", lambda s: s.current_class),
     ("class_roll", lambda s: s.class_roll), ("student_id_sid", lambda s: s.student_id_sid),
+    ("section", lambda s: s.section),
     ("phone", lambda s: s.phone), ("email", lambda s: s.email), ("updates_opt_in", lambda s: s.updates_opt_in),
+    ("heard_from", lambda s: s.heard_from),
     ("registered_at", lambda s: s.created_at.isoformat()),
 ]
 
@@ -130,7 +134,7 @@ def student_edit(request, wsid):
     return render(request, "dashboard/student_edit.html", {
         "s": student, "form": form,
         "districts": District.objects.all(),
-        "upazilas": Upazila.objects.filter(district_id=district_id or 0),
+        "upazilas": ref.areas_of(district_id),
         "schools": School.objects.filter(upazila_id=upazila_id or 0, merged_into__isnull=True),
     })
 

@@ -1,22 +1,26 @@
 {% extends "public_base.html" %}{% load static %}
 {% block title %}WikiScholar Registration{% endblock %}
-{% block head %}{% include "_datefield_assets.html" %}{% endblock %}
 {% block content %}
+{# Every label, hint and message is English with a smaller Bangla line (class "bn"). Messages from Python and #}
+{# register.js get their Bangla from apps/registration/bangla.py, passed to the script below. #}
 <main class="reg" id="reg">
   <div class="intro">
-    <h1>Student Registration</h1>
+    <h1>Student Registration <span class="bn" lang="bn">শিক্ষার্থী নিবন্ধন</span></h1>
     <p>Complete the form in four steps. At the end you'll get a WikiScholar ID, which you'll need for every WikiScholar activity.
       Please write everything in <strong>English</strong>.</p>
+    <p class="bn" lang="bn">চারটি ধাপে ফর্মটি পূরণ করুন। শেষে একটি উইকিস্কলার আইডি পাবেন, উইকিস্কলারের সব কাজে এটি লাগবে।
+      সব তথ্য <strong>ইংরেজিতে</strong> লিখুন।</p>
   </div>
 
   <nav class="rail" aria-label="Registration steps">
     <ol>
-      <li data-step-tab="1" aria-current="step"><span class="n">1</span><span class="t">Student &amp; guardian</span></li>
-      <li data-step-tab="2"><span class="n">2</span><span class="t">School details</span></li>
-      <li data-step-tab="3"><span class="n">3</span><span class="t">Contact &amp; email verification</span></li>
-      <li data-step-tab="4"><span class="n">4</span><span class="t">Consent &amp; submit</span></li>
+      <li data-step-tab="1" aria-current="step"><span class="n">1</span><span class="t">Student &amp; guardian<span class="bn" lang="bn">শিক্ষার্থী ও অভিভাবক</span></span></li>
+      <li data-step-tab="2"><span class="n">2</span><span class="t">School details<span class="bn" lang="bn">বিদ্যালয়ের তথ্য</span></span></li>
+      <li data-step-tab="3"><span class="n">3</span><span class="t">Contact &amp; email verification<span class="bn" lang="bn">যোগাযোগ ও ইমেইল যাচাই</span></span></li>
+      <li data-step-tab="4"><span class="n">4</span><span class="t">Consent &amp; submit<span class="bn" lang="bn">সম্মতি ও জমা</span></span></li>
     </ol>
-    <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a></p>
+    <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a>
+      <span class="bn" lang="bn">কোনো প্রশ্ন থাকলে এই ঠিকানায় যোগাযোগ করুন</span></p>
   </nav>
 
   <form class="sheet" id="regForm" novalidate autocomplete="on" lang="en">
@@ -25,54 +29,49 @@
 
     <!-- Step 1 -->
     <section class="step" data-step="1">
-      <h2>Student &amp; guardian</h2>
+      <h2>Student &amp; guardian <span class="bn" lang="bn">শিক্ষার্থী ও অভিভাবক</span></h2>
       <fieldset class="declare" id="declareBox">
-        <legend>Guardian declaration</legend>
-        <p class="declare-note">This form must be filled in by the student's guardian (parent), as required by the
-          Wikimedia Bangladesh Youth Safety Policy.</p>
+        <legend>Guardian declaration <span class="bn-inline" lang="bn">অভিভাবকের ঘোষণা</span></legend>
+        <p class="declare-note">This form must be filled in by the student's guardian, as required by the
+          Wikimedia Bangladesh Youth Safety Policy.
+          <span class="bn" lang="bn">উইকিমিডিয়া বাংলাদেশের যুব সুরক্ষা নীতি অনুযায়ী ফর্মটি শিক্ষার্থীর অভিভাবককেই পূরণ করতে হবে।</span></p>
         <label class="check">
           <input type="checkbox" name="guardian_declaration" id="guardian_declaration" required>
-          <span>I am the <strong>guardian (parent)</strong> of the student named below, and I am filling in this form on
-            their behalf. The information I give is correct.</span>
+          <span>I am the <strong>guardian</strong> of the student named below, and I am filling in this form on
+            their behalf. The information I give is correct.
+            <span class="bn" lang="bn">আমি নিচে উল্লেখ করা শিক্ষার্থীর <strong>অভিভাবক</strong> এবং তার পক্ষে এই ফর্মটি পূরণ করছি।
+              আমার দেওয়া সব তথ্য সঠিক।</span></span>
         </label>
         <p class="err" data-err="guardian_declaration"></p>
       </fieldset>
       <div class="grid">
         <div class="field span2">
-          <label for="student_name">Student's full name</label>
+          <label for="student_name">Student's full name <span class="bn" lang="bn">শিক্ষার্থীর পুরো নাম</span></label>
           <input id="student_name" name="student_name" required maxlength="150" autocomplete="name" data-english placeholder="e.g. Rahim Uddin">
           <p class="err" data-err="student_name"></p>
         </div>
-        <div class="field">
-          <label for="date_of_birth">Date of birth</label>
-          <input id="date_of_birth" name="date_of_birth" type="text" inputmode="numeric" maxlength="10" required
-                 autocomplete="bday" placeholder="dd/mm/yyyy" aria-describedby="dob_hint" data-datefield data-max="yesterday"
-                 data-view="years">
-          <p class="hint" id="dob_hint">Day/month/year, for example 14/03/2012.</p>
-          <p class="err" data-err="date_of_birth"></p>
-        </div>
-        <fieldset class="field">
-          <legend>Gender</legend>
+        <fieldset class="field span2">
+          <legend>Gender <span class="bn" lang="bn">লিঙ্গ</span></legend>
           <div class="choices">
-            {% for v, l in genders %}<label class="chip"><input type="radio" name="gender" value="{{ v }}" required><span>{{ l }}</span></label>{% endfor %}
+            {% for v, l, bn in genders %}<label class="chip"><input type="radio" name="gender" value="{{ v }}" required><span>{{ l }} <span class="bn-inline" lang="bn">{{ bn }}</span></span></label>{% endfor %}
           </div>
           <p class="err" data-err="gender"></p>
         </fieldset>
-        <div class="field">
-          <label for="guardian_name">Guardian's name (your name)</label>
+        <div class="field span2">
+          <label for="guardian_name">Guardian's name (your name) <span class="bn" lang="bn">অভিভাবকের নাম (আপনার নাম)</span></label>
           <input id="guardian_name" name="guardian_name" required maxlength="150" data-english>
           <p class="err" data-err="guardian_name"></p>
         </div>
-        <fieldset class="field">
-          <legend>Relation to guardian</legend>
+        <fieldset class="field span2">
+          <legend>Relation to guardian <span class="bn" lang="bn">অভিভাবকের সাথে সম্পর্ক</span></legend>
           <div class="choices">
-            {% for v, l in relations %}<label class="chip"><input type="radio" name="guardian_relation" value="{{ v }}" required><span>{{ l }}</span></label>{% endfor %}
+            {% for v, l, bn in relations %}<label class="chip"><input type="radio" name="guardian_relation" value="{{ v }}" required><span>{{ l }} <span class="bn-inline" lang="bn">{{ bn }}</span></span></label>{% endfor %}
           </div>
           <p class="err" data-err="guardian_relation"></p>
         </fieldset>
         <div class="field" id="relationOtherField" hidden>
-          <label for="guardian_relation_other">Write the relation</label>
-          <input id="guardian_relation_other" name="guardian_relation_other" maxlength="60" data-english placeholder="e.g. Uncle, Aunt, Brother">
+          <label for="guardian_relation_other">Write the relation <span class="bn" lang="bn">সম্পর্কটি লিখুন</span></label>
+          <input id="guardian_relation_other" name="guardian_relation_other" maxlength="60" data-english placeholder="e.g. Uncle, Aunt">
           <p class="err" data-err="guardian_relation_other"></p>
         </div>
       </div>
@@ -80,66 +79,79 @@
 
     <!-- Step 2 -->
     <section class="step" data-step="2" hidden>
-      <h2>School details</h2>
+      <h2>School details <span class="bn" lang="bn">বিদ্যালয়ের তথ্য</span></h2>
       <div class="grid">
         <div class="field">
-          <label for="district">District</label>
+          <label for="district">District <span class="bn" lang="bn">জেলা</span></label>
           <select id="district" name="district" required><option value="">Loading…</option></select>
           <p class="err" data-err="district"></p>
         </div>
         <div class="field">
-          <label for="region">Region (automatic)</label>
+          <label for="region">Region <span class="label-note">(automatic)</span> <span class="bn" lang="bn">অঞ্চল (নিজে থেকে বসবে)</span></label>
           <output id="region" class="derived" aria-live="polite">Shown after you choose a district</output>
         </div>
-        <div class="field">
-          <label for="upazila">Upazila</label>
-          <select id="upazila" name="upazila" required disabled><option value="">Choose a district first</option></select>
+        <div class="field span2">
+          <label for="upazila">Upazila / Area <span class="bn" lang="bn">উপজেলা / এলাকা</span></label>
+          <select id="upazila" name="upazila" required disabled aria-describedby="areaHelp"><option value="">Choose a district first</option></select>
+          <p class="hint" id="areaHelp">In a city, choose your thana under its city corporation. Not listed? Choose “Other area (not listed)” at the end.
+            <span class="bn" lang="bn">শহরে থাকলে সিটি কর্পোরেশনের নিচে আপনার থানা বেছে নিন। তালিকায় না থাকলে শেষের “Other area (not listed)” বেছে নিন।</span></p>
           <p class="err" data-err="upazila"></p>
         </div>
-        <div class="field">
-          <label for="current_class">Current class</label>
-          <select id="current_class" name="current_class" required>
-            <option value="">Choose</option>
-            {% for v, l in classes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
-          </select>
-          <p class="err" data-err="current_class"></p>
-        </div>
         <div class="field span2 combo">
-          <label for="school_name">School name</label>
+          <label for="school_name">School name <span class="bn" lang="bn">বিদ্যালয়ের নাম</span></label>
           <input id="school_name" name="school_name" required maxlength="255" disabled data-english
                  role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="schoolList"
-                 placeholder="Choose an upazila first" autocomplete="off">
+                 aria-describedby="schoolHelp" placeholder="Choose the area first" autocomplete="off">
           <input type="hidden" name="school_id" id="school_id">
           <ul id="schoolList" role="listbox" hidden></ul>
           <p class="hint" id="schoolHint"></p>
-          <p class="hint" id="schoolHelp">Start typing: approved schools in the chosen upazila are suggested. If yours isn't listed, add it as new.</p>
+          <p class="hint" id="schoolHelp">Start typing: approved schools in the chosen area are suggested. If yours isn't listed, add it as new.
+            <span class="bn" lang="bn">লিখতে শুরু করুন: বেছে নেওয়া এলাকার অনুমোদিত বিদ্যালয়গুলোর নাম দেখাবে। আপনার বিদ্যালয় তালিকায় না থাকলে নতুন হিসেবে যোগ করুন।</span></p>
           <p class="err" data-err="school_name"></p>
         </div>
         <div class="field">
-          <label for="class_roll">Class roll</label>
-          <input id="class_roll" name="class_roll" inputmode="numeric" maxlength="20" aria-describedby="rollHelp" data-english>
+          <label for="current_class">Current class <span class="bn" lang="bn">বর্তমান শ্রেণি</span></label>
+          <select id="current_class" name="current_class" required>
+            <option value="">Choose · বেছে নিন</option>
+            {% for v, l, bn in classes %}<option value="{{ v }}">{{ l }} · {{ bn }}</option>{% endfor %}
+          </select>
+          <p class="err" data-err="current_class"></p>
+        </div>
+        <div class="field">
+          <label for="section">Section <span class="label-note">(if any)</span>
+            <span class="bn" lang="bn">শাখা (যদি থাকে)</span></label>
+          <input id="section" name="section" maxlength="20" aria-describedby="sectionHelp" data-english placeholder="e.g. A">
+          <p class="err" data-err="section"></p>
+        </div>
+        <p class="hint span2 grid-hint" id="sectionHelp">Write the section only if the class has sections (for example A, B, Day, Morning). Otherwise leave it empty.
+          <span class="bn" lang="bn">শ্রেণিতে শাখা থাকলে তবেই শাখার নাম ইংরেজিতে লিখুন (যেমন A, B, Day, Morning)। না থাকলে ঘরটি খালি রাখুন।</span></p>
+        <div class="field">
+          <label for="class_roll">Class roll <span class="bn" lang="bn">রোল নম্বর</span></label>
+          <input id="class_roll" name="class_roll" inputmode="numeric" pattern="[0-9]*" maxlength="20" aria-describedby="rollHelp" data-digits placeholder="e.g. 12">
           <p class="err" data-err="class_roll"></p>
         </div>
         <div class="field">
-          <label for="student_id_sid">Student ID (SID) <span class="label-note">(if any)</span></label>
+          <label for="student_id_sid">Student ID (SID) <span class="label-note">(if any)</span>
+            <span class="bn" lang="bn">শিক্ষার্থী আইডি (যদি থাকে)</span></label>
           <input id="student_id_sid" name="student_id_sid" maxlength="40" aria-describedby="rollHelp" data-english>
           <p class="err" data-err="student_id_sid"></p>
         </div>
-        <p class="hint span2" id="rollHelp">Fill in at least one. If the school hasn't given the student an ID, the class roll is enough.</p>
+        <p class="hint span2 grid-hint" id="rollHelp">Fill in at least one of class roll and student ID. The class roll is numbers only. If the school hasn't given the student an ID, the class roll is enough.
+          <span class="bn" lang="bn">রোল নম্বর ও শিক্ষার্থী আইডির অন্তত একটি পূরণ করুন। রোল নম্বর শুধু সংখ্যায় লিখুন। বিদ্যালয় থেকে আইডি দেওয়া না হলে শুধু রোল নম্বরই যথেষ্ট।</span></p>
       </div>
     </section>
 
     <!-- Step 3 -->
     <section class="step" data-step="3" hidden>
-      <h2>Contact &amp; email verification</h2>
+      <h2>Contact &amp; email verification <span class="bn" lang="bn">যোগাযোগ ও ইমেইল যাচাই</span></h2>
       <div class="grid">
         <div class="field">
-          <label for="phone">Mobile number</label>
+          <label for="phone">Mobile number <span class="bn" lang="bn">মোবাইল নম্বর</span></label>
           <input id="phone" name="phone" type="tel" inputmode="tel" required placeholder="01XXXXXXXXX" autocomplete="tel">
           <p class="err" data-err="phone"></p>
         </div>
         <div class="field">
-          <label for="email">Email</label>
+          <label for="email">Email <span class="bn" lang="bn">ইমেইল</span></label>
           <input id="email" name="email" type="email" required autocomplete="email" spellcheck="false" placeholder="name@gmail.com">
           <p class="err" data-err="email"></p>
         </div>
@@ -147,24 +159,30 @@
           <p id="typoText"></p>
           <div class="row">
             <button type="button" class="btn quiet" id="typoFix"></button>
-            <button type="button" class="btn quiet" id="typoKeep">No, my address is correct</button>
+            <button type="button" class="btn quiet" id="typoKeep">No, my address is correct <span class="bn-inline" lang="bn">না, আমার ঠিকানা ঠিক আছে</span></button>
           </div>
         </div>
         <div class="otp span2" id="otpBox">
           <p class="hint" id="otpHowTo">The verification code is sent <strong>by email only</strong> (not by SMS).
-            If it hasn't arrived within a minute, check your <strong>Spam</strong> or <strong>Junk</strong> folder.</p>
-          <button type="button" class="btn primary" id="sendOtp">Send verification code</button>
+            If it hasn't arrived within a minute, check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+            <span class="bn" lang="bn">যাচাই কোড <strong>শুধু ইমেইলে</strong> পাঠানো হয় (এসএমএসে নয়)। এক মিনিটের মধ্যে না পেলে ইমেইলের
+              <strong>Spam</strong> বা <strong>Junk</strong> ফোল্ডার দেখুন।</span></p>
+          {% if TURNSTILE_SITE_KEY %}{# Cloudflare Turnstile: rendered by register.js when step 3 opens #}
+          <div class="turnstile" id="turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}"></div>
+          <p class="err" data-err="turnstile" aria-live="polite"></p>
+          {% endif %}
+          <button type="button" class="btn primary" id="sendOtp">Send verification code <span class="bn-inline" lang="bn">যাচাই কোড পাঠান</span></button>
           <div class="otp-entry" id="otpEntry" hidden>
-            <label for="email_otp">Email code</label>
+            <label for="email_otp">Email code <span class="bn" lang="bn">ইমেইলে পাওয়া কোড</span></label>
             <div class="row">
               <input id="email_otp" name="email_otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code">
-              <button type="button" class="btn primary" id="verifyOtp">Verify code</button>
+              <button type="button" class="btn primary" id="verifyOtp">Verify code <span class="bn-inline" lang="bn">কোড যাচাই করুন</span></button>
             </div>
             <p class="otp-timer" id="otpTimer" hidden></p>
             <p class="hint" id="otpHint"></p>
             <button type="button" class="link" id="resendOtp" disabled>Send a new code</button>
           </div>
-          <p class="verified" id="verifiedNote" hidden>Email verified.</p>
+          <p class="verified" id="verifiedNote" hidden>Email verified. <span class="bn-inline" lang="bn">ইমেইল যাচাই হয়েছে।</span></p>
           <p class="err" data-err="email_otp" aria-live="polite"></p>
         </div>
       </div>
@@ -172,35 +190,62 @@
 
     <!-- Step 4 -->
     <section class="step" data-step="4" hidden>
-      <h2>Consent &amp; submit</h2>
+      <h2>Consent &amp; submit <span class="bn" lang="bn">সম্মতি ও জমা</span></h2>
+      <div class="field survey">
+        <label for="heard_from">How did you hear about WikiScholar? <span class="bn" lang="bn">উইকিস্কলারের কথা আপনি কোথা থেকে জানলেন?</span></label>
+        <select id="heard_from" name="heard_from" required>
+          <option value="">Choose · বেছে নিন</option>
+          {% for v, l, bn in heard_from %}<option value="{{ v }}">{{ l }} · {{ bn }}</option>{% endfor %}
+        </select>
+        <p class="err" data-err="heard_from"></p>
+      </div>
       <label class="check">
         <input type="checkbox" name="policy_consent" id="policy_consent" required>
-        <span>I have read and agree to the <a href="{{ POLICY_URL }}" target="_blank" rel="noopener">Wikimedia Bangladesh Youth Safety Policy</a></span>
+        <span>I have read and agree to the <a href="{{ POLICY_URL }}" target="_blank" rel="noopener">Wikimedia Bangladesh Youth Safety Policy</a>
+          <span class="bn" lang="bn">আমি উইকিমিডিয়া বাংলাদেশের <a href="{{ POLICY_URL }}" target="_blank" rel="noopener">যুব সুরক্ষা নীতি</a> পড়েছি এবং এতে সম্মতি দিচ্ছি।</span></span>
       </label>
       <p class="err" data-err="policy_consent"></p>
       <label class="check">
         <input type="checkbox" name="updates_opt_in" id="updates_opt_in">
-        <span>I want to receive future WikiScholar updates by email</span>
+        <span>I want to receive future WikiScholar updates by email
+          <span class="bn" lang="bn">উইকিস্কলারের পরবর্তী খবরাখবর ইমেইলে পেতে চাই</span></span>
       </label>
       <p class="err" data-err="__all__" id="formErr"></p>
     </section>
 
     <div class="actions">
-      <button type="button" class="btn quiet" id="back" hidden>Back</button>
-      <p class="nav-note" id="verifyFirst" hidden>Verify your email to continue.</p>
-      <button type="button" class="btn primary" id="next">Next step</button>
-      <button type="submit" class="btn primary" id="submit" hidden disabled>Complete registration</button>
+      <button type="button" class="btn quiet" id="back" hidden>Back <span class="bn-inline" lang="bn">আগের ধাপ</span></button>
+      <p class="nav-note" id="verifyFirst" hidden>Verify your email to continue. <span class="bn" lang="bn">এগিয়ে যেতে ইমেইল যাচাই করুন।</span></p>
+      <button type="button" class="btn primary" id="next">Next step <span class="bn-inline" lang="bn">পরের ধাপ</span></button>
+      <button type="submit" class="btn primary" id="submit" hidden disabled>Complete registration <span class="bn-inline" lang="bn">নিবন্ধন সম্পন্ন করুন</span></button>
     </div>
   </form>
 
+  {# Success screen. It is also the printout: "Print / Save as PDF" prints just this card under the logo. #}
   <section class="done" id="done" hidden tabindex="-1" aria-live="polite">
-    <p class="done-lead">Registration complete</p>
-    <p class="wsid" id="wsid"></p>
-    <p>This is your WikiScholar ID. A confirmation email with these details has been sent to <strong id="doneEmail"></strong>.</p>
+    <div class="done-head">
+      <span class="done-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <h2 class="done-lead">Registration complete <span class="bn" lang="bn">নিবন্ধন সম্পন্ন হয়েছে</span></h2>
+    </div>
+    <div class="id-card">
+      <p class="id-label">Your WikiScholar ID <span class="bn-inline" lang="bn">আপনার উইকিস্কলার আইডি</span></p>
+      <p class="wsid" id="wsid"></p>
+      <p class="id-note">Keep this ID safe: you'll need it for every WikiScholar activity.
+        <span class="bn" lang="bn">আইডিটি সংরক্ষণ করুন: উইকিস্কলারের প্রতিটি কাজে এটি লাগবে।</span></p>
+    </div>
+    <p class="done-email">A confirmation email with these details has been sent to <strong id="doneEmail"></strong>.
+      <span class="bn" lang="bn">এই তথ্যসহ একটি নিশ্চিতকরণ ইমেইল ওই ঠিকানায় পাঠানো হয়েছে।</span></p>
     <dl id="summary"></dl>
-    <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a></p>
-    <p><a class="btn" href="{{ SITE_URL }}">&larr; Back to {{ SITE_HOST }}</a></p>
+    <div class="done-actions">
+      <button type="button" class="btn primary" id="printDone">Print / Save as PDF <span class="bn-inline" lang="bn">প্রিন্ট / পিডিএফ সংরক্ষণ</span></button>
+      <a class="btn quiet" href="{{ SITE_URL }}">&larr; Back to {{ SITE_HOST }} <span class="bn-inline" lang="bn">ওয়েবসাইটে ফিরে যান</span></a>
+    </div>
+    <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a>
+      <span class="bn" lang="bn">কোনো প্রশ্ন থাকলে এই ঠিকানায় যোগাযোগ করুন</span></p>
+    <p class="print-only" id="printNote"></p>
   </section>
 </main>
+{{ bangla_messages|json_script:"bnMessages" }}
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/register.js' %}" defer></script>{% endblock %}
+{% block scripts %}{% if TURNSTILE_SITE_KEY %}<script src="{{ TURNSTILE_SCRIPT }}?render=explicit" id="turnstileScript" async defer></script>{% endif %}
+<script src="{% static 'js/register.js' %}" defer></script>{% endblock %}

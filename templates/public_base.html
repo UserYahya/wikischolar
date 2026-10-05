@@ -9,15 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@100..112.5,400..800&family=Noto+Sans+Bengali:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/public.css' %}">
   {% block head %}{% endblock %}
-  <link rel="icon" type="image/png" href="{% static 'img/wikischolar-logo.png' %}">
+  {% include "_favicons.html" %}
 </head>
 <body>
   <header class="masthead">
     <div class="masthead-inner">
       {# width/height keep the logo small even before the stylesheet loads #}
-      <a class="brand" href="/"><img src="{% static 'img/wikischolar-logo.png' %}" alt="WikiScholar" width="143" height="44"></a>
+      <a class="brand" href="/"><img src="{% static 'img/wikischolar-logo-en.png' %}" alt="WikiScholar" width="143" height="44"></a>
       <nav class="site-links" aria-label="WikiScholar website">
-        <span class="org">A Wikimedia Bangladesh programme</span>
+        <span class="org">A Wikimedia Bangladesh programme<span class="bn" lang="bn">উইকিমিডিয়া বাংলাদেশের একটি উদ্যোগ</span></span>
         <a class="back-site" href="{{ SITE_URL }}"><span aria-hidden="true">&larr;</span> <span class="back-long">Back to </span>{{ SITE_HOST }}</a>
       </nav>
     </div>

@@ -10,7 +10,6 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core import audit, ids
-from apps.core.utils import DATE_FORMAT
 from apps.notifications import services as notify
 from apps.notifications.models import NotificationLog
 from apps.reference import services as reference
@@ -47,8 +46,8 @@ def start_email_verification(email, *, request):
     ev.id = uuid.uuid4()
     ev.code_hash = _hash(code, ev.id)
     ev.save()
-    subject, body = notify.render_system_email(emails.OTP, {"code": code, "minutes": CFG["OTP_TTL_MINUTES"]})
-    log = notify.send_transactional_email(NotificationLog.Kind.OTP, email, subject, body)
+    log = notify.send_system_email(emails.OTP, NotificationLog.Kind.OTP, email,
+                                   {"code": code, "minutes": CFG["OTP_TTL_MINUTES"]})
     return ev, code, log
 
 
@@ -95,12 +94,13 @@ def register_student(data, *, request):
     now = timezone.now()
     student = Student.objects.create(
         wikischolar_id=ids.next_wikischolar_id(),
-        student_name=data["student_name"], date_of_birth=data["date_of_birth"], gender=data["gender"],
+        student_name=data["student_name"], gender=data["gender"],
         guardian_name=data["guardian_name"], guardian_relation=data["guardian_relation"],
         guardian_relation_other=data["guardian_relation_other"],
         district=data["district"], upazila=data["upazila"], school=school,
         school_name_as_entered=data["school_name"], school_resolution=how,
         current_class=data["current_class"], class_roll=data["class_roll"], student_id_sid=data["student_id_sid"],
+        section=data["section"], heard_from=data["heard_from"],
         phone=data["phone"], email=data["email"], email_verified_at=ev.verified_at,
         policy_consent_at=now, policy_version=CFG["POLICY_VERSION"], updates_opt_in=data["updates_opt_in"],
         filled_by=FilledBy.GUARDIAN if data.get("guardian_declaration") else FilledBy.STUDENT,
@@ -120,32 +120,34 @@ def summary(student):
     return {
         "wikischolar_id": student.wikischolar_id,
         "student_name": student.student_name,
-        "date_of_birth": student.date_of_birth.strftime(DATE_FORMAT),
         "gender": student.get_gender_display(),
         "guardian": f"{student.guardian_name} ({student.guardian_relation_label})",
         "district": student.district.name,
         "region": region.name if region else "",
-        "upazila": student.upazila.name,
+        "upazila": student.upazila.display_name,  # thanas carry their city corporation
         "school": student.school.name,
         "school_pending": student.school.verification_status == "pending",
         "current_class": student.get_current_class_display(),
         "class_roll": student.class_roll,
         "student_id_sid": student.student_id_sid,
+        "section": student.section,
+        "heard_from": student.get_heard_from_display(),
         "phone": student.phone,
         "email": student.email,
         "filled_by": student.get_filled_by_display(),
+        "registered_on": timezone.localtime(student.created_at).strftime("%d/%m/%Y"),
     }
 
 
 def send_confirmation(student):
-    subject, body = notify.render_system_email(emails.CONFIRMATION, emails.confirmation_values(summary(student)))
-    notify.send_transactional_email(NotificationLog.Kind.CONFIRMATION, student.email, subject, body, student=student)
+    notify.send_system_email(emails.CONFIRMATION, NotificationLog.Kind.CONFIRMATION, student.email,
+                             emails.confirmation_values(summary(student)), student=student)
 
 
 # ---- Admin edits (every change → edit_history + audit_logs) ------------------ #
-EDITABLE_FIELDS = ["student_name", "date_of_birth", "gender", "guardian_name", "guardian_relation",
+EDITABLE_FIELDS = ["student_name", "gender", "guardian_name", "guardian_relation",
                    "guardian_relation_other", "district", "upazila", "school", "current_class", "class_roll",
-                   "student_id_sid", "phone", "email", "updates_opt_in"]
+                   "student_id_sid", "section", "phone", "email", "updates_opt_in"]
 
 
 def _value(student, field):

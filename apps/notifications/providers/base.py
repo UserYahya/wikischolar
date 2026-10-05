@@ -12,5 +12,5 @@ class Provider:
     """Providers receive only what is needed to deliver: destination + content."""
     name = "base"
 
-    def send(self, destination, body, subject=""):
+    def send(self, destination, body, subject="", html=None):  # html: email only
         raise NotImplementedError

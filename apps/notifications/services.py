@@ -9,6 +9,7 @@ import hmac
 import re
 import time
 from dataclasses import dataclass, field
+from typing import Callable, Optional
 
 from django.conf import settings
 from django.db import transaction
@@ -17,6 +18,7 @@ from django.utils.module_loading import import_string
 
 from apps.core import audit, ids
 
+from . import html_email
 from .models import Channel, EmailBatch, EmailSettings, EmailTemplate, NotificationLog, SmsBatch, SmsSettings
 
 _providers = {}
@@ -42,9 +44,11 @@ def render(template, student):
     return template.replace("{name}", student.student_name).replace("{wikischolar_id}", student.wikischolar_id)
 
 
-def _deliver(log, body, subject=""):
+def _deliver(log, body, subject="", html=None):
+    """Email always goes out as text + branded HTML: `html` if given, else the provider builds it from the text."""
     provider = provider_for(log.channel)
-    result = provider.send(log.destination, body, subject=subject)
+    extra = {"html": html} if html else {}
+    result = provider.send(log.destination, body, subject=subject, **extra)
     log.attempts += 1
     log.provider = provider.name
     log.provider_message_id = result.provider_message_id
@@ -69,6 +73,8 @@ class SystemEmail:
     placeholders: dict                # {"code": "what it is", ...}; used as {code} in the text
     required: tuple = ()              # placeholders the text must contain
     sample: dict = field(default_factory=dict)  # example values for the preview and test email
+    # values -> {placeholder: HTML} for placeholders shown richly in the HTML email (a code box, a table…)
+    html_values: Optional[Callable[[dict], dict]] = None
 
 
 _SYSTEM_EMAILS = {}
@@ -123,6 +129,15 @@ def render_system_email(key, values):
     return " ".join(fill(subject, values).split()), fill(body, values)
 
 
+def render_system_email_html(key, values, base_url=None):
+    """The HTML part of a system email: the saved wording in the WikiScholar layout."""
+    email = get_system_email(key)
+    subject, body, _ = system_email_text(key)
+    text, fragments = html_email.fill_html(body, values, email.html_values(values) if email.html_values else None)
+    return html_email.render_html(text, subject=" ".join(fill(subject, values).split()), fragments=fragments,
+                                  base_url=base_url)
+
+
 @transaction.atomic
 def save_system_email(key, subject, body, *, request):
     get_system_email(key)  # KeyError for unknown keys
@@ -154,18 +169,26 @@ def send_system_email_test(key, to, *, request):
     """Send the saved wording, filled with sample values, through the active email settings."""
     email = get_system_email(key)
     subject, body = render_system_email(key, email.sample)
-    result = provider_for(Channel.EMAIL).send(to, body, subject=f"[TEST] {subject}")
+    result = provider_for(Channel.EMAIL).send(to, body, subject=f"[TEST] {subject}",
+                                              html=render_system_email_html(key, email.sample))
     audit.record("settings.system_email_tested", request=request, entity_type="email_templates", entity_id=key,
                  meta={"to": to, "ok": result.ok, "error": result.error})
     return result
 
 
 # ---- Transactional ---------------------------------------------------------- #
-def send_transactional_email(kind, to, subject, body, student=None):
+def send_transactional_email(kind, to, subject, body, student=None, html=None):
     log = NotificationLog.objects.create(
         channel=Channel.EMAIL, kind=kind, destination=to, student=student,
         wikischolar_id=student.wikischolar_id if student else "")
-    return _deliver(log, body, subject)
+    return _deliver(log, body, subject, html=html)
+
+
+def send_system_email(key, kind, to, values, student=None):
+    """Send a registered system email (text + HTML) to one address."""
+    subject, body = render_system_email(key, values)
+    return send_transactional_email(kind, to, subject, body, student=student,
+                                    html=render_system_email_html(key, values))
 
 
 def email_delivery():
@@ -196,7 +219,7 @@ def send_test_sms(sms_settings, phone):
 
 def send_test_email(email_settings, to):
     """Send through the given (possibly not yet active) settings, bypassing the active config."""
-    from django.core.mail import EmailMessage
+    from django.core.mail import EmailMultiAlternatives
 
     from .providers.base import SendResult
     from .providers.email import reply_to_address
@@ -204,9 +227,10 @@ def send_test_email(email_settings, to):
     body = ("This is a test message from the WikiScholar dashboard.\n\n"
             "If you can read this, outgoing email is configured correctly.\n"
             f"Replies to this email go to: {reply_to or email_settings.from_email}")
-    msg = EmailMessage(subject="WikiScholar test email", body=body, from_email=email_settings.from_header,
-                       to=[to], connection=email_settings.connection(),
-                       reply_to=[reply_to] if reply_to else None)
+    msg = EmailMultiAlternatives(subject="WikiScholar test email", body=body, from_email=email_settings.from_header,
+                                 to=[to], connection=email_settings.connection(),
+                                 reply_to=[reply_to] if reply_to else None)
+    msg.attach_alternative(html_email.render_html(body, subject="WikiScholar test email"), "text/html")
     try:
         msg.send(fail_silently=False)
     except Exception as exc:

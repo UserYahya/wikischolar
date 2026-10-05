@@ -16,7 +16,7 @@
     if (items.length) {
       const head = document.createElement("li");
       head.className = "head"; head.setAttribute("role", "presentation");
-      head.textContent = "Already listed in this upazila — open it instead of adding";
+      head.textContent = "Already listed in this upazila or area — open it instead of adding";
       list.append(head);
     }
     items.forEach((s, i) => {
@@ -29,7 +29,7 @@
     const add = document.createElement("li");
     add.id = `opt${items.length}`; add.dataset.i = items.length; add.className = "add";
     add.setAttribute("role", "option"); add.setAttribute("aria-selected", String(active === items.length));
-    add.textContent = items.length ? `Not in the list? Add “${q}” as a new school` : `No match in this upazila. Add “${q}” as a new school`;
+    add.textContent = items.length ? `Not in the list? Add “${q}” as a new school` : `No match in this upazila or area. Add “${q}” as a new school`;
     list.append(add);
     list.hidden = !q;
     nameIn.setAttribute("aria-expanded", String(!list.hidden));
