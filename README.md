@@ -47,6 +47,11 @@ Public form: `http://localhost:8000/` · Dashboard: `http://localhost:8000/dashb
 
 For a quick local HTTP trial, set `DJANGO_DEBUG=1` and `DJANGO_SSL_REDIRECT=0` in `.env`.
 
+## Deploying on an Azure VM (Docker + Caddy + Cloudflare)
+
+See [`docs/DEPLOY_AZURE.md`](docs/DEPLOY_AZURE.md): `docker-compose.prod.yml`, `deploy/Caddyfile`,
+daily `pg_dump` backups to S3 (`deploy/pg_backup.sh`).
+
 ## Deploying on cPanel shared hosting
 
 See [`docs/DEPLOY_CPANEL.md`](docs/DEPLOY_CPANEL.md): Setup Python App + PostgreSQL, `.env` from

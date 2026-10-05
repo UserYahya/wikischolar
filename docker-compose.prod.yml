@@ -1,0 +1,93 @@
+# Production stack for a single Linux VM (Azure D2s_v5: 2 vCPU / 8 GB) behind Cloudflare.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Only Caddy publishes ports. gunicorn, PostgreSQL and Redis stay on the internal Docker network
+# (Docker bypasses ufw, so never add `ports:` to them). Full runbook: docs/DEPLOY_AZURE.md.
+name: wikischolar
+
+x-app: &app
+  build: .
+  image: wikischolar-app
+  env_file: .env
+  environment:
+    DB_HOST: db
+    DB_PORT: "5432"
+    DB_SSLMODE: disable  # internal Docker network only
+    REDIS_URL: redis://redis:6379/0
+    DJANGO_BEHIND_PROXY: "1"
+  restart: unless-stopped
+  depends_on:
+    db: {condition: service_healthy}
+    redis: {condition: service_healthy}
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-register.wikischolar.bd}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/certs:/etc/caddy/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web]
+
+  web:
+    <<: *app
+    # Kept as one shell line: a folded YAML block keeps line breaks on indented lines,
+    # which would cut the gunicorn options off.
+    command:
+      - sh
+      - -c
+      - >-
+        python manage.py migrate --noinput &&
+        python manage.py seed_reference &&
+        exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --worker-class gthread --workers 3 --threads 4 --timeout 120 --max-requests 2000 --max-requests-jitter 200 --access-logfile -
+
+  worker:
+    # Sends queued bulk messages for batches larger than WS_INLINE_DISPATCH_MAX. Run exactly one.
+    <<: *app
+    command: sh -c "while true; do python manage.py send_queued; sleep 60; done"
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    shm_size: 256mb
+    environment:
+      POSTGRES_DB: ${DB_NAME:?set DB_NAME in .env}
+      POSTGRES_USER: ${DB_USER:?set DB_USER in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    # Tuned for 8 GB RAM shared with the app containers.
+    command: >
+      postgres
+      -c shared_buffers=2GB
+      -c effective_cache_size=5GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=256MB
+      -c max_connections=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c wal_compression=on
+      -c shared_preload_libraries=pg_stat_statements
+      -c log_min_duration_statement=500
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    # Cache only (rate limits): no persistence, bounded memory.
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save "" --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

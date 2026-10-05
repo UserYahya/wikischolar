@@ -4,3 +4,7 @@ __pycache__/
 .git
 staticfiles/
 .venv/
+deploy/certs/
+*.dump
+.env.*
+!deploy/.env.production.example

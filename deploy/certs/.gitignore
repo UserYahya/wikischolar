@@ -1,0 +1,3 @@
+# Cloudflare Origin certificate goes here on the server (origin.pem, origin.key). Never commit them.
+*
+!.gitignore
