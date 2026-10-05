@@ -4,7 +4,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN DJANGO_DEBUG=1 python manage.py collectstatic --noinput
+# DEBUG must stay off here: only then does Django use the hashed, compressed manifest storage.
+RUN DJANGO_SECRET_KEY=collectstatic-build-only python manage.py collectstatic --noinput
 RUN useradd --system --uid 1001 app && chown -R app /app
 USER app
 EXPOSE 8000
