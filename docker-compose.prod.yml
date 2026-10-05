@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
     ports: ["80:80", "443:443", "443:443/udp"]
     environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:-register.wikischolar.bd}
+      SITE_ADDRESS: ${SITE_ADDRESS:-registration.wikischolar.bd}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./deploy/certs:/etc/caddy/certs:ro

@@ -5,6 +5,19 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-06
 
+### Added (Azure deployment)
+- **Production stack for one Linux VM behind Cloudflare** ([`docs/DEPLOY_AZURE.md`](docs/DEPLOY_AZURE.md)):
+  `docker-compose.prod.yml` (only Caddy publishes ports; gunicorn `gthread`; PostgreSQL 16 tuned for
+  8 GB; Redis as a bounded cache), `deploy/Caddyfile` (Cloudflare Origin certificate; trusts only
+  Cloudflare IPs and replaces `X-Forwarded-For` with the verified visitor IP, so per-IP rate limits
+  can't be dodged with a forged header) and `deploy/pg_backup.sh` (daily verified `pg_dump` to S3).
+- Docker image: `collectstatic` now runs with DEBUG off, so static files really get hashed names
+  and gzip/brotli copies; the `app` user has a home directory (needed by gunicorn 26).
+
+### Changed
+- This app's address is now **`registration.wikischolar.bd`** (was `register.wikischolar.bd`): the
+  `WS_PUBLIC_URL` default and every `.env` template and guide.
+
 ### Changed (school suggestions)
 - **School suggestions cover the whole district**, not just the chosen upazila / area: a student
   may attend a school in another upazila or thana of their district, and a school filed under a

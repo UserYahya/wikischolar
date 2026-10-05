@@ -128,7 +128,7 @@ class HtmlEmailTests(WSTestCase):
         html = self.html_of(msg)
         self.assertIn(code, html)
         self.assertIn("letter-spacing:8px", html)  # the code box
-        self.assertIn("https://register.wikischolar.bd/static/img/wikischolar-logo-en.png", html)
+        self.assertIn("https://registration.wikischolar.bd/static/img/wikischolar-logo-en.png", html)
         self.assertIn("A Wikimedia Bangladesh programme", html)
 
     def test_confirmation_email_has_details_table(self):
