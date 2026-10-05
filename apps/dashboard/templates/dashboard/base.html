@@ -34,6 +34,7 @@
     </nav>
     <div class="who">
       <p>{{ user.full_name }}<br><small>{{ user.get_role_display }}</small></p>
+      <p><a class="link" href="{% url 'dashboard:password_change' %}" {% if request.resolver_match.view_name == "dashboard:password_change" %}aria-current="page"{% endif %}>Change password</a></p>
       <form method="post" action="{% url 'dashboard:logout' %}">{% csrf_token %}<button class="link">Sign out</button></form>
     </div>
   </aside>

@@ -30,6 +30,6 @@ class HeardFrom(models.TextChoices):
     ONLINE_AD = "online_ad", "Google or YouTube ad"
     WIKIPEDIA_NOTICE = "wikipedia_notice", "Notice on Wikipedia"
     SCHOOL = "school", "Teacher or school announcement"
-    BANNER = "banner", "Banner"
+    BANNER = "banner", "Banner / leaflet etc."
     VOLUNTEERS = "volunteers", "Wikipedia volunteers came to our school"
     OTHER = "other", "Somewhere else"

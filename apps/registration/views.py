@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
-from apps.core import ratelimit
+from apps.core import ratelimit, turnstile
 from apps.core.utils import client_ip
 
 from . import bangla, services
@@ -28,6 +28,7 @@ MESSAGES = {
     "email_not_verified": "Your email isn't verified, or the verification expired. Please verify again.",
     "send_failed": "We couldn't send the code. Check the email address and try again.",
     "email_taken": services.EMAIL_TAKEN_MESSAGE,
+    "security_check": "The security check didn't pass or has expired. Please do it again.",
 }
 
 
@@ -83,6 +84,9 @@ def send_otp(request):
             raise ValidationError("not ascii")
     except ValidationError:
         return _err("invalid_email")
+    # Cloudflare Turnstile (when configured): a fresh token for every code sent
+    if not turnstile.verify(str(data.get("turnstile_token", "")), client_ip(request)):
+        return _err("security_check")
     ip = client_ip(request) or "unknown"
     if not (ratelimit.allow("otp_per_ip", ip) and ratelimit.allow("otp_per_email", email)):
         return _err("rate_limited", 429)

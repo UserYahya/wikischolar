@@ -75,7 +75,10 @@ use the same mechanism (`EB-`, `SB-`).
 * Audit: logins, failed logins, logouts, record **views**, exports, edits, archives,
   merges, region changes, batch creation and resends. `audit_logs` is append-only in the DB.
 * Public endpoints: CSRF, rate limits (OTP per email/IP, submit per IP, API per IP, login per
-  IP), honeypot field, strict server-side validation.
+  IP), honeypot field, strict server-side validation, and optional Cloudflare Turnstile
+  (`apps/core/turnstile.py`, on when its two keys are set) checked by `send-otp` and the
+  dashboard sign-in form before anything else. Passwords: every admin can change their own;
+  a Super Admin can set another admin's (both audited, passwords never logged).
 * Transport/cookies: HTTPS redirect, HSTS, secure + HttpOnly session cookie (8 h), SameSite,
   `nosniff`, same-origin referrer, dashboard pages `noindex`.
 * Webhooks require a shared token (`NOTIFY_WEBHOOK_TOKEN`).

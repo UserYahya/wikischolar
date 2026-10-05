@@ -118,8 +118,8 @@
           <p class="err" data-err="current_class"></p>
         </div>
         <div class="field">
-          <label for="section">Section <span class="label-note">(optional)</span>
-            <span class="bn" lang="bn">শাখা (ঐচ্ছিক)</span></label>
+          <label for="section">Section <span class="label-note">(if any)</span>
+            <span class="bn" lang="bn">শাখা (যদি থাকে)</span></label>
           <input id="section" name="section" maxlength="20" aria-describedby="sectionHelp" data-english placeholder="e.g. A">
           <p class="err" data-err="section"></p>
         </div>
@@ -167,6 +167,10 @@
             If it hasn't arrived within a minute, check your <strong>Spam</strong> or <strong>Junk</strong> folder.
             <span class="bn" lang="bn">যাচাই কোড <strong>শুধু ইমেইলে</strong> পাঠানো হয় (এসএমএসে নয়)। এক মিনিটের মধ্যে না পেলে ইমেইলের
               <strong>Spam</strong> বা <strong>Junk</strong> ফোল্ডার দেখুন।</span></p>
+          {% if TURNSTILE_SITE_KEY %}{# Cloudflare Turnstile: rendered by register.js when step 3 opens #}
+          <div class="turnstile" id="turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}"></div>
+          <p class="err" data-err="turnstile" aria-live="polite"></p>
+          {% endif %}
           <button type="button" class="btn primary" id="sendOtp">Send verification code <span class="bn-inline" lang="bn">যাচাই কোড পাঠান</span></button>
           <div class="otp-entry" id="otpEntry" hidden>
             <label for="email_otp">Email code <span class="bn" lang="bn">ইমেইলে পাওয়া কোড</span></label>
@@ -243,4 +247,5 @@
 </main>
 {{ bangla_messages|json_script:"bnMessages" }}
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/register.js' %}" defer></script>{% endblock %}
+{% block scripts %}{% if TURNSTILE_SITE_KEY %}<script src="{{ TURNSTILE_SCRIPT }}?render=explicit" id="turnstileScript" async defer></script>{% endif %}
+<script src="{% static 'js/register.js' %}" defer></script>{% endblock %}

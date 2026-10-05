@@ -20,11 +20,21 @@
       <td class="nowrap">{{ a.last_login|date:"Y-m-d H:i"|default:"Never" }}</td>
       <td>{{ a.created_by.full_name|default:"—" }}</td>
       <td>{% if a.is_deleted %}<span class="tag">Deactivated</span>{% else %}<span class="tag ok">Active</span>{% endif %}</td>
-      <td>{% if a.pk == user.pk %}<span class="muted">You</span>{% else %}
+      <td>{% if a.pk == user.pk %}<a href="{% url 'dashboard:password_change' %}">Change your password</a>{% else %}
         <form method="post" action="{% url 'dashboard:admin_update' a.pk %}" class="inline">{% csrf_token %}
           {% if a.is_deleted %}<button class="btn small" name="op" value="reactivate">Reactivate</button>
           {% else %}<button class="btn small danger-btn" name="op" value="deactivate">Deactivate</button>{% endif %}
-        </form>{% endif %}</td>
+        </form>
+        {% if not a.is_deleted %}
+        <details class="set-password">
+          <summary>Set new password</summary>
+          <form method="post" action="{% url 'dashboard:admin_update' a.pk %}" class="inline" autocomplete="off">{% csrf_token %}
+            <input type="hidden" name="op" value="password">
+            <input type="password" name="password" required minlength="12" autocomplete="new-password" aria-label="New password for {{ a.email }}" placeholder="New temporary password">
+            <button class="btn small">Set</button>
+          </form>
+        </details>
+        {% endif %}{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>

@@ -150,6 +150,22 @@ Dashboard → **Email & SMS settings**:
 
 * **Wording of the OTP and confirmation emails**: Dashboard → **System emails** (Super Admin).
 
+### Cloudflare Turnstile (optional bot protection)
+
+Turnstile stops bots from using "Send verification code" to send emails, and guards the dashboard
+sign-in. Your domain does **not** need to use Cloudflare's DNS.
+
+1. Sign in at dash.cloudflare.com (a free account is enough) → **Turnstile** → **Add widget**.
+2. Name it (e.g. WikiScholar), add the hostname of this app (e.g. `register.wikischolar.bd`), widget
+   mode **Managed**, then **Create**.
+3. Copy the **Site Key** and **Secret Key** into `.env`:
+   `WS_TURNSTILE_SITE_KEY=…` and `WS_TURNSTILE_SECRET_KEY=…`, then **Restart**.
+4. Open the form, go to step 3: the check appears above "Send verification code". The sign-in page
+   shows it too. To switch it off, empty both values and Restart.
+
+If you sign in from an address Cloudflare isn't set up for, the check fails: add that hostname to the
+widget, or empty the keys. Keep the secret key private (never in the repository).
+
 ## 8b. Updating an existing install
 
 1. Build a new package (`python scripts/build_cpanel_zip.py`) and upload + extract it over the
@@ -172,6 +188,9 @@ Dashboard → **Email & SMS settings**:
 * `migrate` also adds the 9 missing upazilas, the city-corporation thanas, the cantonments and an
   "Other area" per district (migration `reference.0004`); no `seed_reference` run is needed.
 * `collectstatic` is required (new logo, icons, CSS and JS).
+
+**Then (2026-10-06):** `migrate` (`registration.0008`, a label change only) and `collectstatic`. Optional:
+switch on Cloudflare Turnstile (see "Cloudflare Turnstile" above).
 
 ## 9. Backups
 

@@ -47,6 +47,9 @@ MESSAGES = {
         "আপনার ইমেইল যাচাই হয়নি, অথবা যাচাইয়ের মেয়াদ শেষ হয়ে গেছে। আবার যাচাই করুন।",
     "We couldn't send the code. Check the email address and try again.":
         "কোড পাঠানো যায়নি। ইমেইল ঠিকানাটি দেখে নিয়ে আবার চেষ্টা করুন।",
+    "The security check didn't pass or has expired. Please do it again.":
+        "নিরাপত্তা যাচাই সফল হয়নি বা মেয়াদ শেষ হয়ে গেছে। আবার করুন।",
+    "Complete the security check first.": "আগে নিরাপত্তা যাচাইটি সম্পন্ন করুন।",
     "This email address is already registered for another student. Please use a different email address.":
         "এই ইমেইল ঠিকানা দিয়ে অন্য একজন শিক্ষার্থী আগেই নিবন্ধন করেছে। অন্য একটি ইমেইল ঠিকানা ব্যবহার করুন।",
     # Messages built in register.js
@@ -90,7 +93,7 @@ HEARD_FROM = {
     HeardFrom.ONLINE_AD: "গুগল বা ইউটিউবের বিজ্ঞাপন",
     HeardFrom.WIKIPEDIA_NOTICE: "উইকিপিডিয়ার নোটিশ",
     HeardFrom.SCHOOL: "শিক্ষক বা বিদ্যালয়ের ঘোষণা",
-    HeardFrom.BANNER: "ব্যানার",
+    HeardFrom.BANNER: "ব্যানার / লিফলেট ইত্যাদি",
     HeardFrom.VOLUNTEERS: "উইকিপিডিয়ার স্বেচ্ছাসেবকেরা আমাদের বিদ্যালয়ে এসেছিলেন",
     HeardFrom.OTHER: "অন্য কোথাও",
 }

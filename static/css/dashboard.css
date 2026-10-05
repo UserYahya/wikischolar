@@ -270,3 +270,14 @@ td.nowrap { white-space: nowrap; }
 /* System emails: HTML preview */
 .email-preview { width: 100%; height: 520px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); margin: .25rem 0 .5rem; }
 .text-part summary { cursor: pointer; font-size: .8125rem; color: var(--muted); }
+
+/* Change password; Super Admin "Set new password" on the Admins page */
+.narrow { max-width: 30rem; }
+.edit-form.narrow label { font-weight: 600; font-size: .8125rem; margin-top: .4rem; }
+.edit-form.narrow input { width: 100%; }
+.edit-form.narrow ul.hint { margin: 0; padding-left: 1.1rem; }
+.who p a[aria-current="page"] { font-weight: 600; }
+.set-password { margin-top: .35rem; }
+.set-password summary { cursor: pointer; font-size: .8125rem; color: var(--green); }
+.set-password form { margin-top: .35rem; display: flex; gap: .35rem; }
+.set-password input { min-width: 12rem; }

@@ -3,6 +3,25 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-06
+
+### Added
+- **Cloudflare Turnstile (optional).** With `WS_TURNSTILE_SITE_KEY` and `WS_TURNSTILE_SECRET_KEY`
+  set, a Turnstile check (usually invisible) appears above "Send verification code" and on the
+  dashboard sign-in; the server verifies it with Cloudflare before sending a code or checking a
+  password, and refuses if the check fails or Cloudflare can't be reached. The form resets the widget
+  after each code (a token works once). Without the keys nothing changes. No new Python package.
+  Setup: `docs/DEPLOY_CPANEL.md` → "Cloudflare Turnstile".
+- **Change password** for every admin (sidebar link under your name): current password plus the new
+  one twice, with the password rules shown; other sessions are signed out.
+- **Super Admins can set a new password** for another admin (Admins page → "Set new password"),
+  e.g. when someone forgets theirs. Both actions are audited; passwords are never logged.
+
+### Changed
+- The form's Section label says "(if any)" (Bangla "যদি থাকে") instead of "(optional)".
+- Survey option "Banner" is now "Banner / leaflet etc." (ব্যানার / লিফলেট ইত্যাদি); stored value
+  unchanged (`banner`), label-only migration `registration.0008`.
+
 ## 2026-10-05
 
 ### Added

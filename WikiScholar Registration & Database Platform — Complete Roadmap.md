@@ -21,6 +21,7 @@
 | Guardian declaration on the form; OTP/confirmation wording editable by a Super Admin | **Built** (added later, 10.1 / 10.3) |
 | October 2026 form update: Bangla beside every English text, section, numbers-only roll, "how did you hear" survey, **date of birth removed**, HTML emails, grouped dashboard menu | **Built** (10.1 / 10.2) |
 | City-corporation thanas, cantonments and "Other area" in the upazila list ("Upazila / Area") | **Built** (10.1): no area of Bangladesh is left out |
+| Optional Cloudflare Turnstile; admins change their own password, Super Admin sets others' | **Built** (10.2, 2026-10-06) |
 | Secure query interface for advanced users (5.2) | **Not built**: the filter panel covers the listed filters |
 | Field-level encryption at rest (6) | **Not built**: TLS, disk encryption and least privilege are assumed; stored provider secrets are encrypted |
 | Phase 2+ modules (Section 9) | **Not started**; the module registry and architecture are ready for them |
@@ -407,6 +408,8 @@ Features and decisions added while building and testing the MVP. Each is live an
 | Reliable bulk sending: chunked from the browser with automatic continuation, rows claimed once (`SKIP LOCKED`), braces in text no longer crash, works on pooled DB connections, clear provider errors, explanation when 0 recipients (opt-in) | bulk email failed on the first cPanel install while OTP worked |
 | Admin edits follow the same English-only and class rules; school and location names are English-only | consistent data |
 | Sidebar tools in **collapsible groups** (Students, Schools & places, Messaging, Administration) with the logo on top | the menu had grown to 11 links |
+| **Change password** for every admin; Super Admin **sets a new password** for others | admins could not change a temporary password, and a forgotten one needed a server command |
+| Optional **Cloudflare Turnstile** on "Send verification code" and sign-in | stop bots sending emails through the form and guessing passwords |
 
 ### 10.3 Email & SMS settings (Super Admin)
 | Change | Why |

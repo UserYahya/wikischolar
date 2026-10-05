@@ -52,6 +52,7 @@ permission codes in `apps/core/permissions.py`.
 | 19 | October 2026 list of ten: logos and favicon, HTML emails, grouped dashboard menu, Bangla beside every form text, "guardian" wording, remove date of birth, numbers-only roll, optional section, "how did you hear" survey, new Youth Policy link | all done (CHANGELOG 2026-10-05); date-of-birth column dropped |
 | 20 | Keep only the English logo in the header; review the form's design/UX | Bangla logo kept in `docs/brand/`; review fixed a wrong Bangla label, a focus box, step 2 order, small Bangla text, cut-off placeholders, the success screen |
 | 21 | Build the upazila/thana plan | 105 thanas of 13 city corporations, 31 cantonments, "Other area"; research found 503 upazilas (8 created in Jun–Jul 2026) and Bogura City Corporation (May 2026) |
+| 22 | Cloudflare Turnstile; admin password change; Section "(if any)"; "Banner / leaflet etc." | Turnstile optional (on with two `.env` keys); Change password page + Super Admin "Set new password" |
 
 ## 4. cPanel deployment problems met (and fixes)
 

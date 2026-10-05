@@ -35,9 +35,9 @@ Analytics) will plug into the same app.
 | Step | Collects | Rules |
 |---|---|---|
 | 1. Student & guardian | **required guardian declaration** (Youth Safety Policy: the guardian fills in the form: "I am the guardian of the student named below and I am filling in this form on their behalf"), name, gender, guardian name, relation (Father / Mother / Other + typed relation). **Date of birth is not collected** (removed in October 2026, column dropped) | "Other" requires the typed relation; the declaration is stored as `filled_by = guardian` + `guardian_declared_at` |
-| 2. School details | district → region (automatic) → **upazila / area**, school (typeahead), class + **section** (optional: "only if the class has sections"), class roll and/or student ID (labelled "(if any)": many students have none) | the area must be in the district; class 6–10 only; roll **or** SID required; **class roll is numbers only** (Bangla digits become 0–9, other characters are dropped as you type and refused by the server); section is English text; while typing, **only approved (verified) schools** of the chosen area are suggested; a school not in the list is added as *pending* for staff to approve |
+| 2. School details | district → region (automatic) → **upazila / area**, school (typeahead), class + **section** (labelled "(if any)": "only if the class has sections"), class roll and/or student ID (labelled "(if any)": many students have none) | the area must be in the district; class 6–10 only; roll **or** SID required; **class roll is numbers only** (Bangla digits become 0–9, other characters are dropped as you type and refused by the server); section is English text; while typing, **only approved (verified) schools** of the chosen area are suggested; a school not in the list is added as *pending* for staff to approve |
 | 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk; **one action at a time**: "Send verification code", then "Verify code", is the solid button, and "Next step" only appears once the email is verified (until then the bar says "Verify your email to continue.", and Enter sends the code); **one email per student**: an address already used by an active student is refused on "Send verification code" ("already registered… use a different email address") and again on submit |
-| 4. Consent & submit | **"How did you hear about WikiScholar?"** dropdown (Social media · Google or YouTube ad · Notice on Wikipedia · Teacher or school announcement · Banner · Wikipedia volunteers came to our school · Somewhere else), Youth Safety Policy consent (links to `WS_POLICY_URL`, default `https://wikischolar.bd/youth-policy`), optional email updates opt-in | survey answer and consent required; the answers are counted on the dashboard Overview |
+| 4. Consent & submit | **"How did you hear about WikiScholar?"** dropdown (Social media · Google or YouTube ad · Notice on Wikipedia · Teacher or school announcement · Banner / leaflet etc. · Wikipedia volunteers came to our school · Somewhere else), Youth Safety Policy consent (links to `WS_POLICY_URL`, default `https://wikischolar.bd/youth-policy`), optional email updates opt-in | survey answer and consent required; the answers are counted on the dashboard Overview |
 
 * **Upazila / Area: no area of Bangladesh is left out.** City corporations have no upazila, so the
   list after choosing a district holds, as grouped options (`<optgroup>`), in this order: the
@@ -77,7 +77,13 @@ Analytics) will plug into the same app.
   the browser/phone Back button moves between steps; finished steps can be clicked to reopen.
   The draft is cleared after a successful registration.
 * **Anti-abuse:** honeypot field, rate limits (OTP per email/IP, registrations per IP, logins),
-  OTP stored only as an HMAC, 10-minute expiry, lockout after 5 wrong codes.
+  OTP stored only as an HMAC, 10-minute expiry, lockout after 5 wrong codes, and optionally
+  **Cloudflare Turnstile** (`apps/core/turnstile.py`): when `WS_TURNSTILE_SITE_KEY` and
+  `WS_TURNSTILE_SECRET_KEY` are set, a Turnstile widget (usually invisible, at most one click) sits
+  above "Send verification code" and on the dashboard sign-in, and the server checks its token with
+  Cloudflare before sending a code or checking a password. A token works once, so the form resets
+  the widget after each code. If Cloudflare can't be reached the check fails and the person tries
+  again. Without the keys nothing is shown or checked.
 * **Header:** slim white bar with the English WikiScholar logo
   (`static/img/wikischolar-logo-en.png`; the Bangla logo is kept in `docs/brand/`), "A Wikimedia
   Bangladesh programme" (with Bangla) and a **"← Back to wikischolar.bd"** pill button
@@ -143,7 +149,13 @@ Analytics) will plug into the same app.
   district's page lists its upazilas and areas with their group; *Add* takes an optional group
   (an existing city corporation, Cantonment or Other).
 * **Audit log**: every view of a student record, edit, export, message, login and setting change.
-* **Admins** (Super Admin): create admins, change roles, deactivate.
+* **Admins** (Super Admin): create admins, change roles, deactivate, and **set a new password**
+  for an admin who forgot theirs (signs them out everywhere; audited as `admin.password_reset`,
+  the password itself is never logged).
+* **Change password** (every admin, link under their name in the sidebar,
+  `/dashboard/account/password/`): current password plus the new one twice, checked by the
+  password rules (12+ characters, not common, not all digits, not like the name or email). Other
+  sessions of that account are signed out; audited as `admin.password_changed`.
 * **System emails** (Super Admin): edit the subject and text of the **OTP email** and the
   **registration confirmation** with placeholders (`{code}`, `{student_name}`, `{wikischolar_id}`,
   `{details}`, …); refuses text without required placeholders (`{code}`, `{wikischolar_id}`) or
@@ -278,6 +290,7 @@ These are enforced in code **and** in the database; changes must keep them true.
 | `/dashboard/messages/<code>/?status=not_delivered&q=` | batch page; `…/recipients.csv` (same filters), `…/send/` (POST, next chunk), `…/resend/` (POST) |
 | `/dashboard/students/?msg_batch=<code>&msg_batch_mode=sent\|not_sent\|not_delivered` | students by message history (also `&filled_by=student\|guardian`) |
 | `/dashboard/settings/system-emails/` | System emails (Super Admin) |
+| `/dashboard/account/password/` | change your own password (any admin) |
 
 ---
 
@@ -404,6 +417,7 @@ The app reads real environment variables first, then a `.env` file next to `mana
 | `WS_CONTACT_EMAIL`, `WS_POLICY_URL`, `WS_POLICY_VERSION` | `info@wikischolar.bd`, `https://wikischolar.bd/youth-policy`, `2026-01` | shown on the form / stored with consent |
 | `WS_REPLY_TO` | `info@wikischolar.bd` | Reply-to of every email when Email settings has none |
 | `WS_SITE_URL` | `https://wikischolar.bd` | target of the form's "Back to …" link |
+| `WS_TURNSTILE_SITE_KEY` / `WS_TURNSTILE_SECRET_KEY` | *(empty: off)* | Cloudflare Turnstile on "Send verification code" and the dashboard sign-in; both needed. Cloudflare's always-pass test keys `1x00000000000000000000AA` / `1x0000000000000000000000000000000AA` work on localhost |
 | `WS_PUBLIC_URL` | `https://register.wikischolar.bd` | this app's own public address; the logo in HTML emails is loaded from here (empty = text wordmark instead) |
 | `WS_OTP_TTL_MINUTES` / `WS_OTP_MAX_ATTEMPTS` / `WS_OTP_VERIFIED_WINDOW_MINUTES` | `10` / `5` / `60` | OTP rules |
 | `WS_OTP_DEBUG_ECHO` | `0` | dev only: show the OTP on the form |
@@ -464,7 +478,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-180 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+191 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
@@ -478,7 +492,10 @@ the form (and that every message has a translation), section, numbers-only roll,
 date of birth, HTML emails, grouped navigation and the favicon. `tests/test_areas.py` covers
 "Upazila / Area" (grouped API order, registering with a thana, dashboard grouping, the Area type
 filter, adding a grouped area, the import) and checks that `data/reference_seed.json` has 503
-upazilas, all 13 city corporations, the cantonments and an "Other area" in every district. External calls (SMTP,
+upazilas, all 13 city corporations, the cantonments and an "Other area" in every district.
+`tests/test_security_accounts.py` covers Turnstile (off without keys; on: widget shown, missing,
+bad or unverifiable tokens refused, a good token sends the code; dashboard sign-in) and password
+changes (own password; Super Admin setting another admin's; permissions; audit without passwords). External calls (SMTP,
 MiM SMS) are mocked; no real messages are sent.
 
 ---

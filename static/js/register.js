@@ -120,6 +120,7 @@
       else { li.removeAttribute("role"); li.removeAttribute("tabindex"); li.removeAttribute("title"); }
     });
     $("#back").hidden = n === 1;
+    if (n === 3) renderTurnstile();
     syncNext();
     $("#submit").hidden = n !== 4;
     updateSubmit();
@@ -328,6 +329,29 @@
     return d;
   }
 
+  // ---------- Cloudflare Turnstile (only when the server has keys; see apps/core/turnstile.py) ----------
+  // Rendered when step 3 first opens (not inside a hidden step); a token works once, so the widget is
+  // reset after each code the server checked it for.
+  const tsBox = $("#turnstile");
+  let tsWidget = null, tsToken = "";
+  function renderTurnstile() {
+    if (!tsBox || tsWidget !== null || !window.turnstile || state.step !== 3) return;
+    tsWidget = window.turnstile.render(tsBox, {
+      sitekey: tsBox.dataset.sitekey, size: "flexible", language: "auto", theme: "light",
+      callback: (token) => { tsToken = token; setError("turnstile", ""); },
+      "expired-callback": () => { tsToken = ""; },
+      "error-callback": () => { tsToken = ""; },
+    });
+  }
+  function resetTurnstile() {
+    tsToken = "";
+    if (tsWidget !== null) window.turnstile.reset(tsWidget);
+  }
+  if (tsBox) {
+    const script = $("#turnstileScript");
+    if (window.turnstile) renderTurnstile(); else if (script) script.addEventListener("load", renderTurnstile);
+  }
+
   // ---------- email: instant typo hint + OTP ----------
   const emailIn = $("#email"), typoBox = $("#typoBox");
   const isVerified = () => state.verificationId && state.verifiedEmail === emailIn.value.trim().toLowerCase();
@@ -403,12 +427,15 @@
     clearErrors(["email", "email_otp"]);
     const email = emailIn.value.trim().toLowerCase();
     if (!email.includes("@")) { setError("email", MSG.email); emailIn.focus(); return; }
+    if (tsBox && !tsToken) { setError("turnstile", "Complete the security check first."); renderTurnstile(); return; }
     const btn = $("#sendOtp"); btn.setAttribute("aria-busy", "true"); btn.disabled = true;
     try {
       // The server checks for typos before the address format, so "name@gmailcom" gets a suggestion.
-      const { ok, data } = await api("/api/registration/email/send-otp/", { email, confirm_typo: state.typoConfirmed });
-      if (data.typo_suggestion) { showTypo(data, { fromSend: true }); return; }
-      if (!ok) { setError("email", data.message || MSG.network); return; }
+      const { ok, data } = await api("/api/registration/email/send-otp/",
+        { email, confirm_typo: state.typoConfirmed, turnstile_token: tsToken });
+      if (data.typo_suggestion) { showTypo(data, { fromSend: true }); return; }  // token not used yet
+      if (tsBox) resetTurnstile();  // the server has used this token
+      if (!ok) { setError(data.error === "security_check" ? "turnstile" : "email", data.message || MSG.network); return; }
       state.verificationId = data.verification_id;
       $("#otpEntry").hidden = false;
       $("#otpHint").innerHTML = bi("We sent a 6-digit code by email to {email}. Can't find it? Check your Spam or Junk folder.", { email }) +
