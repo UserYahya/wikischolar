@@ -16,9 +16,10 @@ class StudentEditForm(StudentCoreFields):
 
     def clean(self):
         data = super().clean()
-        school, upazila = data.get("school"), data.get("upazila")
-        if school and upazila and school.upazila_id != upazila.pk:
-            self.add_error("school", "This school is not in the selected upazila.")
+        # A student may attend a school in another upazila / area of their district (as on the form)
+        school, district = data.get("school"), data.get("district")
+        if school and district and school.district_id != district.pk:
+            self.add_error("school", "This school is not in the selected district.")
         return data
 
 

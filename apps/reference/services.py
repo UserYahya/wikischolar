@@ -5,7 +5,7 @@ Other modules call these functions; they never touch reference tables directly.
 from django.conf import settings
 from django.contrib.postgres.search import TrigramSimilarity, TrigramWordSimilarity
 from django.db import connection, transaction
-from django.db.models import FloatField, OuterRef, Q, Subquery, Value
+from django.db.models import Case, FloatField, IntegerField, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce, Greatest
 from django.utils import timezone
 
@@ -56,16 +56,27 @@ def _alive_schools():
     return School.objects.filter(merged_into__isnull=True).exclude(verification_status=School.Status.MERGED)
 
 
-def search_schools(upazila_id, query, limit=8, verified_only=False):
-    """Typeahead: fuzzy match on canonical names and aliases, scoped to the upazila.
+# A school in the student's own area ranks this much higher than an equally good match elsewhere
+# in the district (similarity is 0..1), so it comes first unless another name fits clearly better.
+SAME_AREA_BONUS = 0.15
+
+
+def search_schools(upazila_id=None, query="", limit=8, verified_only=False, *, district_id=None,
+                   prefer_upazila_id=None):
+    """Typeahead: fuzzy match on canonical names and aliases. Scoped to the district (the public form:
+    a student may attend a school in another upazila / thana of their district; schools in
+    `prefer_upazila_id` rank first) or, without `district_id`, to one upazila (dashboard lists).
     The public form passes verified_only=True so students are only offered approved schools;
-    the dashboard editor also sees pending ones."""
-    qs = _alive_schools().filter(upazila_id=upazila_id)
+    the dashboard editor also sees pending ones. Each school comes with its `upazila` (area)."""
+    qs = _alive_schools().select_related("upazila")
+    qs = qs.filter(district_id=district_id) if district_id else qs.filter(upazila_id=upazila_id)
     if verified_only:
         qs = qs.filter(verification_status=School.Status.VERIFIED)
+    prefer = prefer_upazila_id or 0
+    same_area = Case(When(upazila_id=prefer, then=Value(1)), default=Value(0), output_field=IntegerField())
     qn = normalize_school_name(query)
-    if not qn:
-        return list(qs.order_by("-verification_status", "name")[:limit])  # 'verified' > 'pending'
+    if not qn:  # 'verified' > 'pending'
+        return list(qs.annotate(same=same_area).order_by("-same", "-verification_status", "name")[:limit])
     alias_score = (
         SchoolAlias.objects.filter(school=OuterRef("pk"))
         .annotate(s=TrigramWordSimilarity(Value(qn), "alias_normalized"))
@@ -76,9 +87,11 @@ def search_schools(upazila_id, query, limit=8, verified_only=False):
             s_name=TrigramWordSimilarity(Value(qn), "name_normalized"),
             s_alias=Coalesce(Subquery(alias_score, output_field=FloatField()), Value(0.0)),
         )
-        .annotate(score=Greatest("s_name", "s_alias"))
+        .annotate(score=Greatest("s_name", "s_alias"),
+                  rank=Greatest("s_name", "s_alias") + Case(When(upazila_id=prefer, then=Value(SAME_AREA_BONUS)),
+                                                            default=Value(0.0), output_field=FloatField()))
         .filter(Q(score__gte=0.3) | Q(name_normalized__contains=qn))
-        .order_by("-score", "name")[:limit]
+        .order_by("-rank", "name")[:limit]
     )
 
 
@@ -87,8 +100,11 @@ def resolve_school(*, upazila, typed_text, school_id=None):
     Returns (school, how). how ∈ {'selected', 'exact', 'alias', 'auto', 'created'}.
     Never returns a merged school: references are redirected to the canonical one.
     """
+    # A school picked from the suggestions may be anywhere in the student's district (they can attend
+    # a school outside their own upazila / thana). A typed name is only matched within the chosen
+    # area: common names ("Government Girls High School") exist in many upazilas.
     if school_id:
-        school = School.objects.filter(pk=school_id, upazila=upazila).first()
+        school = School.objects.filter(pk=school_id, district_id=upazila.district_id).first()
         if school:
             return school.canonical(), "selected"
 

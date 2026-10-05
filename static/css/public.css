@@ -116,7 +116,10 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
   box-shadow: 0 10px 24px rgba(8, 77, 55, .12); }
 #schoolList li { padding: .5rem .65rem; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; gap: 1rem; }
 #schoolList li[aria-selected="true"], #schoolList li:hover { background: var(--tint); }
-#schoolList .tag { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+/* Each suggestion: the school name, with its area on a small line underneath (fits narrow phones) */
+#schoolList li:not(.add) { flex-direction: column; gap: .05rem; }
+#schoolList .tag { font-size: .8rem; color: var(--muted); }
+#schoolList .tag.here { color: var(--deep); }
 #schoolList li.add { border-top: 1px dashed var(--line); margin-top: .25rem; color: var(--deep); font-weight: 600; }
 
 .typo { background: var(--marigold-soft); border-left: 4px solid var(--marigold); padding: .75rem 1rem; border-radius: 4px; }

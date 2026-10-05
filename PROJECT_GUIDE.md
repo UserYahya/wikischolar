@@ -35,7 +35,7 @@ Analytics) will plug into the same app.
 | Step | Collects | Rules |
 |---|---|---|
 | 1. Student & guardian | **required guardian declaration** (Youth Safety Policy: the guardian fills in the form: "I am the guardian of the student named below and I am filling in this form on their behalf"), name, gender, guardian name, relation (Father / Mother / Other + typed relation). **Date of birth is not collected** (removed in October 2026, column dropped) | "Other" requires the typed relation; the declaration is stored as `filled_by = guardian` + `guardian_declared_at` |
-| 2. School details | district → region (automatic) → **upazila / area**, school (typeahead), class + **section** (labelled "(if any)": "only if the class has sections"), class roll and/or student ID (labelled "(if any)": many students have none) | the area must be in the district; class 6–10 only; roll **or** SID required; **class roll is numbers only** (Bangla digits become 0–9, other characters are dropped as you type and refused by the server); section is English text; while typing, **only approved (verified) schools** of the chosen area are suggested; a school not in the list is added as *pending* for staff to approve |
+| 2. School details | district → region (automatic) → **upazila / area**, school (typeahead), class + **section** (labelled "(if any)": "only if the class has sections"), class roll and/or student ID (labelled "(if any)": many students have none) | the area must be in the district; class 6–10 only; roll **or** SID required; **class roll is numbers only** (Bangla digits become 0–9, other characters are dropped as you type and refused by the server); section is English text; while typing, **only approved (verified) schools** are suggested, from **the whole district** (a student may attend a school in another upazila / thana), each with its area, the student's own area first; a school picked from the list may be in any area of the district, but a typed name is matched only within the chosen area (common names repeat across upazilas); a school not in the list is added as *pending* for staff to approve |
 | 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk; **one action at a time**: "Send verification code", then "Verify code", is the solid button, and "Next step" only appears once the email is verified (until then the bar says "Verify your email to continue.", and Enter sends the code); **one email per student**: an address already used by an active student is refused on "Send verification code" ("already registered… use a different email address") and again on submit |
 | 4. Consent & submit | **"How did you hear about WikiScholar?"** dropdown (Social media · Google or YouTube ad · Notice on Wikipedia · Teacher or school announcement · Banner / leaflet etc. · Wikipedia volunteers came to our school · Somewhere else), Youth Safety Policy consent (links to `WS_POLICY_URL`, default `https://wikischolar.bd/youth-policy`), optional email updates opt-in | survey answer and consent required; the answers are counted on the dashboard Overview |
 
@@ -271,8 +271,10 @@ These are enforced in code **and** in the database; changes must keep them true.
   students** (checked on send-code and on submit; archiving a student frees the address).
 * **Secrets** (SMTP password, SMS API key) are stored encrypted with `WS_CREDENTIALS_KEY`
   (or a key derived from `DJANGO_SECRET_KEY`) and never written to the audit log.
-* **School resolution** on submit: picked ID → exact normalised name → alias → trigram match
-  ≥ 0.8 → new *pending* school.
+* **School resolution** on submit: picked ID (any school in the student's district) → exact
+  normalised name → alias → trigram match ≥ 0.8 (these three within the chosen upazila / area)
+  → new *pending* school in the chosen area. So a student's area and their school's area may
+  differ (both in the same district); the dashboard editor only requires the same district.
 
 ---
 
@@ -283,7 +285,7 @@ These are enforced in code **and** in the database; changes must keep them true.
 | `/` | public registration form |
 | `/api/registration/email/check/?email=` | instant typo hint (GET, stores nothing) |
 | `/api/registration/email/send-otp/`, `/verify-otp/`, `/api/registration/submit/` | form JSON API (POST, CSRF) |
-| `/api/reference/districts/`, `/districts/<id>/upazilas/`, `/schools/?upazila=&q=` | lookup API |
+| `/api/reference/districts/`, `/districts/<id>/upazilas/`, `/schools/?district=&upazila=&q=` (whole district, that area first; `?upazila=` alone: one area) | lookup API |
 | `/notifications/webhook/<email|sms>/?token=` | provider delivery reports (generic JSON or Brevo transactional events) |
 | `/dashboard/…` | staff dashboard (login required) |
 | `/dashboard/messages/?q=&channel=&problems=1` | Messages list and its filters |
@@ -478,7 +480,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-191 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+198 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
@@ -495,7 +497,10 @@ filter, adding a grouped area, the import) and checks that `data/reference_seed.
 upazilas, all 13 city corporations, the cantonments and an "Other area" in every district.
 `tests/test_security_accounts.py` covers Turnstile (off without keys; on: widget shown, missing,
 bad or unverifiable tokens refused, a good token sends the code; dashboard sign-in) and password
-changes (own password; Super Admin setting another admin's; permissions; audit without passwords). External calls (SMTP,
+changes (own password; Super Admin setting another admin's; permissions; audit without passwords).
+`tests/test_school_district.py` covers district-wide school suggestions (own area first, area
+shown, approved only), picks from another area, typed names matched only in the chosen area, and
+the dashboard editor keeping a school from another area. External calls (SMTP,
 MiM SMS) are mocked; no real messages are sent.
 
 ---

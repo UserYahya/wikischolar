@@ -39,8 +39,9 @@ later consume the same JSON endpoints.
 1. The page loads districts (with their current region) from `/api/reference/districts/`.
    Picking a district shows its region — read from the DB at that moment.
 2. Upazilas and the other areas (city-corporation thanas, cantonments, "Other area": `upazilas` rows
-   with a `group`) load per district, grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?upazila=&q=`
-   (trigram similarity over normalised names and aliases, scoped to the upazila). The public form
+   with a `group`) load per district, grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?district=&upazila=&q=`
+   (trigram similarity over normalised names and aliases across the district; the chosen area's
+   schools get a +0.15 ranking bonus, `SAME_AREA_BONUS`; each result carries its area). The public form
    is offered **verified schools only**; signed-in staff (`?all=1`) also see pending ones. Pending
    schools are still matched on submit (step 5), so two students typing the same new school share
    one pending row.
@@ -54,8 +55,10 @@ later consume the same JSON endpoints.
    verification used, and writes the audit entry. The confirmation email is sent after commit.
 
 ### School resolution order
-`selected` (ID picked from typeahead, must be in the same upazila) → `exact` (normalised name)
+`selected` (ID picked from typeahead, must be in the same district) → `exact` (normalised name)
 → `alias` → `auto` (trigram similarity ≥ `WS_SCHOOL_AUTO_RESOLVE`, default 0.8) → `created`
+(`exact`, `alias` and `auto` look only in the chosen upazila / area, and `created` files the new
+school there: common names such as "Government Girls High School" repeat across upazilas)
 (new `pending` school). Normalisation lower-cases, strips punctuation and expands common
 abbreviations (`govt` → `government`, `h/s` → `high school`, …). Merged schools always
 redirect to their canonical row.

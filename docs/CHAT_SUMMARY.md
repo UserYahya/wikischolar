@@ -53,6 +53,7 @@ permission codes in `apps/core/permissions.py`.
 | 20 | Keep only the English logo in the header; review the form's design/UX | Bangla logo kept in `docs/brand/`; review fixed a wrong Bangla label, a focus box, step 2 order, small Bangla text, cut-off placeholders, the success screen |
 | 21 | Build the upazila/thana plan | 105 thanas of 13 city corporations, 31 cantonments, "Other area"; research found 503 upazilas (8 created in Jun–Jul 2026) and Bogura City Corporation (May 2026) |
 | 22 | Cloudflare Turnstile; admin password change; Section "(if any)"; "Banner / leaflet etc." | Turnstile optional (on with two `.env` keys); Change password page + Super Admin "Set new password" |
+| 23 | School suggestions by district, not upazila; any server/UX issue? | done; no schema change; ~0.1 s per search at 3,000 schools in a district; same-name schools shown with their area, own area first; typed names still matched only in the chosen area |
 
 ## 4. cPanel deployment problems met (and fixes)
 
