@@ -156,7 +156,7 @@ Turnstile stops bots from using "Send verification code" to send emails, and gua
 sign-in. Your domain does **not** need to use Cloudflare's DNS.
 
 1. Sign in at dash.cloudflare.com (a free account is enough) → **Turnstile** → **Add widget**.
-2. Name it (e.g. WikiScholar), add the hostname of this app (e.g. `register.wikischolar.bd`), widget
+2. Name it (e.g. WikiScholar), add the hostname of this app (e.g. `registration.wikischolar.bd`), widget
    mode **Managed**, then **Create**.
 3. Copy the **Site Key** and **Secret Key** into `.env`:
    `WS_TURNSTILE_SITE_KEY=…` and `WS_TURNSTILE_SECRET_KEY=…`, then **Restart**.
@@ -184,7 +184,7 @@ widget, or empty the keys. Keep the secret key private (never in the repository)
   the stored dates are deleted and cannot be brought back without the backup.
 * In `.env`: set `WS_POLICY_URL=https://wikischolar.bd/youth-policy` (an old value there overrides
   the new default) and add `WS_PUBLIC_URL=https://<this app's address>` (e.g.
-  `https://register.wikischolar.bd`) so the logo shows in emails.
+  `https://registration.wikischolar.bd`) so the logo shows in emails.
 * `migrate` also adds the 9 missing upazilas, the city-corporation thanas, the cantonments and an
   "Other area" per district (migration `reference.0004`); no `seed_reference` run is needed.
 * `collectstatic` is required (new logo, icons, CSS and JS).
