@@ -184,6 +184,21 @@ def send_transactional_email(kind, to, subject, body, student=None, html=None):
     return _deliver(log, body, subject, html=html)
 
 
+def send_transactional_sms(kind, to, body, student=None):
+    """One SMS to one number (e.g. the registration confirmation); the result is on the log row,
+    including set-up problems (e.g. saved SMS credentials that can't be read), which are never raised."""
+    log = NotificationLog.objects.create(
+        channel=Channel.SMS, kind=kind, destination=to, student=student,
+        wikischolar_id=student.wikischolar_id if student else "")
+    try:
+        return _deliver(log, body)
+    except Exception as exc:
+        log.status, log.error = NotificationLog.Status.FAILED, f"SMS not sent: {exc}"[:500]
+        log.status_updated_at = timezone.now()
+        log.save(update_fields=["status", "error", "status_updated_at"])
+        return log
+
+
 def send_system_email(key, kind, to, values, student=None):
     """Send a registered system email (text + HTML) to one address."""
     subject, body = render_system_email(key, values)

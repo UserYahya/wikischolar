@@ -308,3 +308,65 @@ class EmailAlreadyRegisteredTests(WSTestCase):
         self.client.get("/")
         r = self.post_json("/api/registration/email/send-otp/", {"email": "old@gmail.com"})
         self.assertEqual(r.status_code, 200, r.content)
+
+
+GSM_7 = set("@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "ÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà")
+
+
+class ConfirmationSmsTests(WSTestCase):
+    """After registering, the student gets an SMS (besides the email) with the ID and the contact address."""
+
+    def _register_capturing_sms(self, **over):
+        from unittest import mock
+
+        from apps.notifications.providers.sms import ConsoleSmsProvider
+        sent = []
+        real_send = ConsoleSmsProvider.send
+
+        def capture(provider, destination, body, subject=""):
+            sent.append((destination, body))
+            return real_send(provider, destination, body, subject)
+        with mock.patch.object(ConsoleSmsProvider, "send", capture),                 self.captureOnCommitCallbacks(execute=True):  # the email and SMS go out after commit
+            s = self.register(**over)
+        return s, sent
+
+    def test_sms_is_sent_with_id_and_contact_email(self):
+        s, sent = self._register_capturing_sms(phone="01812345678")
+        self.assertEqual(len(sent), 1)
+        destination, body = sent[0]
+        self.assertEqual(destination, "01812345678")
+        self.assertIn("registration successful", body)
+        self.assertIn(s["wikischolar_id"], body)
+        self.assertIn("info@wikischolar.bd", body)
+        self.assertLessEqual(len(body), 160)
+        self.assertTrue(set(body) <= GSM_7, set(body) - GSM_7)  # plain letters: one 160-character SMS
+        log = Student.objects.get(wikischolar_id=s["wikischolar_id"]).notifications.get(channel="sms")
+        self.assertEqual((log.kind, log.status, log.destination), ("confirmation", "sent", "01812345678"))
+        # the confirmation email still goes out as before
+        self.assertEqual(mail.outbox[-1].to, ["rahim@gmail.com"])
+
+    def test_longest_id_fits_one_sms(self):
+        from unittest import mock
+
+        from apps.registration import services
+        student = Student(wikischolar_id="WS-2027-999999999")
+        self.assertLessEqual(len(services.confirmation_sms_text(student)), services.SMS_LIMIT)
+        long_contact = {**services.CFG, "CONTACT_EMAIL": "x" * 150 + "@example.org"}
+        with mock.patch.object(services, "CFG", long_contact):
+            text = services.confirmation_sms_text(student)
+        self.assertLessEqual(len(text), services.SMS_LIMIT)  # a too-long contact address is left out, not cut
+        self.assertIn("WS-2027-999999999", text)
+
+    def test_sms_problem_never_breaks_registration_or_email(self):
+        from unittest import mock
+
+        from apps.notifications.providers.sms import ConsoleSmsProvider
+        with mock.patch.object(ConsoleSmsProvider, "send", side_effect=RuntimeError("gateway down")),                 self.captureOnCommitCallbacks(execute=True):
+            s = self.register(email="sms-fails@gmail.com")
+        self.assertTrue(s["wikischolar_id"].startswith("WS-"))
+        self.assertEqual(mail.outbox[-1].to, ["sms-fails@gmail.com"])
+        log = Student.objects.get(wikischolar_id=s["wikischolar_id"]).notifications.get(channel="sms")
+        self.assertEqual(log.status, "failed")
+        self.assertIn("gateway down", log.error)
+

@@ -5,6 +5,19 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-07
 
+### Added
+- **Confirmation SMS** after registering, besides the confirmation email: "WikiScholar registration successful.
+  Your ID: WS-2027-000001. Questions? Email info@wikischolar.bd" (98 of 160 characters, plain letters so it stays
+  one SMS; the address is `WS_CONTACT_EMAIL`). Verification stays email-only. Sent after commit independently of
+  the email; a failed SMS (gateway down, IP not whitelisted, unreadable credentials) is logged as Failed on the
+  student page and never blocks registration. The success screen says an SMS was sent to the phone number.
+  3 new tests (201 in total).
+
+### Upgrade notes
+- No migrations, no new settings. Real SMS need MiM SMS chosen in Dashboard → Email & SMS settings and the
+  server's IP whitelisted in the MiM panel (without SMS settings the SMS only goes to the server log; with a
+  non-whitelisted IP it is logged as Failed).
+
 ### Changed
 - Git workflow: never push directly to `main` (the Azure VM auto-deploys from it); use a branch and a pull request
   (PROJECT_GUIDE "Source code and git").

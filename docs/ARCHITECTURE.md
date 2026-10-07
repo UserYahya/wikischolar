@@ -52,7 +52,8 @@ later consume the same JSON endpoints.
 5. `submit` revalidates everything server-side, requires a verification that is verified,
    for the same email, within 60 minutes, in this session; then in one transaction:
    resolves the school, allocates the WikiScholar ID, creates the student, marks the
-   verification used, and writes the audit entry. The confirmation email is sent after commit.
+   verification used, and writes the audit entry. After commit, the confirmation email and the
+   confirmation SMS (ID + contact address) are sent as two independent callbacks.
 
 ### School resolution order
 `selected` (ID picked from typeahead, must be in the same district) → `exact` (normalised name)

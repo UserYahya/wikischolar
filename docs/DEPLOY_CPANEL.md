@@ -146,7 +146,7 @@ Dashboard → **Email & SMS settings**:
   delivered and bounced messages; without it they stay "Sent".
 * **SMS (MiM SMS)**: whitelist the hosting **server's IP** (cPanel home → *General Information →
   Shared IP Address*) and your domain in sms.mimsms.com → Utility → Developer, or every SMS is
-  rejected.
+  rejected. Every registration sends a confirmation SMS (ID + contact address).
 
 * **Wording of the OTP and confirmation emails**: Dashboard → **System emails** (Super Admin).
 
