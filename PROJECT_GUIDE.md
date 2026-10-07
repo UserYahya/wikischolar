@@ -470,8 +470,9 @@ and logs; only the templates `.env.example` and `docs/cpanel.env.example` are tr
 made-up accounts only. `.gitattributes` keeps LF line endings (the servers are Linux). Commit with
 a clear message, add a `CHANGELOG.md` entry and run the tests.
 
-**Never push directly to `main`.** The Azure VM deploys itself automatically from `main`, so
-anything merged there goes live. Work on a branch and open a pull request; the owner merges it:
+**Never push directly to `main`.** The Azure VM runs `main`: deploys are manual (a `git pull` and
+rebuild on the server, docs/DEPLOY_AZURE.md section F), and each one puts everything merged into
+`main` live. Work on a branch and open a pull request; the owner merges it:
 
 ```sh
 git checkout -b my-change
