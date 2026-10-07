@@ -11,19 +11,26 @@ from apps.reference.models import District, Region, Upazila
 class Command(BaseCommand):
     help = ("Seed regions, districts, upazilas and other areas (city-corporation thanas, cantonments, "
             "\"Other area\") from a JSON file. Idempotent. "
-            "Existing district→region assignments (edited in the dashboard) are kept "
+            "It only adds what is missing: names of existing regions and districts (renamed in the "
+            "dashboard) are never overwritten, and district→region assignments are kept "
             "unless --reset-region-assignments is given.")
 
     def add_arguments(self, parser):
         parser.add_argument("--file", default=str(Path(settings.BASE_DIR) / "data" / "reference_seed.json"))
         parser.add_argument("--reset-region-assignments", action="store_true")
+        parser.add_argument("--if-empty", action="store_true",
+                            help="Do nothing when regions already exist (run on every container start).")
 
     @transaction.atomic
-    def handle(self, file, reset_region_assignments, **opts):
+    def handle(self, file, reset_region_assignments, if_empty=False, **opts):
+        if if_empty and Region.all_objects.exists():
+            self.stdout.write("Reference data already loaded; nothing to do (--if-empty).")
+            return
         data = json.loads(Path(file).read_text(encoding="utf-8"))
         regions = {}
         for i, r in enumerate(data["regions"]):
-            obj, _ = Region.all_objects.update_or_create(
+            # get_or_create: a region renamed in the dashboard keeps its name
+            obj, _ = Region.all_objects.get_or_create(
                 code=r["code"], defaults={"name": r["name"], "name_bn": r.get("name_bn", ""), "sort_order": i})
             regions[r["code"]] = obj
         new_d = new_u = new_a = kept = 0
@@ -34,8 +41,7 @@ class Command(BaseCommand):
                 district = District.all_objects.create(code=d["code"], name=d["name"],
                                                        name_bn=d.get("name_bn", ""), region=seed_region)
                 new_d += 1
-            else:
-                district.name, district.name_bn = d["name"], d.get("name_bn", "")
+            else:  # an existing district keeps its name
                 if reset_region_assignments or district.region_id is None:
                     district.region = seed_region
                 elif district.region_id != (seed_region.pk if seed_region else None):

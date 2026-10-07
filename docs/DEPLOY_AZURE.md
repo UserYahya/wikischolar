@@ -99,7 +99,7 @@ and use `ssh wikischolar` (and `scp file wikischolar:/path`).
 
 13. Start the stack:
     ```bash
-    dc up -d --build      # builds the app; migrate + seed_reference run on every start
+    dc up -d --build      # builds the app; migrate runs on every start; seed_reference only fills an empty database
     dc ps                 # db and redis "healthy", web/worker/caddy "Up"
     dc logs -f web        # Ctrl+C to leave
     ```
@@ -142,7 +142,7 @@ and use `ssh wikischolar` (and `scp file wikischolar:/path`).
 
 ## F. Updates and day-to-day operations
 
-- **Deploy an update**: `cd /opt/wikischolar && git pull && dc up -d --build`. collectstatic, migrate and seed run automatically. Downtime is a few seconds.
+- **Deploy an update**: `cd /opt/wikischolar && git pull && dc up -d --build`. collectstatic and migrate run automatically; the reference seed is skipped once loaded, so dashboard renames survive. Downtime is a few seconds.
 - **Logs**: `dc logs -f web`, `dc logs -f caddy`, `dc logs worker`. Slow SQL (over 500 ms) is logged in `dc logs db`.
 - **Slowest queries**:
   ```bash
