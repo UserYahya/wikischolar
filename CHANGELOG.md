@@ -3,6 +3,12 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-07
+
+### Changed
+- Git workflow: never push directly to `main` (the Azure VM auto-deploys from it); use a branch and a pull request
+  (PROJECT_GUIDE "Source code and git").
+
 ## 2026-10-06
 
 ### Added (Azure deployment)
