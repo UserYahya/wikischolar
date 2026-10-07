@@ -19,8 +19,8 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   non-whitelisted IP it is logged as Failed).
 
 ### Changed
-- Git workflow: never push directly to `main` (the Azure VM auto-deploys from it); use a branch and a pull request
-  (PROJECT_GUIDE "Source code and git").
+- Git workflow: never push directly to `main` (the Azure VM runs `main`; merged code goes live at the next
+  manual deploy); use a branch and a pull request (PROJECT_GUIDE "Source code and git").
 
 ## 2026-10-06
 
