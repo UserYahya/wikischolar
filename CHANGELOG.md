@@ -3,6 +3,15 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-08
+
+### Fixed
+- **Region names renamed in the dashboard reverted on every deploy.** The Azure web container runs
+  `seed_reference` on each start, and it overwrote existing region (and district) names with the seed's.
+  `seed_reference` now only adds missing regions/districts and never renames existing ones; the compose file
+  runs it with the new `--if-empty` flag (skips when regions exist). The six renamed regions were restored on
+  the live server from the audit log. 1 new test.
+
 ## 2026-10-07
 
 ### Added

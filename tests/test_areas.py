@@ -7,7 +7,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management import call_command
 
-from apps.reference.models import Upazila
+from apps.reference.models import District, Region, Upazila
 from apps.registration.models import Student
 
 from .base import WSTestCase
@@ -119,6 +119,32 @@ class SeedCommandTests(WSTestCase):
         self.assertEqual(Upazila.objects.filter(district=self.gazipur, name="Tongi East").count(), 1)
         self.assertEqual(Upazila.objects.get(district=self.gazipur, name="Tongi East").group, GCC)
         self.assertEqual(Upazila.objects.get(district=self.gazipur, name="Kaliakair").group, "Other")
+
+    def test_seed_keeps_dashboard_renames_and_if_empty_skips(self):
+        # Every deploy restarts the web container, which runs seed_reference: it must not undo dashboard renames.
+        self.client.force_login(self.super)
+        self.client.post("/dashboard/locations/", {"op": "rename_region", "region": self.dhaka.pk,
+                                                   "name": "Jamuna", "name_bn": "যমুনা"})
+        self.dhaka.refresh_from_db()
+        self.assertEqual((self.dhaka.name, self.dhaka.name_bn), ("Jamuna", "যমুনা"))
+        District.objects.filter(pk=self.gazipur.pk).update(name="Gazipur Zila")
+        data = {"regions": [{"code": "dhaka", "name": "Dhaka", "name_bn": "ঢাকা"},
+                            {"code": "sylhet", "name": "Sylhet"}],
+                "districts": [{"code": "gazipur", "name": "Gazipur", "region": "dhaka"},
+                              {"code": "sylhet", "name": "Sylhet", "region": "sylhet"}]}
+        path = Path(settings.BASE_DIR) / "tests" / "_seed_tmp.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        try:
+            call_command("seed_reference", file=str(path), if_empty=True, stdout=io.StringIO())
+            self.assertFalse(Region.objects.filter(code="sylhet").exists())  # regions exist: nothing done
+            call_command("seed_reference", file=str(path), stdout=io.StringIO())
+        finally:
+            path.unlink()
+        self.dhaka.refresh_from_db()
+        self.assertEqual((self.dhaka.name, self.dhaka.name_bn), ("Jamuna", "যমুনা"))
+        self.assertEqual(District.objects.get(pk=self.gazipur.pk).name, "Gazipur Zila")
+        self.assertTrue(Region.objects.filter(code="sylhet", name="Sylhet").exists())  # missing rows still added
+        self.assertTrue(District.objects.filter(code="sylhet").exists())
 
 
 class SeedCoverageTests(WSTestCase):

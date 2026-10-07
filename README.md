@@ -32,8 +32,11 @@ The 6-region / 64-district mapping is **not in any Python file**. It lives in
   (dashboard filters, reports, the public form's region autofill, CSV exports).
 * Regions can be added, renamed, or archived (only when empty). Districts with no region
   are highlighted and reported as "No region".
-* Re-running `seed_reference` adds new places but **keeps** dashboard edits, unless you pass
-  `--reset-region-assignments`.
+* Re-running `seed_reference` adds new places but **keeps** dashboard edits: region and district
+  names are never overwritten, and district→region assignments are kept unless you pass
+  `--reset-region-assignments`. An upazila renamed in the dashboard is matched by name, so a manual
+  re-run adds its seed name back as a new area; the Azure stack runs it only on an empty database
+  (`--if-empty`).
 
 ## Quick start (Docker)
 
