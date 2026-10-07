@@ -461,7 +461,17 @@ Never commit secrets or local data. `.gitignore` already excludes `.env` (all re
 passwords), `.venv`, the portable PostgreSQL (`.pgsql/`, `.pgdata/`), `dist/`, `staticfiles/`, zips
 and logs; only the templates `.env.example` and `docs/cpanel.env.example` are tracked. Tests use
 made-up accounts only. `.gitattributes` keeps LF line endings (the servers are Linux). Commit with
-a clear message, add a `CHANGELOG.md` entry, run the tests, then push.
+a clear message, add a `CHANGELOG.md` entry and run the tests.
+
+**Never push directly to `main`.** The Azure VM deploys itself automatically from `main`, so
+anything merged there goes live. Work on a branch and open a pull request; the owner merges it:
+
+```sh
+git checkout -b my-change
+git commit -m "Describe the change"
+git push -u origin my-change
+gh pr create            # or open the pull request on github.com
+```
 
 ## 9b. Packaging a release for upload
 
