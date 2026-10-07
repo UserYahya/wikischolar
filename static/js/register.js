@@ -556,6 +556,7 @@
     $("#reg").classList.add("is-done");
     $("#wsid").textContent = s.wikischolar_id;
     $("#doneEmail").textContent = s.email;
+    $("#donePhone").textContent = s.phone;
     const rows = [
       ["Filled in by", s.filled_by],
       ["Name", s.student_name], ["Gender", s.gender], ["Guardian", s.guardian],

@@ -111,7 +111,9 @@ def register_student(data, *, request):
     ev.save(update_fields=["status", "used_at", "student"])
     audit.record("student.registered", request=request, actor_type="public", entity=student,
                  meta={"school_resolution": how, "school_id": school.pk, "filled_by": student.filled_by})
-    transaction.on_commit(lambda: send_confirmation(student))
+    # After commit, as two independent callbacks: a failing SMS never stops the email, or the other way round.
+    transaction.on_commit(lambda: send_confirmation(student), robust=True)
+    transaction.on_commit(lambda: send_confirmation_sms(student), robust=True)
     return student
 
 
@@ -142,6 +144,26 @@ def summary(student):
 def send_confirmation(student):
     notify.send_system_email(emails.CONFIRMATION, NotificationLog.Kind.CONFIRMATION, student.email,
                              emails.confirmation_values(summary(student)), student=student)
+
+
+# One SMS segment: 160 characters, plain (GSM) letters only. A single non-GSM character (Bangla,
+# curly quotes…) makes the whole SMS Unicode, where one segment holds only 70.
+SMS_LIMIT = 160
+
+
+def confirmation_sms_text(student):
+    """The registration SMS: success, the WikiScholar ID and where to send questions (no name: names
+    vary in length and may need Unicode)."""
+    text = (f"WikiScholar registration successful. Your ID: {student.wikischolar_id}. "
+            f"Questions? Email {CFG['CONTACT_EMAIL']}")
+    if len(text) > SMS_LIMIT:  # only with an unusually long WS_CONTACT_EMAIL
+        text = f"WikiScholar registration successful. Your ID: {student.wikischolar_id}."
+    return text
+
+
+def send_confirmation_sms(student):
+    notify.send_transactional_sms(NotificationLog.Kind.CONFIRMATION, student.phone,
+                                  confirmation_sms_text(student), student=student)
 
 
 # ---- Admin edits (every change → edit_history + audit_logs) ------------------ #

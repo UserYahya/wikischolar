@@ -106,6 +106,7 @@ and use `ssh wikischolar` (and `scp file wikischolar:/path`).
 14. Run the pre-flight check: `dc exec web python manage.py check_host`. Every line should be **OK**.
 15. Create the first admin: `dc exec web python manage.py create_super_admin --email you@wikimedia.org.bd --name "Your Name"` (it prompts for the password, minimum 12 characters).
 16. Test the site: open <https://registration.wikischolar.bd>, run a full test registration (the OTP email must arrive), then sign in at `/dashboard/`.
+17. **SMS (MiM SMS)**: every registration sends a confirmation SMS. Whitelist the VM's **static public IP** (step 2) and the domain in sms.mimsms.com → Utility → Developer, then choose MiM SMS in Dashboard → Email & SMS settings and send a test SMS. Without SMS settings the SMS is only written to the server log; with MiM SMS but no whitelisted IP it is logged as Failed on the student page. Registration and email are never affected.
 
 ## E. Daily backups to Amazon S3
 
