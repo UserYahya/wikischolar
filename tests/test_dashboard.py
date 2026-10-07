@@ -747,11 +747,21 @@ class SmsSettingsTests(WSTestCase):
         self.assertContains(r, "Test SMS sent to 01812345678")
         self.assertEqual(calls[-1][1]["mobileNumber"], "8801812345678")
         self.assertTrue(AuditLog.objects.filter(action="settings.sms_tested", meta__ok=True).exists())
-        calls = self.fake_gateway({"statusCode": "200", "status": "Ok", "trxnId": "P6", "responseResult": "51"})
+        # The shape the live API returns (2026-10)
+        calls = self.fake_gateway({"statusCode": "200", "status": "Success", "trxnId": "P6", "message": "Success",
+                                   "data": [{"balance": "205.5", "expair_Date": "26/01/2027"}]})
         r = self.client.post("/dashboard/settings/email/", {"op": "sms_balance"}, follow=True)
-        self.assertContains(r, "MiM SMS balance: 51")
+        self.assertContains(r, "MiM SMS balance: 205.5 (valid until 26/01/2027)")
         self.assertEqual(calls[-1], ("https://api.mimsms.com/api/V2/BalanceCheck",
                                      {"userName": "sms@wikimedia.org.bd", "apiKey": "KEY-123"}))
+        # The shape in MiM's older docs
+        self.fake_gateway({"statusCode": "200", "status": "Ok", "trxnId": "P7", "responseResult": "51"})
+        r = self.client.post("/dashboard/settings/email/", {"op": "sms_balance"}, follow=True)
+        self.assertContains(r, "MiM SMS balance: 51")
+        # A 200 without a balance is an error, never an empty success message
+        self.fake_gateway({"statusCode": "200", "status": "Success"})
+        r = self.client.post("/dashboard/settings/email/", {"op": "sms_balance"}, follow=True)
+        self.assertContains(r, "Balance check failed: MiM SMS sent no balance")
 
     def test_only_super_admin_and_inactive_falls_back_to_env(self):
         from apps.notifications import services as notify

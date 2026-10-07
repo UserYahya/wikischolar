@@ -72,7 +72,8 @@ class MimSmsProvider(Provider):
         return SendResult(ok=False, error=self._error(data, raw))
 
     def balance(self):
-        """(ok, balance_or_error). POST /V2/BalanceCheck; the balance is in responseResult."""
+        """(ok, balance_or_error). POST /V2/BalanceCheck. The live API answers
+        {"data": [{"balance": "205.5", "expair_Date": "26/01/2027"}]}; older docs show responseResult."""
         if not (self.username and self.api_key):
             return False, "Username and API key are required"
         try:
@@ -80,7 +81,13 @@ class MimSmsProvider(Provider):
         except Exception as exc:
             return False, f"MiM SMS request failed: {exc}"[:500]
         if str(data.get("statusCode")) == "200":
-            return True, str(data.get("responseResult", ""))
+            rows = data.get("data")
+            row = rows[0] if isinstance(rows, list) and rows and isinstance(rows[0], dict) else {}
+            balance = str(row.get("balance") or data.get("responseResult") or "").strip()
+            if not balance:
+                return False, f"MiM SMS sent no balance: {raw}"[:500]
+            expiry = row.get("expair_Date")  # MiM's spelling
+            return True, f"{balance} (valid until {expiry})" if expiry else balance
         return False, self._error(data, raw)
 
     def delivery_status(self, destination, tracking_id):

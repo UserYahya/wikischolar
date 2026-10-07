@@ -5,6 +5,11 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-07
 
+### Fixed
+- **Check MiM SMS balance** showed an empty "MiM SMS balance:" message: the live API returns the balance in
+  `data[0].balance` (with `expair_Date`), not `responseResult`. It now shows e.g. "205.5 (valid until 26/01/2027)",
+  still accepts the old `responseResult` shape, and reports a reply without a balance as an error.
+
 ### Added
 - **Confirmation SMS** after registering, besides the confirmation email: "WikiScholar registration successful.
   Your ID: WS-2027-000001. Questions? Email info@wikischolar.bd" (98 of 160 characters, plain letters so it stays
