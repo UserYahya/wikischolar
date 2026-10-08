@@ -5,6 +5,10 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-08
 
+### Changed
+- Registration step 2: shorter hint under the school box: "Start typing: approved schools in the district are
+  suggested. If yours isn't listed, add it as new." (Bangla shortened to match). Behaviour unchanged.
+
 ### Fixed
 - **Region names renamed in the dashboard reverted on every deploy.** The Azure web container runs
   `seed_reference` on each start, and it overwrote existing region (and district) names with the seed's.
