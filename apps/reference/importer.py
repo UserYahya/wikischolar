@@ -1,6 +1,8 @@
 """Bulk school import from CSV (dashboard Schools → Import, and `manage.py import_schools`).
 
-The CSV has district, upazila and name columns. `plan()` checks every row without saving and
+The CSV has district, upazila / area and name columns; the upazila / area may be left blank (or the
+column left out) when it isn't known: such a school belongs to its whole district until an admin sets
+its area. `plan()` checks every row without saving and
 says what would happen to it; `apply()` creates the rows that are new (plus any similar-name rows
 the admin chose to add), re-checking first because the data may have changed in between.
 """
@@ -75,9 +77,10 @@ def read_rows(data):
     header = [_key(h) for h in next(reader, [])]
     di = header.index("district") if "district" in header else None
     ui = next((header.index(c) for c in AREA_COLUMNS if c in header), None)
-    if di is None or ui is None:
-        raise ImportFileError("The first row must be the column headings: District, Upazila / Area, School name. "
-                              "Download the template to start from the right layout.")
+    if di is None:  # the Upazila / Area column is optional
+        raise ImportFileError("The first row must be the column headings: District, Upazila / Area, School name "
+                              "(Upazila / Area may be left blank). Download the template to start from the right "
+                              "layout.")
     ni = next((header.index(c) for c in NAME_COLUMNS if c in header), None)
     if ni is None:
         raise ImportFileError("There is no “School name” column.")
@@ -86,7 +89,8 @@ def read_rows(data):
         cell = lambda i: cells[i].strip() if i < len(cells) else ""  # noqa: E731
         if not cell(ni):
             continue
-        rows.append({"line": line, "district": cell(di), "upazila": cell(ui), "name": cell(ni)})
+        rows.append({"line": line, "district": cell(di), "upazila": cell(ui) if ui is not None else "",
+                     "name": cell(ni)})
         if len(rows) > MAX_ROWS:
             raise ImportFileError(f"The file has more than {MAX_ROWS} schools. Split it into smaller files.")
     if not rows:
@@ -100,7 +104,7 @@ def plan(rows):
     # Matched by English or Bangla name, ignoring case and extra spaces.
     districts = {_key(n): d for d in District.objects.all() for n in (d.name, d.name_bn) if _key(n)}
     upazilas = {(u.district_id, _key(n)): u for u in Upazila.objects.all() for n in (u.name, u.name_bn) if _key(n)}
-    seen = {}
+    seen_in_area, seen_in_district, seen_without_area = {}, {}, {}  # → row line
     out = []
     for raw in rows:
         row = dict(raw)
@@ -110,12 +114,15 @@ def plan(rows):
             row.update(result=ERROR, message=f"Unknown district “{row['district']}”." if row["district"]
                        else "The district is missing.")
             continue
-        upz = upazilas.get((district.pk, _key(row["upazila"])))
-        if not upz:
-            row.update(result=ERROR, message=f"No upazila or area “{row['upazila']}” in {district.name}."
-                       if row["upazila"] else "The upazila / area is missing.")
-            continue
-        row.update(district=district.name, upazila=upz.name, upazila_id=upz.pk)
+        upz = None
+        if row["upazila"]:  # blank = area not known: the school belongs to the whole district
+            upz = upazilas.get((district.pk, _key(row["upazila"])))
+            if not upz:
+                row.update(result=ERROR, message=f"No upazila or area “{row['upazila']}” in {district.name}. "
+                                                 "Check the spelling, or leave it blank if you don't know it.")
+                continue
+        row.update(district=district.name, district_id=district.pk,
+                   upazila=upz.name if upz else "", upazila_id=upz.pk if upz else None)
         try:
             row["name"] = english_text(row["name"])
         except ValidationError as exc:
@@ -124,14 +131,24 @@ def plan(rows):
         if len(row["name"]) > 255:
             row.update(result=ERROR, message="The name is longer than 255 characters.")
             continue
-        key = (upz.pk, normalize_school_name(row["name"]))
-        if key in seen:
-            row.update(result=REPEATED, message=f"Same school as row {seen[key]}.")
+        # A row without an area repeats any earlier row of the same name in the district; a row with
+        # an area repeats one in the same area or one without an area.
+        name_key = normalize_school_name(row["name"])
+        if upz:
+            earlier = seen_in_area.get((upz.pk, name_key)) or seen_without_area.get((district.pk, name_key))
+        else:
+            earlier = seen_in_district.get((district.pk, name_key))
+        if earlier:
+            row.update(result=REPEATED, message=f"Same school as row {earlier}.")
             continue
-        seen[key] = row["line"]
-        if same := services.same_name_school(upz, row["name"]):
+        seen_in_district.setdefault((district.pk, name_key), row["line"])
+        if upz:
+            seen_in_area[(upz.pk, name_key)] = row["line"]
+        else:
+            seen_without_area[(district.pk, name_key)] = row["line"]
+        if same := services.same_name_school(upz, row["name"], district_id=district.pk):
             row.update(result=EXISTS, school=same)
-        elif similar := services.similar_schools(upz, row["name"], limit=3):
+        elif similar := services.similar_schools(upz, row["name"], limit=3, district_id=district.pk):
             row.update(result=SIMILAR, similar=similar)
         else:
             row["result"] = NEW
@@ -156,9 +173,9 @@ def apply(rows, *, status=School.Status.VERIFIED, add_similar=(), request=None, 
     created = []
     for r in planned:
         if r["result"] == NEW or (r["result"] == SIMILAR and r["line"] in add_similar):
-            upz = upazilas[r["upazila_id"]]
             created.append(School.objects.create(
-                name=r["name"], upazila=upz, district_id=upz.district_id, verification_status=status,
+                name=r["name"], upazila=upazilas.get(r["upazila_id"]), district_id=r["district_id"],
+                verification_status=status,
                 source=School.Source.IMPORT, verified_by=user if verified else None,
                 verified_at=timezone.now() if verified else None))
     if created:

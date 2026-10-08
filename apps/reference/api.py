@@ -62,7 +62,9 @@ def schools(request):
         results = services.search_schools(upazila_id, q, limit=500 if staff_list else 8, verified_only=not with_pending)
     return JsonResponse({"schools": [
         {"id": s.pk, "name": s.name, "verified": s.verification_status == "verified",
-         "area": s.upazila.name, "area_bn": s.upazila.name_bn, "same_area": s.upazila_id == upazila_id}
+         # area "" = not known yet (a school listed for the whole district)
+         "area": s.upazila.name if s.upazila_id else "", "area_bn": s.upazila.name_bn if s.upazila_id else "",
+         "same_area": bool(s.upazila_id) and s.upazila_id == upazila_id}
         for s in results
     ]})
 

@@ -4,8 +4,9 @@ from apps.reference import importer
 
 
 class Command(BaseCommand):
-    help = ("Import a school list. CSV columns: district,upazila,name (names as in the DB; the dashboard's "
-            "Schools → Import offers a template). Same checks as the dashboard import; similar names are added.")
+    help = ("Import a school list. CSV columns: district, upazila / area (optional: blank or left out when not "
+            "known), name (names as in the DB; the dashboard's Schools → Import offers a template). Same checks "
+            "as the dashboard import; similar names are added.")
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path")

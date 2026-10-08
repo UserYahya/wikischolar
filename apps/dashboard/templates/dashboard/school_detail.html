@@ -2,9 +2,9 @@
 {% block title %}{{ school.name }}{% endblock %}
 {% block content %}
 <header class="page-head"><div>
-  <p class="crumb"><a href="{% url 'dashboard:schools' %}?district={{ school.district_id }}&upazila={{ school.upazila_id }}">Schools in {{ school.upazila.name }}</a></p>
+  <p class="crumb">{% if school.upazila_id %}<a href="{% url 'dashboard:schools' %}?district={{ school.district_id }}&upazila={{ school.upazila_id }}">Schools in {{ school.upazila.name }}</a>{% else %}<a href="{% url 'dashboard:schools' %}?district={{ school.district_id }}">Schools in {{ school.district.name }}</a>{% endif %}</p>
   <h1>{{ school.name }}</h1>
-  <p class="muted">{{ school.upazila.name }}, {{ school.district.name }}{% if school.district.region %} ({{ school.district.region.name }}){% endif %} · <span class="tag {% if school.verification_status == 'verified' %}ok{% endif %}">{{ school.get_verification_status_display }}</span></p>
+  <p class="muted">{% if school.upazila_id %}{{ school.upazila.name }}{% else %}Area not known{% endif %}, {{ school.district.name }}{% if school.district.region %} ({{ school.district.region.name }}){% endif %} · <span class="tag {% if school.verification_status == 'verified' %}ok{% endif %}">{{ school.get_verification_status_display }}</span></p>
   {% if school.is_deleted %}<p class="notice">Removed {{ school.deleted_at|date:"j M Y H:i" }}{% if school.deleted_by %} by {{ school.deleted_by.email }}{% endif %}. Registrations no longer match it.</p>{% endif %}
   {% if school.merged_into %}<p class="notice">Merged into <a href="{% url 'dashboard:school' school.merged_into_id %}">{{ school.merged_into.name }}</a>. New registrations resolve there.</p>{% endif %}
 </div>
@@ -24,6 +24,15 @@
     {% if can_edit and not school.merged_into and not school.is_deleted %}
     <form method="post" class="toolbar">{% csrf_token %}<input name="alias" placeholder="Add an alternate spelling" aria-label="Alias" required><button class="btn" name="op" value="alias">Add alias</button></form>
     <form method="post" class="toolbar">{% csrf_token %}<input name="name" value="{{ school.name }}" aria-label="Official name" required><button class="btn" name="op" value="rename">Rename</button></form>
+    <h3>Upazila / Area</h3>
+    {% if not school.upazila_id %}<p class="hint">Not known yet: the school is suggested to students from every area of {{ school.district.name }}. Set its area when you know it.</p>{% endif %}
+    <form method="post" class="toolbar">{% csrf_token %}
+      <select name="upazila" aria-label="Upazila or area" required>
+        <option value="" {% if not school.upazila_id %}selected{% endif %} disabled>Choose upazila or area…</option>
+        {% include "dashboard/_area_options.html" with areas=areas selected=school.upazila_id|stringformat:"s" %}
+      </select>
+      <button class="btn" name="op" value="set_area">{% if school.upazila_id %}Change area{% else %}Set area{% endif %}</button>
+    </form>
     {% endif %}
     {% if merged_from %}<h3>Merged into this school</h3><ul class="plain">{% for m in merged_from %}<li><a href="{% url 'dashboard:school' m.pk %}">{{ m.name }}</a></li>{% endfor %}</ul>{% endif %}
   </section>
@@ -38,7 +47,7 @@
     <thead><tr><th>WikiScholar ID</th><th>Name</th><th>Class</th></tr></thead>
     <tbody>{% for s in students %}<tr><td><a class="wsid" href="{% url 'dashboard:student' s.wikischolar_id %}">{{ s.wikischolar_id }}</a></td><td>{{ s.student_name }}</td><td class="num">{{ s.current_class }}</td></tr>{% endfor %}</tbody>
   </table></div>
-  {% if student_count > 100 %}<p><a href="{% url 'dashboard:students' %}?district={{ school.district_id }}&upazila={{ school.upazila_id }}&school={{ school.pk }}">See all {{ student_count }}</a></p>{% endif %}
+  {% if student_count > 100 %}<p><a href="{% url 'dashboard:students' %}?district={{ school.district_id }}{% if school.upazila_id %}&upazila={{ school.upazila_id }}{% endif %}&school={{ school.pk }}">See all {{ student_count }}</a></p>{% endif %}
   {% endif %}
 </section>
 {% if can_edit and not school.is_deleted %}

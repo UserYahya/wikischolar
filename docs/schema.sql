@@ -607,7 +607,7 @@ CREATE TABLE public.schools (
     district_id bigint NOT NULL,
     merged_into_id bigint,
     verified_by_id bigint,
-    upazila_id bigint NOT NULL,
+    upazila_id bigint,
     CONSTRAINT school_merged_has_target CHECK ((((merged_into_id IS NOT NULL) AND ((verification_status)::text = 'merged'::text)) OR ((NOT ((verification_status)::text = 'merged'::text)) AND (merged_into_id IS NULL))))
 );
 

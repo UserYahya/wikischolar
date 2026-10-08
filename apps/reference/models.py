@@ -108,7 +108,9 @@ class School(SoftDeleteModel):
     name = models.CharField(max_length=255)
     name_normalized = models.CharField(max_length=255, editable=False)
     district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="schools")
-    upazila = models.ForeignKey(Upazila, on_delete=models.PROTECT, related_name="schools")
+    # Blank = area not known yet (e.g. imported from a list with districts only). Such a school belongs
+    # to the whole district: it is suggested and duplicate-checked across all its areas.
+    upazila = models.ForeignKey(Upazila, null=True, blank=True, on_delete=models.PROTECT, related_name="schools")
     verification_status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True)
     source = models.CharField(max_length=14, choices=Source.choices, default=Source.REGISTRATION)
     merged_into = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="merged_from")
@@ -136,6 +138,11 @@ class School(SoftDeleteModel):
         if self.upazila_id and not self.district_id:
             self.district_id = self.upazila.district_id
         super().save(*args, **kwargs)
+
+    @property
+    def area_name(self):
+        """The upazila / area name, or "" when it isn't known yet."""
+        return self.upazila.name if self.upazila_id else ""
 
     def canonical(self):
         school, hops = self, 0

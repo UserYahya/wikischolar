@@ -59,7 +59,7 @@ erDiagram
       text name
       text name_normalized "GIN trigram"
       bigint district_id FK
-      bigint upazila_id FK
+      bigint upazila_id FK "blank = area not known (whole district)"
       text verification_status "verified|pending|merged"
       text source
       bigint merged_into_id FK
