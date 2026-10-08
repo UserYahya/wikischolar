@@ -114,14 +114,28 @@ Analytics) will plug into the same app.
 * **Importing schools from CSV** (Dashboard → Schools → *Import CSV*, needs `schools.edit`):
   *Download template* gives the headings `District,Upazila / Area,School name` (older templates'
   `Upazila`, or `Area`, and a lower-case `name` column also work); fill in one school per row; rows
-  without a school name are ignored. *District & upazila / area list* (all districts or one) lists
+  without a school name are ignored. **Upazila / Area is optional**: leave it blank when it isn't
+  known, or leave the column out (District and School name are required); see *Schools without an
+  area* below. *District & upazila / area list* (all districts or one) lists
   every upazila, thana, cantonment and "Other area" with its district and group in English and
   Bangla, spelled as the import expects. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
   district/upazila matched in English or Bangla ignoring case) and choose *Verified* or *Pending*.
   A preview shows each row as *will be added*, *similar* (added only if ticked), *already listed*,
-  *repeated in the file* or *error* (unknown district/upazila, not English, too long). Nothing is
+  *repeated in the file* or *error* (unknown district, misspelt upazila, not English, too long). Nothing is
   saved until *Import N schools*; the rows wait in the session and are checked again then. One
   `school.imported` audit entry records the count and the new school IDs; source is *Bulk import*.
+* **Schools without an area** (`schools.upazila_id` blank, e.g. imported from a list with districts
+  only) belong to their **whole district** until an admin sets the area:
+  * Suggestions: offered to students from every area of the district, shown without an area label.
+  * Typed names: a name typed on the form in any area of the district matches them, so no pending
+    duplicate is created.
+  * Duplicate checks: the import, *Add school* and *Review duplicates* compare them with every school
+    in the district. A row without an area repeats any same-name row of that district.
+  * Merging: allowed within the district. A kept school without an area takes the area of the
+    duplicate merged into it.
+  * Dashboard: *Upazila / Area* shows "Not known", and the area filter has an *Area not known*
+    option. The school page has *Set area* (audited as `school.area_set`); it is refused when that
+    area already lists the name, in which case merge the two schools instead.
 
 ### Admin dashboard (`/dashboard/`)
 * **Sidebar**: the WikiScholar logo, then the tools in **collapsible groups** (*Overview*;
@@ -447,7 +461,7 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `migrate` | create/update tables (run after every code update) |
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
 | `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts, 503 upazilas and the other areas (city-corporation thanas, cantonments, "Other area"; idempotent; keeps dashboard edits). On an existing database, migration `reference.0004` adds new areas from the seed by itself |
-| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
+| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English; the upazila may be blank or the column left out); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
 | `send_queued` | send queued bulk messages (cron/worker, run one at a time) |
@@ -498,7 +512,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-201 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+212 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a

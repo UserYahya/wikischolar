@@ -138,7 +138,7 @@ record which student batch they were sent to.
 | Command | Purpose |
 |---|---|
 | `seed_reference [--file PATH] [--reset-region-assignments]` | Load/refresh regions, districts, upazilas and the other "Upazila / Area" choices (city-corporation thanas, cantonments, "Other area"). Idempotent. |
-| `import_schools CSV [--status verified\|pending]` | Import a school list (`district,upazila,name`). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
+| `import_schools CSV [--status verified\|pending]` | Import a school list (`district,upazila,name`; upazila optional). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
 | `create_super_admin --email --name [--password]` | Bootstrap the first Super Admin; everyone else is created from the dashboard. |
 | `check_host` | Pre-flight on a new server: Python, PostgreSQL 13+, `pg_trgm`, settings, migrations, cache. |
 | `find_non_english` | List stored names, school names, rolls or SIDs that aren't English (entered before the English-only rule). |
@@ -150,7 +150,7 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-201 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+212 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
 roll-or-SID, phone, upazila-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new
@@ -179,7 +179,9 @@ lists schools already in the upazila; the same name or an alias is refused and a
 needs confirmation) and remove ones with no students (archived, restorable from *Removed*).
 **Schools → Import CSV** bulk-loads schools: download the template (headings *District,
 Upazila / Area, School name*), fill in one school per row (a downloadable district & upazila / area
-list gives the spellings), upload, check the per-row preview, then confirm.
+list gives the spellings), upload, check the per-row preview, then confirm. The upazila / area
+may be left blank (or the column left out): such a school belongs to its whole district (suggested
+and duplicate-checked across all its areas) until an admin sets its area on the school page.
 
 **Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, upazila, school,
 class, gender, date-range, opt-in and text search; CSV export; per-student edit history;

@@ -40,7 +40,9 @@ def school_list(request):
     if district:
         qs = qs.filter(district_id=district)
     upazila = request.GET.get("upazila", "")
-    if upazila:
+    if upazila == "none":  # area not known yet (e.g. imported with the district only)
+        qs = qs.filter(upazila__isnull=True)
+    elif upazila.isdigit():
         qs = qs.filter(upazila_id=upazila)
     q = request.GET.get("q", "").strip()
     if q:
@@ -165,7 +167,8 @@ def school_detail(request, pk):
                 messages.error(request, str(exc))
                 return redirect("dashboard:school", pk=pk)
             messages.success(request, f"Removed “{school.name}”. You can restore it from Schools → Removed.")
-            return redirect(f"{reverse('dashboard:schools')}?district={school.district_id}&upazila={school.upazila_id}")
+            return redirect(f"{reverse('dashboard:schools')}?district={school.district_id}"
+                            + (f"&upazila={school.upazila_id}" if school.upazila_id else ""))
         if op == "restore":
             try:
                 ref.restore_school(school, request=request)
@@ -182,6 +185,18 @@ def school_detail(request, pk):
         elif op == "unverify":
             ref.set_school_status(school, School.Status.PENDING, request=request)
             messages.success(request, "Moved back to pending review.")
+        elif op == "set_area":
+            upz = Upazila.objects.filter(pk=request.POST.get("upazila") or 0, district_id=school.district_id).first()
+            if not upz:
+                messages.error(request, "Choose an upazila or area.")
+            else:
+                try:
+                    changed = ref.set_school_area(school, upz, request=request)
+                except ValueError as exc:
+                    messages.error(request, str(exc))
+                else:
+                    if changed:
+                        messages.success(request, f"Area set to {upz.name}.")
         elif op == "rename" and request.POST.get("name", "").strip():
             if (name := _english(request, request.POST["name"])) is not None:
                 ref.rename_school(school, name, request=request)
@@ -198,6 +213,7 @@ def school_detail(request, pk):
         "students": students, "student_count": school.students.count(), "entered": entered,
         "merged_from": school.merged_from.all(), "can_edit": request.user.has_perm_code("schools.edit"),
         "removal_blocker": "" if school.is_deleted else ref.removal_blocker(school),
+        "areas": ref.areas_of(school.district_id),
     })
 
 

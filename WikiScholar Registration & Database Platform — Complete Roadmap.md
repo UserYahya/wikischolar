@@ -412,6 +412,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | Sidebar tools in **collapsible groups** (Students, Schools & places, Messaging, Administration) with the logo on top | the menu had grown to 11 links |
 | **Change password** for every admin; Super Admin **sets a new password** for others | admins could not change a temporary password, and a forgotten one needed a server command |
 | Optional **Cloudflare Turnstile** on "Send verification code" and sign-in | stop bots sending emails through the form and guessing passwords |
+| **Schools without an area**: the CSV import accepts a blank upazila / area (or no such column); those schools belong to the whole district (suggested, matched and duplicate-checked across its areas) until an admin sets the area; *Area not known* filter | the school lists available have districts but not always upazilas |
 
 ### 10.3 Email & SMS settings (Super Admin)
 | Change | Why |

@@ -42,7 +42,9 @@
     if (!upazila.value) { fill(school, [], "school"); return; }
     try {
       const data = await getJSON(`/api/reference/schools/?upazila=${encodeURIComponent(upazila.value)}&all=1`);
-      fill(school, data.schools.map((s) => ({ id: s.id, text: s.name + (s.verified ? "" : " (pending)") })), "school");
+      // also lists the district's schools whose area isn't known yet
+      fill(school, data.schools.map((s) => ({ id: s.id, text: s.name + (s.area ? "" : " (area not known)")
+        + (s.verified ? "" : " (pending)") })), "school");
     } catch (e) {
       fill(school, [], "school");
     } finally { school.disabled = false; }
