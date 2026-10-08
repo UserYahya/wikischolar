@@ -5,6 +5,9 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-08
 
+### Changed
+- Registration step 2: shorter hint under the school box: "Start typing: approved schools in the district are
+  suggested. If yours isn't listed, add it as new." (Bangla shortened to match). Behaviour unchanged.
 ### Added
 - **Import schools without an upazila / area.** In Schools → Import CSV (and `import_schools`) the Upazila / Area
   cell may be blank, or the column left out; District and School name are still required, and a misspelt area
