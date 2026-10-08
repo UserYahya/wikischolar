@@ -8,6 +8,23 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 ### Changed
 - Registration step 2: shorter hint under the school box: "Start typing: approved schools in the district are
   suggested. If yours isn't listed, add it as new." (Bangla shortened to match). Behaviour unchanged.
+### Added
+- **Import schools without an upazila / area.** In Schools → Import CSV (and `import_schools`) the Upazila / Area
+  cell may be blank, or the column left out; District and School name are still required, and a misspelt area
+  is still an error. A school without an area belongs to its whole district until an admin sets it:
+  - **Public form:** suggested from every area of the district, shown without an area label. A name typed in
+    any area matches it instead of creating a pending duplicate.
+  - **Duplicate checks:** the import, Add school and Review duplicates compare it with every school in the
+    district.
+  - **Merging:** allowed within the district. A kept school without an area takes the area of the duplicate.
+  - **Dashboard:** "Not known" in the Schools list, an *Area not known* filter, *Set area* on the school page
+    (audited; refused when that area already lists the name), and the student editor's school list includes
+    such schools.
+  - 10 new tests (212 in total).
+
+### Upgrade notes
+- New migration `reference.0005_school_area_optional` (makes `schools.upazila_id` nullable; no data changes).
+  Azure runs it automatically on deploy; on cPanel run `migrate` and `collectstatic --noinput`.
 
 ### Fixed
 - **Region names renamed in the dashboard reverted on every deploy.** The Azure web container runs

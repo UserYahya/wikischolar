@@ -25,7 +25,8 @@
       li.id = `opt${i}`; li.dataset.i = i; li.setAttribute("role", "option"); li.setAttribute("aria-selected", String(i === active));
       const name = document.createElement("span"); name.textContent = s.name; li.append(name);
       const tags = document.createElement("span"); tags.className = "tags";
-      tags.textContent = s.area + (s.verified ? "" : " · pending");  // the school's area (same names exist across areas)
+      // the school's area (same names exist across areas); "" = listed for the whole district
+      tags.textContent = (s.area || "area not known") + (s.verified ? "" : " · pending");
       li.append(tags);
       list.append(li);
     });

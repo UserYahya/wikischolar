@@ -10,7 +10,7 @@ from apps.core.models import AuditLog
 from apps.core.permissions import require_perm
 from apps.notifications import services as notify
 from apps.reference import services as ref
-from apps.reference.models import District, Region, School
+from apps.reference.models import District, Region, School, Upazila
 from apps.registration import services
 from apps.registration.choices import CLASS_CHOICES, FilledBy, Gender
 from apps.registration.models import Student
@@ -28,8 +28,9 @@ def _filter_context(p):
            "filled_by_choices": FilledBy.choices, "area_kinds": filters.AREA_KINDS}
     if len(p["district"]) == 1:
         ctx["upazilas"] = ref.areas_of(p["district"][0])
-    if p["upazila"]:
-        ctx["schools"] = School.objects.filter(upazila_id=p["upazila"], merged_into__isnull=True)
+    if p["upazila"]:  # the area's schools plus the district's schools without an area
+        ctx["schools"] = School.objects.filter(ref.school_scope(Upazila.objects.filter(pk=p["upazila"]).first()),
+                                               merged_into__isnull=True) if str(p["upazila"]).isdigit() else []
     return ctx
 
 
@@ -140,9 +141,12 @@ def student_edit(request, wsid):
 
 
 def _school_choices(upazila_id, current):
-    """The editor's school list: schools of the selected upazila / area, plus the student's current
-    school when it is in another area (so saving other changes never switches the school)."""
-    schools = list(School.objects.filter(upazila_id=upazila_id or 0, merged_into__isnull=True).select_related("upazila"))
+    """The editor's school list: schools of the selected upazila / area and the district's schools
+    without an area, plus the student's current school when it is elsewhere (so saving other changes
+    never switches the school)."""
+    upazila = Upazila.objects.filter(pk=upazila_id or 0).first()
+    schools = list(School.objects.filter(ref.school_scope(upazila), merged_into__isnull=True)
+                   .select_related("upazila")) if upazila else []
     if current and all(s.pk != current.pk for s in schools):
         schools.insert(0, current)
     return schools

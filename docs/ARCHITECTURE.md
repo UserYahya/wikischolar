@@ -58,8 +58,9 @@ later consume the same JSON endpoints.
 ### School resolution order
 `selected` (ID picked from typeahead, must be in the same district) → `exact` (normalised name)
 → `alias` → `auto` (trigram similarity ≥ `WS_SCHOOL_AUTO_RESOLVE`, default 0.8) → `created`
-(`exact`, `alias` and `auto` look only in the chosen upazila / area, and `created` files the new
-school there: common names such as "Government Girls High School" repeat across upazilas)
+(`exact`, `alias` and `auto` look only in the chosen upazila / area plus the district's schools
+whose area isn't known yet (`reference.services.school_scope`), and `created` files the new school
+in the chosen area: common names such as "Government Girls High School" repeat across upazilas)
 (new `pending` school). Normalisation lower-cases, strips punctuation and expands common
 abbreviations (`govt` → `government`, `h/s` → `high school`, …). Merged schools always
 redirect to their canonical row.
