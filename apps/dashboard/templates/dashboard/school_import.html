@@ -27,8 +27,8 @@
           <td>{% if r.result == "new" %}<span class="tag ok">Will be added</span>
             {% elif r.result == "similar" %}
               <label class="inline"><input type="checkbox" name="add_similar" value="{{ r.line }}"> Add anyway</label>
-              <small class="muted">Similar to {% for s in r.similar %}<a href="{% url 'dashboard:school' s.pk %}" target="_blank">{{ s.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</small>
-            {% elif r.result == "exists" %}<span class="status">Already listed</span> <a href="{% url 'dashboard:school' r.school.pk %}" target="_blank">{{ r.school.name }}</a>
+              <small class="muted">Similar to {% for s in r.similar %}<a href="{% url 'dashboard:school' s.pk %}" target="_blank">{{ s.name }}</a> ({{ s.location_label }}){% if not forloop.last %}, {% endif %}{% endfor %}</small>
+            {% elif r.result == "exists" %}<span class="status">Already listed</span> <a href="{% url 'dashboard:school' r.school.pk %}" target="_blank">{{ r.school.name }}</a> <small class="muted">({{ r.school.location_label }})</small>
             {% elif r.result == "repeated" %}<span class="status">Skipped</span> <small class="muted">{{ r.message }}</small>
             {% else %}<span class="status failed">Error</span> <small class="err-text">{{ r.message }}</small>{% endif %}</td>
         </tr>{% endfor %}</tbody>

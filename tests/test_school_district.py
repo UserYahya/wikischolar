@@ -27,6 +27,16 @@ class DistrictSuggestionTests(WSTestCase):
         url = f"/api/reference/schools/?district={district.pk}&q={q}" + (f"&upazila={upazila.pk}" if upazila else "")
         return self.client.get(url).json()["schools"]
 
+    def test_suggestions_start_from_the_third_letter(self):
+        self.assertEqual(self.suggest("t"), [])
+        self.assertEqual(self.suggest("to"), [])
+        self.assertEqual(self.suggest("%20to%20"), [])
+        self.assertIn("Tongi Government High School", [s["name"] for s in self.suggest("ton")])
+        self.client.force_login(self.admin)  # the student editor's full list sends no query at all
+        names = [s["name"] for s in self.client.get(f"/api/reference/schools/?upazila={self.kaliakair.pk}&all=1")
+                 .json()["schools"]]
+        self.assertIn("Kaliakair New Academy", names)
+
     def test_whole_district_with_own_area_first(self):
         rows = self.suggest("pilot high school", upazila=self.tongi)
         names = [r["name"] for r in rows]

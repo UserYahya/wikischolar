@@ -75,6 +75,7 @@ MESSAGES = {
     "No region assigned": "কোনো অঞ্চল নির্ধারণ করা নেই",
     "being verified": "যাচাই চলছে",
     "Not in the list? Add it as new: “{name}”": "তালিকায় নেই? নতুন হিসেবে যোগ করুন: “{name}”",
+    "Type at least 3 letters to see suggestions.": "পরামর্শ দেখতে অন্তত ৩টি অক্ষর লিখুন।",
     "Go back to this step": "এই ধাপে ফিরে যান",
     # Summary after registering
     "Filled in by": "যিনি পূরণ করেছেন", "Name": "নাম", "Gender": "লিঙ্গ", "Guardian": "অভিভাবক",

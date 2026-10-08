@@ -39,7 +39,7 @@ later consume the same JSON endpoints.
 1. The page loads districts (with their current region) from `/api/reference/districts/`.
    Picking a district shows its region — read from the DB at that moment.
 2. Upazilas and the other areas (city-corporation thanas, cantonments, "Other area": `upazilas` rows
-   with a `group`) load per district, grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?district=&upazila=&q=`
+   with a `group`) load per district, grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?district=&upazila=&q=` (from 3 characters; a shorter `q` returns no schools)
    (trigram similarity over normalised names and aliases across the district; the chosen area's
    schools get a +0.15 ranking bonus, `SAME_AREA_BONUS`; each result carries its area). The public form
    is offered **verified schools only**; signed-in staff (`?all=1`) also see pending ones. Pending

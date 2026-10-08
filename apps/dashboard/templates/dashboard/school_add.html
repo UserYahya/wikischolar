@@ -32,7 +32,7 @@
 
   {% if same %}
   <div class="notice" role="alert">
-    <p><strong>“{{ same.name }}”</strong> is already listed in {{ same.upazila.name }}{% if same.verification_status == "pending" %} (pending review){% endif %}.
+    <p><strong>“{{ same.name }}”</strong> is already listed in {{ same.location_label }}{% if same.verification_status == "pending" %} (pending review){% endif %}.
       <a href="{% url 'dashboard:school' same.pk %}">Open it</a></p>
   </div>
   {% elif similar %}

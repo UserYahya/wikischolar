@@ -130,6 +130,20 @@ class SchoolsWithoutAreaTests(WSTestCase):
         with self.assertRaises(ValueError):
             ref.merge_schools(keep=keep, duplicate=other, request=self.fake_request())
 
+    def test_messages_name_the_district_when_the_area_is_unknown(self):
+        self.district_school()
+        r = self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "upazila": self.kaliakair.pk,
+                                                          "name": "Gazipur Ideal School"})
+        self.assertContains(r, "already listed in Gazipur (area not known)")
+        in_tongi = School.objects.create(name="Gazipur Ideal School", district=self.gazipur, upazila=self.tongi,
+                                         verification_status="verified")
+        r = self.client.post(f"/dashboard/schools/{in_tongi.pk}/", {"op": "set_area", "upazila": self.kaliakair.pk},
+                             follow=True)
+        self.assertContains(r, "already listed in Gazipur (area not known)")
+        r = self.client.get(f"/dashboard/schools/duplicates/?district={self.gazipur.pk}")
+        self.assertContains(r, "Area not known")
+        self.assertNotContains(r, "<td>, Gazipur</td>", html=False)
+
     def test_remove_and_restore(self):
         school = self.district_school()
         self.client.post(f"/dashboard/schools/{school.pk}/", {"op": "remove", "reason": "test"})
