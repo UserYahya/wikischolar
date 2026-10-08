@@ -159,7 +159,8 @@ def same_name_school(upazila, name, *, district_id=None, exclude=None):
     `district_id` (see school_scope). `exclude`: a school to leave out (the one being moved or restored)."""
     qn = normalize_school_name(name)
     other = ~Q(pk=exclude.pk) if exclude else Q()
-    school = _alive_schools().filter(school_scope(upazila, district_id), other, name_normalized=qn).first()
+    school = (_alive_schools().select_related("upazila", "district")  # messages show its location
+              .filter(school_scope(upazila, district_id), other, name_normalized=qn).first())
     if school:
         return school
     alias = (SchoolAlias.objects.select_related("school")
@@ -178,7 +179,7 @@ def similar_schools(upazila, name, limit=8, *, district_id=None):
     alias_score = (SchoolAlias.objects.filter(school=OuterRef("pk"))
                    .annotate(s=TrigramSimilarity("alias_normalized", Value(qn))).order_by("-s").values("s")[:1])
     return list(
-        _alive_schools().filter(school_scope(upazila, district_id))
+        _alive_schools().select_related("upazila", "district").filter(school_scope(upazila, district_id))
         .annotate(score=Greatest(TrigramSimilarity("name_normalized", Value(qn)),
                                  Coalesce(Subquery(alias_score, output_field=FloatField()), Value(0.0))))
         .filter(score__gte=settings.WIKISCHOLAR["SCHOOL_DUPLICATE_THRESHOLD"])
@@ -218,8 +219,7 @@ def remove_school(school, *, request, reason=""):
 def restore_school(school, *, request):
     clash = same_name_school(school.upazila, school.name, district_id=school.district_id, exclude=school)
     if clash:
-        where = school.upazila.name if school.upazila_id else school.district.name
-        raise ValueError(f"“{clash.name}” is already listed in {where}, so this can't be restored.")
+        raise ValueError(f"“{clash.name}” is already listed in {clash.location_label}, so this can't be restored.")
     school.restore()
     audit.record("school.restored", request=request, entity=school)
 
@@ -319,7 +319,7 @@ def set_school_area(school, upazila, *, request):
         return False
     clash = same_name_school(upazila, school.name, exclude=school)
     if clash:
-        raise ValueError(f"“{clash.name}” is already listed in {upazila.name}. "
+        raise ValueError(f"“{clash.name}” is already listed in {clash.location_label}. "
                          "Merge the two schools from Review duplicates instead.")
     before = audit.snapshot(school)
     school.upazila = upazila

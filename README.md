@@ -170,7 +170,8 @@ stored), updates opt-in, summary screen with the WikiScholar ID, confirmation em
 SMS with the ID and the contact address (one 160-character SMS).
 
 **Schools** — typeahead over the whole district (the student's own upazila / area first, each school
-shown with its area) using `pg_trgm` over names and aliases;
+shown with its area) using `pg_trgm` over names and aliases, from the 3rd letter typed (the API
+returns nothing for a 1–2 character query);
 free text is kept exactly as typed (`school_name_as_entered`) *and* resolved to a school row
 (dual storage); unknown schools become `pending`; admins verify, rename, add aliases, and
 merge duplicates (students re-pointed with edit history, misspelling becomes an alias, the

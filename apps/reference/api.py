@@ -8,6 +8,9 @@ from apps.core.utils import client_ip
 from . import services
 from .models import District
 
+# The school typeahead searches from the 3rd character: one or two letters match almost every school.
+MIN_QUERY = 3
+
 
 def _limited(request):
     return not ratelimit.allow("api_per_ip", client_ip(request) or "unknown")
@@ -50,6 +53,8 @@ def schools(request):
     if not (district_id or upazila_id):
         return JsonResponse({"error": "district_or_upazila_required"}, status=400)
     q = request.GET.get("q", "")[:120]
+    if q.strip() and len(q.strip()) < MIN_QUERY:
+        return JsonResponse({"schools": []})
     # Signed-in staff also see pending schools: ?all=1 lists every school (student editor),
     # ?pending=1 is the typeahead on the dashboard's Add school page. Public form: approved only.
     staff = request.user.is_authenticated

@@ -3,6 +3,20 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-09
+
+### Changed
+- **School suggestions start from the 3rd letter.** One or two letters matched almost every school, so the
+  registration form and the dashboard's Add school box now wait for 3 letters, showing a hint until then
+  ("Type at least 3 letters to see suggestions", with Bangla on the public form). The API returns no schools
+  for a 1–2 character query; a request without a query (the student editor's list) is unchanged.
+
+### Fixed
+- **Messages about a school without an area.** They said "is already listed in ." or ", Gazipur". They now
+  name the district: "already listed in Gazipur (area not known)" (Add school, *Set area*, restoring a
+  school). Review duplicates shows each school's own area, and the import preview shows where an
+  already-listed or similar school is.
+
 ## 2026-10-08
 
 ### Changed

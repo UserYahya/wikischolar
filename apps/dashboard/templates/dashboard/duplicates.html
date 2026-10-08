@@ -10,11 +10,11 @@
 </form>
 {% if pairs %}
 <div class="scroll"><table class="data pairs">
-  <thead><tr><th>School A</th><th>School B</th><th>Upazila / Area</th><th class="num">Similarity</th><th>Merge</th></tr></thead>
+  <thead><tr><th>School A</th><th>School B</th><th>District</th><th class="num">Similarity</th><th>Merge</th></tr></thead>
   <tbody>{% for a, b, sim, na, nb in pairs %}<tr>
-    <td><a href="{% url 'dashboard:school' a.pk %}">{{ a.name }}</a><br><small class="muted">{{ a.get_verification_status_display }} · {{ na }} student{{ na|pluralize }}</small></td>
-    <td><a href="{% url 'dashboard:school' b.pk %}">{{ b.name }}</a><br><small class="muted">{{ b.get_verification_status_display }} · {{ nb }} student{{ nb|pluralize }}</small></td>
-    <td>{{ a.upazila.name }}, {{ a.district.name }}</td><td class="num">{{ sim }}</td>
+    <td><a href="{% url 'dashboard:school' a.pk %}">{{ a.name }}</a><br><small class="muted">{{ a.area_name|default:"Area not known" }} · {{ a.get_verification_status_display }} · {{ na }} student{{ na|pluralize }}</small></td>
+    <td><a href="{% url 'dashboard:school' b.pk %}">{{ b.name }}</a><br><small class="muted">{{ b.area_name|default:"Area not known" }} · {{ b.get_verification_status_display }} · {{ nb }} student{{ nb|pluralize }}</small></td>
+    <td>{{ a.district.name }}</td><td class="num">{{ sim }}</td>
     <td class="merge-cell">
       <form method="post" action="{% url 'dashboard:merge' %}">{% csrf_token %}<input type="hidden" name="keep" value="{{ a.pk }}"><input type="hidden" name="duplicate" value="{{ b.pk }}"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn small">Keep A</button></form>
       <form method="post" action="{% url 'dashboard:merge' %}">{% csrf_token %}<input type="hidden" name="keep" value="{{ b.pk }}"><input type="hidden" name="duplicate" value="{{ a.pk }}"><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn small">Keep B</button></form>

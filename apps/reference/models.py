@@ -144,6 +144,11 @@ class School(SoftDeleteModel):
         """The upazila / area name, or "" when it isn't known yet."""
         return self.upazila.name if self.upazila_id else ""
 
+    @property
+    def location_label(self):
+        """Where the school is, for messages: its area, or its district when the area isn't known."""
+        return self.area_name or f"{self.district.name} (area not known)"
+
     def canonical(self):
         school, hops = self, 0
         while school.merged_into_id and hops < 20:

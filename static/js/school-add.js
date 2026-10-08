@@ -9,6 +9,9 @@
   const district = document.getElementById("id_district");
   const list = document.getElementById("schoolList"), schoolUrl = form.dataset.schoolUrl;
   let items = [], active = -1, timer = null, seq = 0;
+  const MIN_QUERY = 3;  // as in apps/reference/api.py: one or two letters match almost every school
+  const help = document.getElementById("nameHelp"), helpText = help ? help.textContent : "";
+  function setHelp(text) { if (help) help.textContent = text; }
 
   function closeList() { list.hidden = true; nameIn.setAttribute("aria-expanded", "false"); active = -1; }
   function render() {
@@ -57,7 +60,10 @@
     clearWarning();
     clearTimeout(timer);
     const q = nameIn.value.trim();
-    if (!q || !upazila.value) { items = []; closeList(); return; }
+    seq++;  // a reply still on its way is dropped
+    const short = q.length > 0 && q.length < MIN_QUERY;
+    setHelp(short ? "Type at least 3 letters to see the schools already listed." : helpText);
+    if (!q || short || !upazila.value) { items = []; closeList(); return; }
     timer = setTimeout(async () => {
       const mine = ++seq;
       try {

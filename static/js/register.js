@@ -43,6 +43,7 @@
     network: "Couldn't reach the server. Check your internet connection and try again.",
     schoolPicked: "School selected from the list.",
     schoolNew: "This will be added as a new school; our team will verify it later.",
+    schoolMinChars: "Type at least 3 letters to see suggestions.",
   };
   const STEP_FIELDS = {
     1: ["guardian_declaration", "student_name", "gender", "guardian_name", "guardian_relation",
@@ -263,6 +264,7 @@
   // ---------- school typeahead ----------
   const schoolIn = $("#school_name"), schoolId = $("#school_id"), list = $("#schoolList"), schoolHint = $("#schoolHint");
   let timer = null, items = [], active = -1, lastQuery = "";
+  const MIN_SCHOOL_QUERY = 3;  // as MIN_QUERY in apps/reference/api.py
   function resetSchool(disable) {
     schoolIn.value = ""; schoolId.value = ""; setHint(""); closeList();
     schoolIn.disabled = disable;
@@ -298,7 +300,10 @@
     schoolId.value = ""; setHint("");
     clearTimeout(timer);
     const q = schoolIn.value.trim();
+    lastQuery = "";  // a reply still on its way is dropped
     if (!q) { items = []; closeList(); return; }
+    // One or two letters match almost every school: suggestions start from the 3rd letter.
+    if (q.length < MIN_SCHOOL_QUERY) { items = []; closeList(); setHint(MSG.schoolMinChars); return; }
     timer = setTimeout(async () => {
       lastQuery = q;
       // The whole district is searched (a student may attend a school in another area); their own area first.
@@ -320,7 +325,8 @@
   list.addEventListener("mousedown", (e) => { const li = e.target.closest("li"); if (li) { e.preventDefault(); choose(Number(li.dataset.i)); } });
   schoolIn.addEventListener("blur", () => setTimeout(() => {
     closeList();
-    if (schoolIn.value.trim() && !schoolId.value && !schoolHint.dataset.msg) setHint(MSG.schoolNew);
+    if (schoolIn.value.trim() && !schoolId.value
+        && (!schoolHint.dataset.msg || schoolHint.dataset.msg === MSG.schoolMinChars)) setHint(MSG.schoolNew);
     saveDraft();
   }, 120));
 
