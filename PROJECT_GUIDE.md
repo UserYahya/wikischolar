@@ -512,7 +512,7 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
 | `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts and 666 thanas (the government's list, newer upazilas, cantonments, "Other thana"; idempotent; keeps dashboard edits). On an existing database, migration `reference.0007` applies the list by itself |
 | `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,thana,name`, English; the thana may be blank or the column left out); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
-| `import_banbeis_schools XLSX [--dry-run]` | load the government's school list (BANBEIS .xlsx): EIIN, name, thana and government data; matches by EIIN, then by name in the thana; safe to re-run (`apps/reference/banbeis.py`) |
+| `import_banbeis_schools XLSX [--type TYPE] [--dry-run]` | load the government's school list (BANBEIS .xlsx): EIIN, name, thana and government data; matches by EIIN, then by name in the thana; safe to re-run (`apps/reference/banbeis.py`). `--type "SCHOOL & COLLEGE"` imports only that INSTITUTE_TYPE_NAME (used for the School and College sheet) |
 | `undo_school_import [ID] [--list] [--dry-run] [--yes]` | undo one wrong school import: removes (archives) the schools its audit entry lists, keeping ones with students or merges (`importer.undo`) |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
@@ -564,7 +564,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-265 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+275 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a

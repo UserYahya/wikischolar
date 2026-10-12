@@ -172,8 +172,9 @@ class SeedCoverageTests(WSTestCase):
         self.assertFalse(names & {"Chittagong", "Comilla", "Jessore", "Coxs Bazar", "Brahamanbaria", "Nawabganj"})
 
     def test_thana_counts(self):
-        # 560 from the 2024 sheet + 11 upazilas created since; cantonments and "Other" on top
-        self.assertEqual(len(self.of_group("")), 571)
+        # 560 from the 2024 sheet + New Market (School and College sheet) + 11 upazilas created since;
+        # cantonments and "Other" on top
+        self.assertEqual(len(self.of_group("")), 572)
         self.assertGreaterEqual(len(self.of_group(Thana.CANTONMENT)), 30)
         for d in self.seed["districts"]:
             self.assertEqual(len([t for t in d["thanas"] if t.get("group") == Thana.OTHER]), 1, d["code"])

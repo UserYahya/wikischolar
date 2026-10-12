@@ -6,6 +6,16 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 ## 2026-10-13
 
 ### Added
+- **School & college institutions from the second BANBEIS sheet.**
+  - `import_banbeis_schools` takes `--type "SCHOOL & COLLEGE"` to import only rows of that
+    institute type (repeatable, ignores case). Other rows are counted as "other types left out".
+  - New values: institute type *School & college* (and *College*), and education levels *Higher
+    secondary*, *Degree (pass)*, *Degree (honours)*, *Masters* (`reference.0012`). They show up in
+    advanced search and the exports.
+  - The "School and College" sheet has 1,514 of them, all with a thana and none already listed.
+- **Dhaka's New Market thana is back** (নিউ মার্কেট). It wasn't in the first sheet, so it had been
+  retired, but 3 school & colleges are there. `reference.0013` restores the archived row; the seed now
+  has 667 thanas.
 - **Schools → Export CSV.** It downloads exactly the schools the list shows, across all pages,
   following the status, district and thana filters, the search box, an advanced search or a saved
   search.
@@ -16,7 +26,7 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
     count. Locally, all 19,720 schools export in about 3 s.
 - **Students → Export CSV** (which already followed the advanced search) now includes the school's
   EIIN, management, education level, MPO, institute for and area status.
-- 3 new tests (265 in total).
+- 10 new tests (275 in total).
 
 ### Changed
 - **District and thana are searchable pickers** instead of long dropdowns, on the registration form

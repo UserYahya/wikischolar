@@ -216,13 +216,13 @@ dhaka,Dhaka,Uttar Khan,উত্তরখান,,,sheet-alias,Uttarkhan,Uttar Kh
 dhaka,Dhaka,Uttara,উত্তরা,,,sheet-alias,Uttara East,Uttara,4,
 dhaka,Dhaka,Uttara Paschim,উত্তরা পশ্চিম,,,sheet-alias,Uttara West,Uttara  Paschim,6,
 dhaka,Dhaka,Wari,ওয়ারী,,,sheet-exact,Wari,Wari,7,
+dhaka,Dhaka,New Market,নিউ মার্কেট,,,sheet-extra,New Market,New Market,0,from a later BANBEIS sheet (School and College)
 dhaka,Dhaka,Dhaka Cantonment,ঢাকা সেনানিবাস,Cantonment,সেনানিবাস,cantonment,Dhaka Cantonment,,0,
 dhaka,Dhaka,Mirpur Cantonment,মিরপুর সেনানিবাস,Cantonment,সেনানিবাস,cantonment,Mirpur Cantonment,,0,
 dhaka,Dhaka,Savar Cantonment,সাভার সেনানিবাস,Cantonment,সেনানিবাস,cantonment,Savar Cantonment,,0,
 dhaka,Dhaka,Postogola Cantonment,পোস্তগোলা সেনানিবাস,Cantonment,সেনানিবাস,cantonment,Postogola Cantonment,,0,
 dhaka,Dhaka,Other thana (not listed),অন্য থানা (তালিকায় নেই),Other,অন্যান্য,other,Other area (not listed),,0,
 dhaka,Dhaka,Other thana (not listed),,,,retired,Hatirjheel,,0,old area not in the government list; its students/schools move to `thana`
-dhaka,Dhaka,Other thana (not listed),,,,retired,New Market,,0,old area not in the government list; its students/schools move to `thana`
 dinajpur,Dinajpur,Biral,বিরল,,,sheet-variant,Birol,Biral,47,check: spelling variant
 dinajpur,Dinajpur,Birampur,বিরামপুর,,,sheet-exact,Birampur,Birampur,41,
 dinajpur,Dinajpur,Birganj,বীরগঞ্জ,,,sheet-exact,Birganj,Birganj,71,
