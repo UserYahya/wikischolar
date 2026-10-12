@@ -1,0 +1,20 @@
+{% load static %}
+{# Advanced search panel. Needs: form_id (the page's GET filter form), adv, adv_text, adv_problems, adv_meta, adv_query, adv_clear. #}
+<section class="adv-panel" aria-labelledby="advHead">
+  <details id="advDetails" {% if adv or adv_problems %}open{% endif %}>
+    <summary id="advHead">Advanced search{% if adv %} <span class="tag ok">on</span>{% endif %}</summary>
+    {% for p in adv_problems %}<p class="notice">{{ p }}</p>{% endfor %}
+    <p class="hint">Build conditions in groups. Each group matches ALL or ANY of its conditions; the groups are combined with ALL or ANY. The other filters still apply.</p>
+    <div id="advBuilder"></div>
+    <input type="hidden" name="adv" id="advInput" form="{{ form_id }}" value="{{ adv }}">
+    <div class="row">
+      <button type="button" class="btn primary" id="advRun">Search</button>
+      <button type="button" class="btn" id="advAddGroup">+ Group</button>
+      {% if adv %}<a class="link" href="?{{ adv_clear }}">Clear advanced search</a>{% endif %}
+    </div>
+  </details>
+  {% if adv %}<p class="adv-summary"><strong>Advanced search:</strong> {{ adv_text }}</p>{% endif %}
+</section>
+{{ adv_meta|json_script:"advMeta" }}
+{{ adv_query|json_script:"advQuery" }}
+<script src="{% static 'js/advanced-search.js' %}" defer></script>

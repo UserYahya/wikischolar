@@ -2,6 +2,7 @@
 from django.db.models import Q
 
 from apps.core.utils import DATE_FORMAT, parse_date
+from apps.dashboard import advanced
 from apps.notifications import services as notify
 from apps.notifications.models import NotificationLog
 from apps.reference.models import Thana
@@ -14,9 +15,9 @@ SORTS = {
 }
 MULTI = ("district", "region", "class", "gender")
 SINGLE = ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
-          "msg_batch", "msg_batch_mode")
+          "msg_batch", "msg_batch_mode", "adv")
 # Params that narrow the list (sort and batching only reorder or split it).
-NARROWING = MULTI + ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch")
+NARROWING = MULTI + ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch", "adv")
 # Thana type filter: what kind of thana the student chose. "other" finds students to move.
 AREA_KINDS = {"thana": "Thana", "cantonment": "Cantonment", "other": "Other thana (not listed)"}
 # Before thanas replaced "Upazila / Area" (Oct 2026): old links and saved batch filters use these.
@@ -47,6 +48,7 @@ def params_from(querydict):
     for old, new in OLD_PARAMS.items():
         p[new] = p[new] or querydict.get(old, "").strip()
     p["area_kind"] = OLD_AREA_KINDS.get(p["area_kind"], p["area_kind"])
+    p["adv"] = advanced.normalize("students", p["adv"])  # only the valid conditions, as compact JSON
     # Show dates as dd/mm/yyyy even when a link carries yyyy-mm-dd.
     p["from"], p["to"] = _date_label(p["from"]), _date_label(p["to"])
     if not p["msg_batch"]:
@@ -100,6 +102,8 @@ def apply(p, qs=None):
         qs = qs.filter(thana__group=Thana.CANTONMENT)
     elif p["area_kind"] == "other":
         qs = qs.filter(thana__group=Thana.OTHER)
+    if p.get("adv"):
+        qs = qs.filter(advanced.parse("students", p["adv"])[0])
     if p["msg_batch"]:
         if p["msg_batch_mode"] == "not_sent":
             qs = qs.exclude(pk__in=notify.student_ids_in_batch(p["msg_batch"]))
@@ -167,6 +171,8 @@ def describe(snap):
         out.append(("Email updates", "opted in"))
     if snap.get("q"):
         out.append(("Search", f"“{snap['q']}”"))
+    if snap.get("adv"):
+        out.append(("Advanced search", advanced.describe("students", snap["adv"])))
     if snap.get("msg_batch"):
         batch = notify.get_batch(snap["msg_batch"])
         label = batch.label if batch else snap["msg_batch"]

@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,7 +15,8 @@ from apps.reference import services as ref
 from apps.reference.models import District, Region, School, Thana
 
 from ..forms import GOVERNMENT_FIELDS, RegionForm, SchoolDetailsForm
-from ._util import paginate
+from .. import advanced
+from ._util import advanced_context, paginate
 
 
 def _english(request, raw):
@@ -47,12 +48,25 @@ def school_list(request):
     q = request.GET.get("q", "").strip()
     if q:
         qs = qs.filter(Q(name__icontains=q) | Q(aliases__alias_text__icontains=q) | Q(eiin=q)).distinct()
+    adv = advanced.normalize("schools", request.GET.get("adv", ""))
+    if adv:
+        qs = qs.filter(advanced.parse("schools", adv)[0])
+    try:
+        with advanced.time_limit(bool(adv)):
+            return _school_list_page(request, qs, status, district, thana, q, adv)
+    except OperationalError:  # the advanced search hit the time limit
+        messages.error(request, "That advanced search took too long. Narrow it down (e.g. pick a district) and try again.")
+        return redirect("dashboard:schools")
+
+
+def _school_list_page(request, qs, status, district, thana, q, adv):
     page, qstring = paginate(request, qs.order_by("verification_status", "name"))
     return render(request, "dashboard/schools.html", {
         "page": page, "qstring": qstring, "districts": District.objects.all(),
         "thanas": ref.areas_of(district) if district else [],
         "f": {"status": status, "district": district, "thana": thana, "q": q},
         "can_edit": request.user.has_perm_code("schools.edit"),
+        **advanced_context(request, "schools", adv),
     })
 
 

@@ -1,5 +1,6 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Schools{% endblock %}
+{% block head %}{% include "_datefield_assets.html" %}{% endblock %}
 {% block content %}
 <header class="page-head"><h1>Schools <span class="count">{{ page.paginator.count }}</span></h1>
   <div class="row">
@@ -7,7 +8,7 @@
     {% if can_edit %}<a class="btn" href="{% url 'dashboard:school_import' %}">Import CSV</a>{% endif %}
     {% if can_edit %}<a class="btn primary" href="{% url 'dashboard:school_add' %}{% if f.district %}?district={{ f.district }}{% if f.thana %}&amp;thana={{ f.thana }}{% endif %}{% endif %}">Add school</a>{% endif %}
   </div></header>
-<form method="get" class="toolbar">
+<form method="get" class="toolbar" id="schoolFilters">
   <input name="q" value="{{ f.q }}" placeholder="Name, alias or EIIN" aria-label="Search schools">
   <select name="status" aria-label="Status">
     <option value="active" {% if f.status == "active" %}selected{% endif %}>Verified + pending</option>
@@ -20,6 +21,7 @@
   {% if thanas %}<select name="thana" aria-label="Thana"><option value="">All thanas</option><option value="none" {% if f.thana == "none" %}selected{% endif %}>Thana not known</option>{% include "dashboard/_area_options.html" with areas=thanas selected=f.thana %}</select>{% endif %}
   <button class="btn">Filter</button>
 </form>
+{% include "dashboard/_advanced_search.html" with form_id="schoolFilters" %}
 {% if page.object_list %}
 <div class="scroll"><table class="data">
   <thead><tr><th>School</th><th>EIIN</th><th>Thana</th><th>District</th><th>Status</th><th>Source</th><th class="num">Students</th></tr></thead>

@@ -1,6 +1,7 @@
 import csv
 
 from django.contrib import messages
+from django.db import OperationalError
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -15,9 +16,9 @@ from apps.registration import services
 from apps.registration.choices import CLASS_CHOICES, FilledBy, Gender
 from apps.registration.models import Student
 
-from .. import filters
+from .. import advanced, filters
 from ..forms import StudentEditForm
-from ._util import paginate
+from ._util import advanced_context, paginate
 
 
 def _filter_context(p):
@@ -37,6 +38,15 @@ def _filter_context(p):
 @require_perm("students.view")
 def student_list(request):
     p = filters.params_from(request.GET)
+    try:
+        with advanced.time_limit(bool(p["adv"])):
+            return _student_list(request, p)
+    except OperationalError:  # the advanced search hit the time limit
+        messages.error(request, "That advanced search took too long. Narrow it down (e.g. pick a district) and try again.")
+        return redirect("dashboard:students")
+
+
+def _student_list(request, p):
     qs = filters.apply(p)
     page, qstring = paginate(request, qs)
     ctx = _filter_context(p)
@@ -44,6 +54,7 @@ def student_list(request):
                 "active_filters": filters.active_count(p),
                 "can_message": request.user.has_perm_code("messages.send"),
                 "can_export": request.user.has_perm_code("students.export")})
+    ctx.update(advanced_context(request, "students", p["adv"]))
     if p["batch_size"]:
         total = filters.apply({**p, "batch": ""}).count() if p["batch"] else page.paginator.count
         params = request.GET.copy()

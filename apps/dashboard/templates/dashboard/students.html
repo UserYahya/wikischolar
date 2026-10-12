@@ -92,6 +92,7 @@
   </form>
 
   <section class="results">
+    {% include "dashboard/_advanced_search.html" with form_id="filters" %}
     {% if batches %}
     <section class="batches" aria-labelledby="batchesHead">
       <h2 id="batchesHead">{{ batches|length }} batch{{ batches|length|pluralize:"es" }} of up to {{ p.batch_size }} <small class="muted">· {{ batch_total }} students, sorted by {{ p.sort }}</small></h2>

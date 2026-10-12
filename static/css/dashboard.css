@@ -282,3 +282,19 @@ td.nowrap { white-space: nowrap; }
 .set-password summary { cursor: pointer; font-size: .8125rem; color: var(--green); }
 .set-password form { margin-top: .35rem; display: flex; gap: .35rem; }
 .set-password input { min-width: 12rem; }
+
+/* Advanced search (Students, Schools) */
+.adv-panel { background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: .75rem 1rem; margin-bottom: 1rem; }
+.adv-panel > details > summary { font-weight: 600; }
+.adv-panel .hint { margin: .5rem 0; }
+.adv-group { border: 1px solid var(--line-soft); border-radius: 6px; padding: .5rem .75rem .75rem; margin: .5rem 0; }
+.adv-group legend { font-size: .8125rem; font-weight: 600; color: var(--muted); padding: 0 .25rem; }
+.adv-match, .adv-top { margin: .25rem 0 .5rem; }
+.adv-cond { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .35rem 0; }
+.adv-cond select, .adv-cond input { min-width: 0; }
+.adv-field { max-width: 16rem; }
+.adv-list { min-width: 12rem; }
+.adv-text { width: 14rem; } .adv-num { width: 7rem; } .adv-date { width: 8.5rem; }
+.adv-summary { margin: .5rem 0 0; font-size: .875rem; }
+.adv-saved { border-top: 1px solid var(--line-soft); margin-top: .75rem; padding-top: .75rem; display: grid; gap: .5rem; }
+@media (max-width: 640px) { .adv-cond { flex-direction: column; align-items: stretch; } .adv-field, .adv-text { max-width: none; width: 100%; } }
