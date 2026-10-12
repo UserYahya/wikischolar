@@ -38,9 +38,12 @@ def _key(text):
 # Sheet value (letters only, lower case) -> our choice. The sheet's spellings vary ("CRISTIAN",
 # "SEPERATE", "HAOR/BIL" and "HAOR/BILL"), hence the extra keys.
 _CHOICES = {
-    "institute_type": {"school": School.InstituteType.SCHOOL},
+    "institute_type": {"school": "school", "schoolcollege": "school_and_college", "schoolandcollege": "school_and_college",
+                       "college": "college"},
     "education_level": {"secondary": "secondary", "juniorsecondary": "junior_secondary",
-                        "govtprimarypretoeight": "primary_to_eight"},
+                        "govtprimarypretoeight": "primary_to_eight", "highersecondary": "higher_secondary",
+                        "degreepass": "degree_pass", "degreehonors": "degree_honours", "degreehonours": "degree_honours",
+                        "masters": "masters"},
     "management": {"government": "government", "nongovernment": "non_government",
                    "localgovernment": "local_government", "autonomous": "autonomous",
                    "cantonmentboard": "cantonment_board", "cristianmissionary": "christian_missionary",
@@ -95,14 +98,21 @@ class _Rollback(Exception):
     pass
 
 
-def import_schools(path, *, dry_run=False, log=print):
-    """Import the sheet; returns the counts (also written to one audit entry unless `dry_run`)."""
+def import_schools(path, *, dry_run=False, types=(), log=print):
+    """Import the sheet; returns the counts (also written to one audit entry unless `dry_run`).
+    `types`: import only rows whose INSTITUTE_TYPE_NAME is one of these (ignoring case), e.g.
+    ("SCHOOL & COLLEGE",); the rest are counted as other_type. Empty: every row."""
     rows = read_table(path, "EIIN_NO")
     counts = dict(rows=len(rows), created=0, matched_by_name=0, updated=0, unchanged=0, unresolved=0,
-                  unknown_values=0)
+                  unknown_values=0, other_type=0)
+    if types:
+        wanted = {_key(t) for t in types}
+        kept = [r for r in rows if _key(r.get("INSTITUTE_TYPE_NAME")) in wanted]
+        counts["other_type"] = len(rows) - len(kept)
+        rows = kept
     try:
         with transaction.atomic():
-            _import(rows, counts, log)
+            _import(rows, counts, log, types)
             if dry_run:
                 raise _Rollback
     except _Rollback:
@@ -110,7 +120,7 @@ def import_schools(path, *, dry_run=False, log=print):
     return counts
 
 
-def _import(rows, counts, log):
+def _import(rows, counts, log, types=()):
     now = timezone.now()
     districts = {d.name: d for d in District.objects.all()}
     thanas = {(t.district_id, t.name): t for t in Thana.objects.all()}
@@ -182,5 +192,5 @@ def _import(rows, counts, log):
                                     batch_size=1000)
     if new or changed:
         audit.record("school.government_import", actor_type="system", entity_type="schools",
-                     meta=dict(counts, source="BANBEIS e-survey 2024"))
+                     meta=dict(counts, source="BANBEIS e-survey 2024", types=list(types)))
     log("  " + ", ".join(f"{k.replace('_', ' ')}: {v}" for k, v in counts.items()))

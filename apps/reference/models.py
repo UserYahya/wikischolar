@@ -110,11 +110,17 @@ class School(SoftDeleteModel):
     # Government data (BANBEIS institution list, `manage.py import_banbeis_schools`); blank when unknown.
     class InstituteType(models.TextChoices):
         SCHOOL = "school", "School"
+        SCHOOL_AND_COLLEGE = "school_and_college", "School & college"
+        COLLEGE = "college", "College"
 
     class EducationLevel(models.TextChoices):
         SECONDARY = "secondary", "Secondary"
         JUNIOR_SECONDARY = "junior_secondary", "Junior secondary"
         PRIMARY_TO_EIGHT = "primary_to_eight", "Govt. primary (pre to eight)"
+        HIGHER_SECONDARY = "higher_secondary", "Higher secondary"
+        DEGREE_PASS = "degree_pass", "Degree (pass)"
+        DEGREE_HONOURS = "degree_honours", "Degree (honours)"
+        MASTERS = "masters", "Masters"
 
     class Management(models.TextChoices):
         GOVERNMENT = "government", "Government"
@@ -176,7 +182,7 @@ class School(SoftDeleteModel):
     # Government data (blank when unknown). EIIN: the 6-digit Educational Institute Identification Number.
     eiin = models.CharField("EIIN", max_length=6, blank=True)
     division = models.CharField(max_length=40, blank=True)
-    institute_type = models.CharField(max_length=10, choices=InstituteType.choices, blank=True)
+    institute_type = models.CharField(max_length=20, choices=InstituteType.choices, blank=True)
     education_level = models.CharField(max_length=20, choices=EducationLevel.choices, blank=True, db_index=True)
     management = models.CharField(max_length=24, choices=Management.choices, blank=True, db_index=True)
     mpo = models.CharField("MPO", max_length=16, choices=Mpo.choices, blank=True)

@@ -162,3 +162,50 @@ class CapitalsMigrationTests(WSTestCase):
         import_module("apps.reference.migrations.0010_uppercase_school_names").forwards(apps, None)
         self.assertEqual(School.objects.get(pk=self.school.pk).name, "TONGI GOVERNMENT HIGH SCHOOL")
         self.assertEqual(SchoolAlias.objects.get(pk=alias.pk).alias_text, "TONGI GOVT HIGH")
+
+
+class SchoolAndCollegeTests(ImportTests):
+    """The "School and College" sheet: only the rows of one institute type, with their new values."""
+
+    def test_only_the_chosen_type_is_imported_with_its_values(self):
+        out = self.run_import([row("100116", "UTTAR SONAKHALI SCHOOL & COLLEGE", INSTITUTE_TYPE_NAME="SCHOOL & COLLEGE",
+                                   EDUCATION_LEVEL_NAME="Higher Secondary", EMAIL="UTTARSS100116@GMAIL.COM"),
+                               row("100117", "KALIAKAIR DEGREE COLLEGE", INSTITUTE_TYPE_NAME="COLLEGE",
+                                   EDUCATION_LEVEL_NAME="Degree (Honors)")],
+                              "--type", "school & college")
+        self.assertIn("1 created, 0 matched by name, 0 updated, 0 unchanged, 0 skipped, 1 of other types left out.", out)
+        s = School.objects.get(eiin="100116")
+        self.assertEqual((s.institute_type, s.education_level, s.email),
+                         ("school_and_college", "higher_secondary", "uttarss100116@gmail.com"))
+        self.assertFalse(School.objects.filter(eiin="100117").exists())
+        self.assertEqual(AuditLog.objects.get(action="school.government_import").meta["types"], ["school & college"])
+
+    def test_every_type_without_the_option_and_a_missing_type_is_an_error(self):
+        from django.core.management.base import CommandError
+        self.run_import([row("100117", "KALIAKAIR DEGREE COLLEGE", INSTITUTE_TYPE_NAME="COLLEGE",
+                             EDUCATION_LEVEL_NAME="Degree (Honors)")])
+        self.assertEqual(School.objects.get(eiin="100117").education_level, "degree_honours")
+        with self.assertRaisesMessage(CommandError, "No rows of type MADRASAH in the file."):
+            self.run_import([row("100118", "X SCHOOL")], "--type", "MADRASAH")
+
+    def test_new_market_resolves(self):
+        from apps.reference.models import District, Thana
+        dhaka = District.objects.create(code="dhaka", name="Dhaka", region=self.dhaka)
+        new_market = Thana.objects.create(district=dhaka, name="New Market", name_bn="নিউ মার্কেট")
+        self.run_import([row("107961", "B C S I R  SCHOOL AND COLLEGE", district="Dhaka", thana="New Market",
+                             INSTITUTE_TYPE_NAME="SCHOOL & COLLEGE")])
+        self.assertEqual(School.objects.get(eiin="107961").thana, new_market)
+
+    def test_migration_restores_the_archived_new_market(self):
+        from importlib import import_module
+
+        from django.apps import apps
+
+        from apps.reference.models import District, Thana
+        dhaka = District.objects.create(code="dhaka", name="Dhaka", region=self.dhaka)
+        old = Thana.objects.create(district=dhaka, name="New Market", name_bn="নিউ মার্কেট",
+                                   group="Dhaka South City Corporation")
+        old.soft_delete()
+        import_module("apps.reference.migrations.0013_restore_new_market").forwards(apps, None)
+        old = Thana.all_objects.get(pk=old.pk)
+        self.assertEqual((old.is_deleted, old.group, old.name_bn), (False, "", "নিউ মার্কেট"))

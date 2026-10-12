@@ -96,6 +96,9 @@ BANGLA_FIXES = {
     ("pirojpur", "Nesarabad (Swarupkati)"): "নেছারাবাদ (স্বরূপকাঠি)",
     ("rangamati", "Kawkhali (Betbunia)"): "কাউখালী (বেতবুনিয়া)",
 }
+# Thanas that appear in a later BANBEIS sheet but not in the first one: (district code, thana as the
+# sheet writes it, old area it brings back). "School and College" sheet: Dhaka's New Market.
+EXTRA_THANAS = [("dhaka", "New Market", "New Market")]
 # Upazilas created after the 2024 survey: kept from the current seed although the sheet lacks them.
 NEWER_UPAZILAS = {
     "bogra": ["Mokamtola"], "chittagong": ["Fatikchhari North"], "coxs-bazar": ["Eidgaon", "Matamuhuri"],
@@ -182,6 +185,16 @@ def draft_mapping(xlsx, old_seed):
                          "replaces": (old or {}).get("name", ""), "sheet_name": raw, "sheet_schools": n,
                          "note": "check: spelling variant" if source == "sheet-variant" else
                                  ("no Bangla yet" if not old else "")})
+        for c, sheet_name, old_name in EXTRA_THANAS:
+            if c != code:
+                continue
+            old = by_name.get(old_name, {})
+            used.add(old_name)
+            rows.append({"district_code": code, "district": name, "thana": clean_thana(sheet_name),
+                         "thana_bn": BANGLA_FIXES.get((code, sheet_name)) or old.get("name_bn", ""), "group": "",
+                         "group_bn": "", "source": "sheet-extra", "replaces": old_name if old else "",
+                         "sheet_name": sheet_name, "sheet_schools": 0,
+                         "note": "from a later BANBEIS sheet (School and College)"})
         for new_name in NEWER_UPAZILAS.get(code, []):
             old = by_name[new_name]
             used.add(new_name)

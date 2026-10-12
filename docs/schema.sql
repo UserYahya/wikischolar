@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fboP05YxkhXRhdsujXBMaSu6qptrFQwI8XsechgbunkO7JsjcR9URVloY8qrk4R
+\restrict o8UMFTdxHU2XEaYdGIklheYmnhHbmnMUUlbX1bWksnp8nxJc0MbbyjF3utzunSY
 
 -- Dumped from database version 16.15 (Debian 16.15-1.pgdg13+2)
 -- Dumped by pg_dump version 16.15 (Debian 16.15-1.pgdg13+2)
@@ -649,7 +649,7 @@ CREATE TABLE public.schools (
     email character varying(254) NOT NULL,
     geographical_position character varying(20) NOT NULL,
     institute_for character varying(30) NOT NULL,
-    institute_type character varying(10) NOT NULL,
+    institute_type character varying(20) NOT NULL,
     management character varying(24) NOT NULL,
     mpo character varying(16) NOT NULL,
     post_office character varying(80) NOT NULL,
@@ -2305,5 +2305,5 @@ ALTER TABLE ONLY public.thanas
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fboP05YxkhXRhdsujXBMaSu6qptrFQwI8XsechgbunkO7JsjcR9URVloY8qrk4R
+\unrestrict o8UMFTdxHU2XEaYdGIklheYmnhHbmnMUUlbX1bWksnp8nxJc0MbbyjF3utzunSY
 
