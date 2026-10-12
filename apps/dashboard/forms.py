@@ -16,11 +16,38 @@ class StudentEditForm(StudentCoreFields):
 
     def clean(self):
         data = super().clean()
-        # A student may attend a school in another upazila / area of their district (as on the form)
+        # A student may attend a school in another thana of their district (as on the form)
         school, district = data.get("school"), data.get("district")
         if school and district and school.district_id != district.pk:
             self.add_error("school", "This school is not in the selected district.")
         return data
+
+
+GOVERNMENT_FIELDS = ["eiin", "division", "institute_type", "education_level", "management", "mpo", "institute_for",
+                     "geographical_position", "area_status", "post_office", "email"]
+
+
+class SchoolDetailsForm(forms.ModelForm):
+    """A school's government data (EIIN, management, MPO, …), as on the BANBEIS list."""
+
+    class Meta:
+        model = School
+        fields = GOVERNMENT_FIELDS
+
+    def clean_eiin(self):
+        eiin = self.cleaned_data["eiin"].strip()
+        if eiin and not (len(eiin) == 6 and eiin.isdigit()):
+            raise forms.ValidationError("An EIIN is 6 digits.")
+        if eiin and School.all_objects.filter(eiin=eiin).exclude(pk=self.instance.pk).exists():
+            other = School.all_objects.filter(eiin=eiin).first()
+            raise forms.ValidationError(f"EIIN {eiin} already belongs to {other.name}.")
+        return eiin
+
+    def clean_division(self):
+        return english_text(self.cleaned_data["division"]) if self.cleaned_data["division"] else ""
+
+    def clean_post_office(self):
+        return english_text(self.cleaned_data["post_office"]) if self.cleaned_data["post_office"] else ""
 
 
 class ComposeForm(forms.Form):

@@ -7,35 +7,35 @@
   <p class="muted">Region: {% if district.region %}{{ district.region.name }}{% else %}<strong>Unassigned</strong>{% endif %} · change it on the <a href="{% url 'dashboard:locations' %}">locations page</a>.</p>
 </div></header>
 <section>
-  <h2>Upazilas &amp; areas <span class="count">{{ upazilas|length }}</span></h2>
-  <p class="hint">City-corporation thanas, cantonments and “Other area” are listed with their group; the form shows them under these headings.</p>
+  <h2>Thanas <span class="count">{{ thanas|length }}</span></h2>
+  <p class="hint">Cantonments and “Other thana” are listed with their group; the form shows them under these headings, after the thanas.</p>
   <div class="scroll"><table class="data compact">
     <thead><tr><th>Name</th><th>Group</th><th class="num">Schools</th><th class="num">Students</th><th></th></tr></thead>
     <tbody>
-    {% for u in upazilas %}
+    {% for u in thanas %}
       <tr>
         <td>{% if can_edit %}
           <form method="post" class="inline">{% csrf_token %}
-            <input type="hidden" name="op" value="rename_upazila"><input type="hidden" name="upazila" value="{{ u.pk }}">
+            <input type="hidden" name="op" value="rename_thana"><input type="hidden" name="thana" value="{{ u.pk }}">
             <input name="name" value="{{ u.name }}" aria-label="Name" required>
             <input name="name_bn" value="{{ u.name_bn }}" aria-label="Bangla name" lang="bn">
             <button class="btn small">Save</button>
           </form>
         {% else %}{{ u.name }} <span lang="bn" class="muted">{{ u.name_bn }}</span>{% endif %}</td>
-        <td>{% if u.group %}{{ u.group_label }}{% else %}<span class="muted">Upazila</span>{% endif %}</td>
-        <td class="num"><a href="{% url 'dashboard:schools' %}?district={{ district.pk }}&upazila={{ u.pk }}">{{ u.sc }}</a></td>
+        <td>{% if u.group %}{{ u.group_label }}{% else %}<span class="muted">Thana</span>{% endif %}</td>
+        <td class="num"><a href="{% url 'dashboard:schools' %}?district={{ district.pk }}&thana={{ u.pk }}">{{ u.sc }}</a></td>
         <td class="num">{{ u.s }}</td>
-        <td><a href="{% url 'dashboard:students' %}?district={{ district.pk }}&upazila={{ u.pk }}">Students</a></td>
+        <td><a href="{% url 'dashboard:students' %}?district={{ district.pk }}&thana={{ u.pk }}">Students</a></td>
       </tr>
-    {% empty %}<tr><td colspan="5" class="empty">No upazilas.</td></tr>{% endfor %}
+    {% empty %}<tr><td colspan="5" class="empty">No thanas.</td></tr>{% endfor %}
     </tbody>
   </table></div>
   {% if can_edit %}
-  <form method="post" class="toolbar">{% csrf_token %}<input type="hidden" name="op" value="add_upazila">
-    <input name="name" placeholder="New upazila (English)" aria-label="New upazila name" required>
+  <form method="post" class="toolbar">{% csrf_token %}<input type="hidden" name="op" value="add_thana">
+    <input name="name" placeholder="New thana (English)" aria-label="New thana name" required>
     <input name="name_bn" placeholder="বাংলা নাম" aria-label="Bangla name" lang="bn">
     <select name="group" aria-label="Group">
-      <option value="">Upazila</option>
+      <option value="">Thana</option>
       {% for g, g_bn in other_groups %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
     </select>
     <button class="btn">Add</button>

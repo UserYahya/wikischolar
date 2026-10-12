@@ -1,5 +1,5 @@
 /* WikiScholar registration form.
-   All reference data (districts, regions, upazilas, schools) is fetched from
+   All reference data (districts, regions, thanas, schools) is fetched from
    the API; nothing about the district→region mapping lives in this file.
    Answers are kept as a draft in sessionStorage (this tab only) and each step is a
    browser history entry, so Back — the form's or the browser's — never loses data.
@@ -48,12 +48,12 @@
   const STEP_FIELDS = {
     1: ["guardian_declaration", "student_name", "gender", "guardian_name", "guardian_relation",
         "guardian_relation_other"],
-    2: ["district", "upazila", "school_name", "current_class", "class_roll", "student_id_sid", "section"],
+    2: ["district", "thana", "school_name", "current_class", "class_roll", "student_id_sid", "section"],
     3: ["phone", "email", "email_otp"],
     4: ["heard_from", "policy_consent"],
   };
   const DRAFT_FIELDS = ["guardian_declaration", "student_name", "gender", "guardian_name",
-    "guardian_relation", "guardian_relation_other", "district", "upazila", "current_class", "school_name", "school_id",
+    "guardian_relation", "guardian_relation_other", "district", "thana", "current_class", "school_name", "school_id",
     "class_roll", "student_id_sid", "section", "phone", "email", "heard_from", "policy_consent", "updates_opt_in"];
   const DRAFT_KEY = "ws_registration_draft_v2";
   const state = { step: 1, verificationId: null, verifiedEmail: null, districts: new Map(), typoConfirmed: false,
@@ -143,7 +143,7 @@
       if (["guardian_declaration", "class_roll", "student_id_sid", "section", "email_otp", "policy_consent"].includes(name)) continue;
       if (name === "guardian_relation_other" && val("guardian_relation") !== "other") continue;
       if (!v) fail(name, name === "guardian_relation_other" ? MSG.relationOther
-        : ["gender", "guardian_relation", "district", "upazila", "current_class", "heard_from"].includes(name) ? MSG.choose : MSG.required);
+        : ["gender", "guardian_relation", "district", "thana", "current_class", "heard_from"].includes(name) ? MSG.choose : MSG.required);
     }
     STEP_FIELDS[n].forEach((name) => {
       const el = $(`[name="${name}"][data-english]`);
@@ -224,8 +224,8 @@
     setError("guardian_relation", ""); syncRelation({ focus: true });
   }));
 
-  // ---------- district → region, upazila ----------
-  const districtSel = $("#district"), upazilaSel = $("#upazila"), regionOut = $("#region");
+  // ---------- district → region, thana ----------
+  const districtSel = $("#district"), thanaSel = $("#thana"), regionOut = $("#region");
   async function loadDistricts() {
     const { ok, data } = await api("/api/reference/districts/");
     if (!ok) { districtSel.innerHTML = `<option value="">${esc(biText(MSG.network))}</option>`; return; }
@@ -235,19 +235,19 @@
   }
   // "Dhaka · ঢাকা": place names in English with their Bangla name
   const place = (p) => p.name + (p.name_bn ? ` · ${p.name_bn}` : "");
-  async function loadUpazilas() {
+  async function loadThanas() {
     const d = state.districts.get(districtSel.value);
     regionOut.innerHTML = d ? (d.region ? esc(place(d.region)) : bi("No region assigned")) : bi("Shown after you choose a district");
     regionOut.classList.toggle("empty", !d || !d.region);
-    upazilaSel.disabled = true;
-    upazilaSel.innerHTML = `<option value="">${esc(biText(d ? "Loading…" : "Choose a district first"))}</option>`;
+    thanaSel.disabled = true;
+    thanaSel.innerHTML = `<option value="">${esc(biText(d ? "Loading…" : "Choose a district first"))}</option>`;
     if (!d) return;
-    const { ok, data } = await api(`/api/reference/districts/${d.id}/upazilas/`);
-    if (!ok) { upazilaSel.innerHTML = `<option value="">${esc(biText(MSG.network))}</option>`; return; }
-    // Areas come grouped and in order (city-corporation thanas, cantonments, upazilas, "Other area"):
-    // each group becomes an <optgroup> headed "Dhaka North City Corporation · ঢাকা উত্তর সিটি কর্পোরেশন".
+    const { ok, data } = await api(`/api/reference/districts/${d.id}/thanas/`);
+    if (!ok) { thanaSel.innerHTML = `<option value="">${esc(biText(MSG.network))}</option>`; return; }
+    // Thanas come grouped and in order (cantonments, thanas, "Other thana"):
+    // each group becomes an <optgroup> headed e.g. "Cantonments · সেনানিবাস".
     let html = `<option value="">${esc(biText("Choose"))}</option>`, open = null;
-    data.upazilas.forEach((u) => {
+    data.thanas.forEach((u) => {
       if (u.group !== open) {
         if (open !== null) html += "</optgroup>";
         html += `<optgroup label="${esc(u.group + (u.group_bn ? ` · ${u.group_bn}` : ""))}">`;
@@ -255,11 +255,11 @@
       }
       html += `<option value="${u.id}">${esc(place(u))}</option>`;
     });
-    upazilaSel.innerHTML = html + (open !== null ? "</optgroup>" : "");
-    upazilaSel.disabled = false;
+    thanaSel.innerHTML = html + (open !== null ? "</optgroup>" : "");
+    thanaSel.disabled = false;
   }
-  districtSel.addEventListener("change", async () => { resetSchool(true); await loadUpazilas(); saveDraft(); });
-  upazilaSel.addEventListener("change", () => { resetSchool(!upazilaSel.value); saveDraft(); });
+  districtSel.addEventListener("change", async () => { resetSchool(true); await loadThanas(); saveDraft(); });
+  thanaSel.addEventListener("change", () => { resetSchool(!thanaSel.value); saveDraft(); });
 
   // ---------- school typeahead ----------
   const schoolIn = $("#school_name"), schoolId = $("#school_id"), list = $("#schoolList"), schoolHint = $("#schoolHint");
@@ -268,7 +268,7 @@
   function resetSchool(disable) {
     schoolIn.value = ""; schoolId.value = ""; setHint(""); closeList();
     schoolIn.disabled = disable;
-    schoolIn.placeholder = biText(disable ? "Choose the area first" : "Type in English");
+    schoolIn.placeholder = biText(disable ? "Choose the thana first" : "Type in English");
   }
   function setHint(msg) { schoolHint.innerHTML = msg ? bi(msg) : ""; schoolHint.dataset.msg = msg; }
   function closeList() { list.hidden = true; schoolIn.setAttribute("aria-expanded", "false"); active = -1; }
@@ -308,7 +308,7 @@
       lastQuery = q;
       // The whole district is searched (a student may attend a school in another area); their own area first.
       const { ok, data } = await api(`/api/reference/schools/?district=${encodeURIComponent(districtSel.value)}` +
-        `&upazila=${encodeURIComponent(upazilaSel.value)}&q=${encodeURIComponent(q)}`);
+        `&thana=${encodeURIComponent(thanaSel.value)}&q=${encodeURIComponent(q)}`);
       if (q !== lastQuery) return;
       items = ok ? data.schools : [];
       active = -1; render();
@@ -525,7 +525,7 @@
       student_name: val("student_name"), gender: val("gender"),
       guardian_name: val("guardian_name"), guardian_relation: val("guardian_relation"),
       guardian_relation_other: val("guardian_relation") === "other" ? val("guardian_relation_other") : "",
-      district: val("district"), upazila: val("upazila"), school_name: val("school_name"),
+      district: val("district"), thana: val("thana"), school_name: val("school_name"),
       school_id: val("school_id") || null, current_class: val("current_class"),
       class_roll: en(val("class_roll")), student_id_sid: val("student_id_sid"), section: val("section"),
       heard_from: val("heard_from"),
@@ -566,7 +566,7 @@
     const rows = [
       ["Filled in by", s.filled_by],
       ["Name", s.student_name], ["Gender", s.gender], ["Guardian", s.guardian],
-      ["District", s.district], ["Region", s.region || "—"], ["Upazila / Area", s.upazila],
+      ["District", s.district], ["Region", s.region || "—"], ["Thana", s.thana],
       ["School", s.school + (s.school_pending ? " (being verified)" : "")], ["Class", s.current_class],
       ["Section", s.section || "—"], ["Class roll", s.class_roll || "—"], ["Student ID", s.student_id_sid || "—"],
       ["Mobile", s.phone], ["Heard about WikiScholar from", s.heard_from || "—"],
@@ -594,10 +594,10 @@
     if (f.guardian_relation === "other") setField("guardian_relation_other", f.guardian_relation_other);
     if (f.district && state.districts.has(String(f.district))) {
       districtSel.value = f.district;
-      await loadUpazilas();
-      if (f.upazila) {
-        upazilaSel.value = f.upazila;
-        if (upazilaSel.value) {
+      await loadThanas();
+      if (f.thana) {
+        thanaSel.value = f.thana;
+        if (thanaSel.value) {
           resetSchool(false);
           schoolIn.value = f.school_name || "";
           schoolId.value = f.school_id || "";
@@ -621,9 +621,9 @@
 
   (async () => {
     regionOut.innerHTML = bi("Shown after you choose a district");
-    upazilaSel.innerHTML = `<option value="">${esc(biText("Choose a district first"))}</option>`;
+    thanaSel.innerHTML = `<option value="">${esc(biText("Choose a district first"))}</option>`;
     districtSel.innerHTML = `<option value="">${esc(biText("Loading…"))}</option>`;
-    schoolIn.placeholder = biText("Choose the area first");
+    schoolIn.placeholder = biText("Choose the thana first");
     $("#resendOtp").innerHTML = biInline("Send a new code");
     await loadDistricts();
     const draft = loadDraft();

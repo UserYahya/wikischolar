@@ -6,6 +6,35 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 ## 2026-10-12
 
 ### Added
+- **The government's school list** (BANBEIS institution list, e-survey 2024: 19,718 schools).
+  - `manage.py import_banbeis_schools FILE.xlsx [--dry-run]` loads it. Every row resolves to a thana
+    through `data/thana_mapping.csv`.
+  - Schools now carry their **EIIN** (6 digits, unique) and the government data: division, institute
+    type, education level, management, MPO, institute for (co-education / girls / boys), geographical
+    position, area status, post office and email. The sheet's spelling slips are cleaned up
+    (CRISTIAN, SEPERATE, HAOR/BILL).
+  - Existing schools are matched by EIIN, then by name in the same thana (keeping their students);
+    the rest are added as verified "BANBEIS list" schools. Re-running changes nothing.
+  - The school page shows the government data, and admins can edit it (audited). The Schools list
+    has an EIIN column, and typing a 6-digit EIIN finds the school in the list search and the
+    typeahead.
+- **Advanced search** on the Students and Schools lists: conditions (field → operator → value) in
+  groups, each matching ALL or ANY, and the groups combined with ALL or ANY.
+  - Students can be searched by student, guardian, contact and place details, registration date,
+    and their school's government data.
+  - Schools can be searched by name, alias, status, source, number of students, place and
+    government data.
+  - The search is shown in plain English above the results. On Students, Export CSV, batches and
+    *Message this group* follow it.
+  - Only known fields and operators are accepted (no SQL from text). Limits apply, an invalid
+    condition is left out with a notice, and a search stops after 5 seconds.
+- **Saved searches, shared with every admin.**
+  - Save the current conditions under a name, and run any saved search from the *Saved searches*
+    dropdown or from **Students → Saved searches**. It always runs its latest version.
+  - The admin who saved it (or a Super Admin) can update it with the current conditions, or delete
+    it.
+  - Audited, and archived rather than deleted.
+
 - **`manage.py undo_school_import`** takes back a wrong school import. `--list` shows the 20 most
   recent imports (audit id, date, who, how many schools, verified/pending, and whether it was already
   undone). `undo_school_import ID --dry-run` lists what would be removed, and without `--dry-run` it asks you
@@ -15,6 +44,54 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   linked to, or that other schools were merged into, are kept and listed with the reason. One
   `school.import_undone` audit entry records it. Works for schools imported without an area.
   4 new tests (218 in total).
+
+### Changed
+- **School names are stored in capitals**, whether a school comes from the public form, *Add
+  school*, a rename, an import or a merge (existing names converted by `reference.0010`). What a
+  student typed is still kept exactly as typed.
+- **Districts and thanas now follow the government's list** (the BANBEIS institution list, e-survey
+  2024). "Upazila / Area" is now **"Thana" / "থানা"** everywhere: the public form, the dashboard, the
+  CSV import, emails and the code and database.
+  - Districts use the government's spelling: Barishal, Bogura, Chattogram, Cumilla, Jashore,
+    Khagrachhari, Maulvibazar, Netrakona, Norail. Three typos in the sheet are corrected to
+    Brahmanbaria, Cox's Bazar and Chapainawabganj.
+  - The thana list has 666 entries:
+    - the sheet's 560 thanas, with names cleaned up ("Kaptai  Upazila" becomes "Kaptai");
+    - the 11 upazilas created after the survey (Eidgaon, Matamuhuri, Bangra, …);
+    - 31 cantonments;
+    - one "Other thana (not listed)" per district.
+
+    All have Bangla names, carried over from the old list.
+  - City-corporation groups are gone. Cities are listed by their government thanas instead (e.g.
+    Dhaka's Mirpur, Uttara Paschim).
+  - 42 old city-corporation areas the government list doesn't have are retired. Their students and
+    schools move to the sadar thana that covers them, or to "Other thana" where that isn't clear.
+    `data/thana_mapping.csv` lists every old area, the thana that replaces it and why;
+    `scripts/build_thana_seed.py` rebuilds the seed from the sheet.
+- What keeps working from before the rename:
+  - dashboard links with `?upazila=`;
+  - saved batch filters;
+  - CSV files headed `Upazila / Area`, `Upazila` or `Area`;
+  - `{upazila}` in saved email wording.
+- 4 new tests (222 in total).
+
+### Upgrade notes
+- **Back up the database first.** The migrations:
+  - `reference.0006` and `registration.0009` rename the `upazilas` table to `thanas` and the
+    `upazila_id` columns to `thana_id`, in place;
+  - `reference.0007` renames the districts and swaps in the thana list (rows are renamed in place,
+    so linked students and schools keep their links; retired rows are archived, not deleted);
+  - `reference.0008` renames the generated index and constraint names.
+
+  0007 can't be undone except by restoring the backup. It prints what it changed and writes one
+  `reference.thanas_replaced` audit entry. On Azure they run on deploy; on cPanel run `migrate` and
+  `collectstatic --noinput`.
+- Then `reference.0009` (school government data), `reference.0010` (names in capitals) and
+  `dashboard.0001` (saved searches) run.
+- After deploying, copy the BANBEIS .xlsx to the server and run `manage.py import_banbeis_schools
+  FILE.xlsx --dry-run`, then without `--dry-run` (on Azure: `dc exec web python manage.py …`, with the
+  file inside the container, e.g. `docker compose cp`).
+- 33 new tests (255 in total).
 
 ## 2026-10-09
 

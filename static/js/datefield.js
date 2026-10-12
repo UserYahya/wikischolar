@@ -5,7 +5,7 @@
    apps.core.utils.parse_date (which also accepts yyyy-mm-dd), so the form works without JS too.
    Optional attributes: data-min / data-max ("today", "yesterday" or dd/mm/yyyy) and
    data-view="years" to open the calendar on the year grid (for birth dates).
-   window.WSDate = { parse, format } for other scripts (register.js). */
+   window.WSDate = { parse, format, enhance } for other scripts (register.js, advanced-search.js). */
 (() => {
   "use strict";
   const LOCALE = {
@@ -110,6 +110,6 @@
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && dp.visible) dp.hide(); });
   }
 
-  window.WSDate = { parse, format };
+  window.WSDate = { parse, format, enhance };  // enhance: for inputs added later (advanced search)
   document.querySelectorAll("input[data-datefield]").forEach(enhance);
 })();

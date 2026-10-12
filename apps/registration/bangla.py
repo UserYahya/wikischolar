@@ -29,7 +29,7 @@ MESSAGES = {
     "Fill in either the class roll or the student ID.": "রোল নম্বর অথবা শিক্ষার্থী আইডি, অন্তত একটি লিখুন।",
     "Write the class roll in numbers only (for example 12).": "রোল নম্বর শুধু সংখ্যায় লিখুন (যেমন 12)।",
     "Write the student's relation to the guardian.": "অভিভাবকের সাথে শিক্ষার্থীর সম্পর্ক লিখুন।",
-    "Choose an upazila or area in the selected district.": "বেছে নেওয়া জেলার মধ্যে একটি উপজেলা বা এলাকা বেছে নিন।",
+    "Choose a thana in the selected district.": "বেছে নেওয়া জেলার মধ্যে একটি থানা বেছে নিন।",
     "Choose how you heard about WikiScholar.": "উইকিস্কলারের কথা কোথা থেকে জেনেছেন, তা বেছে নিন।",
     "Tick the guardian declaration: the form must be filled in by the student's guardian.":
         "অভিভাবকের ঘোষণায় টিক দিন: ফর্মটি শিক্ষার্থীর অভিভাবককেই পূরণ করতে হবে।",
@@ -68,7 +68,7 @@ MESSAGES = {
     "Code expires in {time}": "কোডটির মেয়াদ আছে আর {time} মিনিট",
     "Choose": "বেছে নিন",
     "Choose a district first": "আগে জেলা বেছে নিন",
-    "Choose the area first": "আগে এলাকা বেছে নিন",
+    "Choose the thana first": "আগে থানা বেছে নিন",
     "Type in English": "ইংরেজিতে লিখুন",
     "Loading…": "লোড হচ্ছে…",
     "Shown after you choose a district": "জেলা বেছে নিলে দেখা যাবে",
@@ -79,7 +79,7 @@ MESSAGES = {
     "Go back to this step": "এই ধাপে ফিরে যান",
     # Summary after registering
     "Filled in by": "যিনি পূরণ করেছেন", "Name": "নাম", "Gender": "লিঙ্গ", "Guardian": "অভিভাবক",
-    "District": "জেলা", "Region": "অঞ্চল", "Upazila / Area": "উপজেলা / এলাকা", "School": "বিদ্যালয়", "Class": "শ্রেণি",
+    "District": "জেলা", "Region": "অঞ্চল", "Thana": "থানা", "School": "বিদ্যালয়", "Class": "শ্রেণি",
     "Section": "শাখা", "Class roll": "রোল নম্বর", "Student ID": "শিক্ষার্থী আইডি", "Mobile": "মোবাইল",
     "Heard about WikiScholar from": "উইকিস্কলারের কথা জেনেছেন",
     "Registered on": "নিবন্ধনের তারিখ",

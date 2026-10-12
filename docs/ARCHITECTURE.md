@@ -38,10 +38,10 @@ later consume the same JSON endpoints.
 
 1. The page loads districts (with their current region) from `/api/reference/districts/`.
    Picking a district shows its region — read from the DB at that moment.
-2. Upazilas and the other areas (city-corporation thanas, cantonments, "Other area": `upazilas` rows
-   with a `group`) load per district, grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?district=&upazila=&q=` (from 3 characters; a shorter `q` returns no schools)
-   (trigram similarity over normalised names and aliases across the district; the chosen area's
-   schools get a +0.15 ranking bonus, `SAME_AREA_BONUS`; each result carries its area). The public form
+2. Thanas (with cantonments and "Other thana": `thanas` rows with a `group`) load per district,
+   grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?district=&thana=&q=` (from 3 characters; a shorter `q` returns no schools)
+   (trigram similarity over normalised names and aliases across the district; the chosen thana's
+   schools get a +0.15 ranking bonus, `SAME_AREA_BONUS`; each result carries its thana). The public form
    is offered **verified schools only**; signed-in staff (`?all=1`) also see pending ones. Pending
    schools are still matched on submit (step 5), so two students typing the same new school share
    one pending row.
@@ -58,9 +58,9 @@ later consume the same JSON endpoints.
 ### School resolution order
 `selected` (ID picked from typeahead, must be in the same district) → `exact` (normalised name)
 → `alias` → `auto` (trigram similarity ≥ `WS_SCHOOL_AUTO_RESOLVE`, default 0.8) → `created`
-(`exact`, `alias` and `auto` look only in the chosen upazila / area plus the district's schools
-whose area isn't known yet (`reference.services.school_scope`), and `created` files the new school
-in the chosen area: common names such as "Government Girls High School" repeat across upazilas)
+(`exact`, `alias` and `auto` look only in the chosen thana plus the district's schools
+whose thana isn't known yet (`reference.services.school_scope`), and `created` files the new school
+in the chosen thana: common names such as "Government Girls High School" repeat across thanas)
 (new `pending` school). Normalisation lower-cases, strips punctuation and expands common
 abbreviations (`govt` → `government`, `h/s` → `high school`, …). Merged schools always
 redirect to their canonical row.
@@ -99,6 +99,25 @@ default to opted-in students only. Delivery webhooks update per-recipient status
 "Resend failed" creates new rows linked by `resend_of`, preserving the original attempt.
 
 Providers are pluggable classes (`NOTIFY_EMAIL_PROVIDER`, `NOTIFY_SMS_PROVIDER`).
+
+## Advanced search and saved searches
+
+`apps/dashboard/advanced.py` holds a field registry per list (`FIELDS["students"]`,
+`FIELDS["schools"]`): key, label, type (text / choice / fk / number / date / bool), ORM path, and the
+operators that type allows. A query is JSON (`{"match", "groups": [{"match", "conditions": [{"field",
+"op", "value"}]}]}`).
+- `parse()` checks every part against the registry, converts values by type, and builds `Q`
+  objects; no SQL is ever built from the text. It returns `(Q, problems, cleaned query)`: invalid
+  conditions are dropped and reported.
+- `normalize()` gives the compact JSON used in URLs and saved filters, and `describe()` the plain
+  English text.
+- On Students the query is the `adv` filter param (`filters.params_from/apply/snapshot/describe`),
+  so export, batches and the message composer follow it.
+- Lists with an advanced query run under `advanced.time_limit()` (`SET LOCAL statement_timeout`,
+  5 s).
+- Saved searches (`apps/dashboard/models.SavedSearch`, views in `views/searches.py`) store the
+  cleaned query. `?saved=<id>` loads it, and it is parsed again each time, so a field removed later
+  is simply left out.
 
 ## Extending in Phase 2
 

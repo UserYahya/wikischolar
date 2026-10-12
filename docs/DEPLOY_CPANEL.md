@@ -100,7 +100,7 @@ pip install -r requirements.txt
 python manage.py check_host            # must end with "This host can run WikiScholar."
 python manage.py migrate
 python manage.py createcachetable
-python manage.py seed_reference        # 6 regions, 64 districts, 503 upazilas + thanas, cantonments, "Other area"
+python manage.py seed_reference        # 6 regions, 64 districts, 666 thanas (government list + cantonments, "Other thana")
 python manage.py collectstatic --noinput
 python manage.py create_super_admin --email you@wikimedia.org.bd --name "Your Name"
 ```
@@ -191,6 +191,12 @@ widget, or empty the keys. Keep the secret key private (never in the repository)
 
 **Then (2026-10-06):** `migrate` (`registration.0008`, a label change only) and `collectstatic`. Optional:
 switch on Cloudflare Turnstile (see "Cloudflare Turnstile" above).
+
+**Then (2026-10-12, thanas):** **back up the database first**, then `migrate` and `collectstatic`.
+Migrations `reference.0006` / `registration.0009` rename the `upazilas` table to `thanas` (and the
+`upazila_id` columns to `thana_id`); `reference.0007` replaces the districts' names and the
+"Upazila / Area" list with the government's thana list. It can't be undone except by restoring the
+backup.
 
 ## 9. Backups
 

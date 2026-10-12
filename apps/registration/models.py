@@ -39,7 +39,7 @@ class Student(SoftDeleteModel):
 
     # Step 2 — academic (region is derived from district at read time)
     district = models.ForeignKey("reference.District", on_delete=models.PROTECT, related_name="students")
-    upazila = models.ForeignKey("reference.Upazila", on_delete=models.PROTECT, related_name="students")
+    thana = models.ForeignKey("reference.Thana", on_delete=models.PROTECT, related_name="students")
     school = models.ForeignKey("reference.School", on_delete=models.PROTECT, related_name="students")
     school_name_as_entered = models.CharField(max_length=255)
     school_resolution = models.CharField(max_length=10, choices=SchoolResolution.choices)
@@ -67,7 +67,7 @@ class Student(SoftDeleteModel):
         db_table = "students"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["district", "upazila"], name="student_location_idx"),
+            models.Index(fields=["district", "thana"], name="student_location_idx"),
             models.Index(fields=["school"], name="student_school_idx"),
             models.Index(fields=["gender"], name="student_gender_idx"),
         ]

@@ -5,12 +5,12 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.reference.models import District, Region, Upazila
+from apps.reference.models import District, Region, Thana
 
 
 class Command(BaseCommand):
-    help = ("Seed regions, districts, upazilas and other areas (city-corporation thanas, cantonments, "
-            "\"Other area\") from a JSON file. Idempotent. "
+    help = ("Seed regions, districts and thanas (with cantonments and \"Other thana\") from a JSON file. "
+            "Idempotent. "
             "It only adds what is missing: names of existing regions and districts (renamed in the "
             "dashboard) are never overwritten, and district→region assignments are kept "
             "unless --reset-region-assignments is given.")
@@ -33,7 +33,7 @@ class Command(BaseCommand):
             obj, _ = Region.all_objects.get_or_create(
                 code=r["code"], defaults={"name": r["name"], "name_bn": r.get("name_bn", ""), "sort_order": i})
             regions[r["code"]] = obj
-        new_d = new_u = new_a = kept = 0
+        new_d = new_t = kept = 0
         for d in data["districts"]:
             district = District.all_objects.filter(code=d["code"]).first()
             seed_region = regions.get(d.get("region"))
@@ -47,19 +47,15 @@ class Command(BaseCommand):
                 elif district.region_id != (seed_region.pk if seed_region else None):
                     kept += 1
                 district.save()
-            for u in d.get("upazilas", []):
-                _, created = Upazila.all_objects.get_or_create(
-                    district=district, name=u["name"], defaults={"name_bn": u.get("name_bn", "")})
-                new_u += created
-            # City-corporation thanas, cantonments and "Other area": areas with a group
-            for a in d.get("areas", []):
-                obj, created = Upazila.all_objects.get_or_create(
-                    district=district, name=a["name"],
-                    defaults={"name_bn": a.get("name_bn", ""), "group": a["group"], "group_bn": a.get("group_bn", "")})
-                if not created and not obj.group:  # an older copy without its group: add it
-                    obj.group, obj.group_bn = a["group"], a.get("group_bn", "")
+            for t in d.get("thanas", []):
+                obj, created = Thana.all_objects.get_or_create(
+                    district=district, name=t["name"],
+                    defaults={"name_bn": t.get("name_bn", ""), "group": t.get("group", ""),
+                              "group_bn": t.get("group_bn", "")})
+                if not created and t.get("group") and not obj.group:  # an older copy without its group: add it
+                    obj.group, obj.group_bn = t["group"], t.get("group_bn", "")
                     obj.save(update_fields=["group", "group_bn"])
-                new_a += created
+                new_t += created
         self.stdout.write(self.style.SUCCESS(
-            f"Seeded {len(regions)} regions, {new_d} new districts, {new_u} new upazilas, {new_a} new other areas "
-            f"(city-corporation thanas, cantonments, \"Other area\"). {kept} dashboard region assignments preserved."))
+            f"Seeded {len(regions)} regions, {new_d} new districts, {new_t} new thanas (with cantonments and "
+            f"\"Other thana\"). {kept} dashboard region assignments preserved."))

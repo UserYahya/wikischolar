@@ -14,7 +14,7 @@ so later modules (Exam, CRM, Volunteer, Call-center, Analytics) plug in beside t
 | Module | App | Owns |
 |---|---|---|
 | Core | `apps/core` | `admins`, `audit_logs`, `id_sequences`, RBAC, soft-delete base, DB integrity triggers |
-| Reference Data | `apps/reference` | `regions`, `districts`, `upazilas`, `schools`, `school_aliases`; public lookup API; school matching & merge |
+| Reference Data | `apps/reference` | `regions`, `districts`, `thanas`, `schools`, `school_aliases`; public lookup API; school matching & merge |
 | Registration | `apps/registration` | `students`, `email_verifications`, `edit_history`; public form + OTP |
 | Notification | `apps/notifications` | `email_batches`, `sms_batches`, `notification_logs`, `email_settings`, `sms_settings`; providers, delivery webhooks |
 | Admin Dashboard | `apps/dashboard` | no tables; UI over the other modules' services |
@@ -34,15 +34,15 @@ The 6-region / 64-district mapping is **not in any Python file**. It lives in
   are highlighted and reported as "No region".
 * Re-running `seed_reference` adds new places but **keeps** dashboard edits: region and district
   names are never overwritten, and district→region assignments are kept unless you pass
-  `--reset-region-assignments`. An upazila renamed in the dashboard is matched by name, so a manual
-  re-run adds its seed name back as a new area; the Azure stack runs it only on an empty database
+  `--reset-region-assignments`. A thana renamed in the dashboard is matched by name, so a manual
+  re-run adds its seed name back as a new thana; the Azure stack runs it only on an empty database
   (`--if-empty`).
 
 ## Quick start (Docker)
 
 ```sh
 cp .env.example .env          # set DJANGO_SECRET_KEY, DB_PASSWORD, email settings, hosts
-docker compose up --build     # migrates, seeds regions/districts/upazilas, starts gunicorn + worker
+docker compose up --build     # migrates, seeds regions/districts/thanas, starts gunicorn + worker
 docker compose exec web python manage.py create_super_admin --email you@wikimedia.org.bd --name "Your Name"
 ```
 
@@ -137,8 +137,9 @@ record which student batch they were sent to.
 
 | Command | Purpose |
 |---|---|
-| `seed_reference [--file PATH] [--reset-region-assignments]` | Load/refresh regions, districts, upazilas and the other "Upazila / Area" choices (city-corporation thanas, cantonments, "Other area"). Idempotent. |
-| `import_schools CSV [--status verified\|pending]` | Import a school list (`district,upazila,name`; upazila optional). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
+| `seed_reference [--file PATH] [--reset-region-assignments]` | Load/refresh regions, districts and thanas (the government's BANBEIS list, newer upazilas, cantonments, "Other thana"). Idempotent. |
+| `import_schools CSV [--status verified\|pending]` | Import a school list (`district,thana,name`; thana optional). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
+| `import_banbeis_schools XLSX [--dry-run]` | Load the government's school list (BANBEIS .xlsx) with EIIN and government data; matches existing schools by EIIN, then by name; safe to re-run. |
 | `undo_school_import [ID] [--list] [--dry-run] [--yes]` | Undo one school import: its schools are removed (restorable from Schools → Removed); ones with students are kept. Run `--list`, then `ID --dry-run`. |
 | `create_super_admin --email --name [--password]` | Bootstrap the first Super Admin; everyone else is created from the dashboard. |
 | `check_host` | Pre-flight on a new server: Python, PostgreSQL 13+, `pg_trgm`, settings, migrations, cache. |
@@ -151,12 +152,12 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-218 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+255 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
-roll-or-SID, phone, upazila-in-district and consent rules; honeypot; OTP typo warning,
+roll-or-SID, phone, thana-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new
 pending) and typeahead scoping; DB-level refusal of deletes, audit tampering, bad phone and
-cross-district upazilas; role permissions on every page; edit history; view/export
+cross-district thanas; role permissions on every page; edit history; view/export
 auditing; archive/restore; filters; region reassignment; school merge; bulk email with
 opt-in filter, delivery webhook and resend; admin management and login auditing.
 
@@ -170,23 +171,25 @@ bound to the browser session), Youth Safety Policy consent (timestamp + policy v
 stored), updates opt-in, summary screen with the WikiScholar ID, confirmation email, and a confirmation
 SMS with the ID and the contact address (one 160-character SMS).
 
-**Schools** — typeahead over the whole district (the student's own upazila / area first, each school
-shown with its area) using `pg_trgm` over names and aliases, from the 3rd letter typed (the API
+**Schools** — typeahead over the whole district (the student's own thana first, each school
+shown with its thana) using `pg_trgm` over names and aliases, from the 3rd letter typed (the API
 returns nothing for a 1–2 character query);
 free text is kept exactly as typed (`school_name_as_entered`) *and* resolved to a school row
 (dual storage); unknown schools become `pending`; admins verify, rename, add aliases, and
 merge duplicates (students re-pointed with edit history, misspelling becomes an alias, the
 duplicate row stays as `merged`). Admins add schools on **Schools → Add school** (a typeahead
-lists schools already in the upazila; the same name or an alias is refused and a similar name
+lists schools already in the thana; the same name or an alias is refused and a similar name
 needs confirmation) and remove ones with no students (archived, restorable from *Removed*).
 **Schools → Import CSV** bulk-loads schools: download the template (headings *District,
-Upazila / Area, School name*), fill in one school per row (a downloadable district & upazila / area
-list gives the spellings), upload, check the per-row preview, then confirm. The upazila / area
-may be left blank (or the column left out): such a school belongs to its whole district (suggested
-and duplicate-checked across all its areas) until an admin sets its area on the school page.
+Thana, School name*), fill in one school per row (a downloadable district & thana list gives the
+spellings), upload, check the per-row preview, then confirm. The thana may be left blank (or the
+column left out): such a school belongs to its whole district (suggested and duplicate-checked
+across all its thanas) until an admin sets its thana on the school page.
 
-**Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, upazila, school,
-class, gender, date-range, opt-in and text search; CSV export; per-student edit history;
+**Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, thana, school,
+class, gender, date-range, opt-in and text search; **advanced search** on Students and Schools
+(conditions in ALL/ANY groups, including the schools' government data) with **shared saved
+searches**; CSV export; per-student edit history;
 archive/restore (no hard deletes); bulk email/SMS to the current filter with batch IDs
 (`EB-2026-0001`, `SB-2026-0001`), per-recipient delivery status, and resend-failed; school
 review and duplicate merge; locations; audit log (including record views and exports);

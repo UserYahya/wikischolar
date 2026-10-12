@@ -31,14 +31,14 @@ def districts(request):
 
 
 @require_GET
-def upazilas(request, district_id):
+def thanas(request, district_id):
     if _limited(request):
         return JsonResponse({"error": "rate_limited"}, status=429)
     if not District.objects.filter(pk=district_id).exists():
         return JsonResponse({"error": "not_found"}, status=404)
-    # Upazilas and the other areas (city-corporation thanas, cantonments, "Other area"), in list
+    # Thanas, cantonments and "Other thana", in list
     # order; "group" / "group_bn" are the dropdown headings.
-    return JsonResponse({"upazilas": [
+    return JsonResponse({"thanas": [
         {"id": u.pk, "name": u.name, "name_bn": u.name_bn, "group": u.group_label, "group_bn": u.group_label_bn}
         for u in services.areas_of(district_id)]})
 
@@ -47,11 +47,11 @@ def upazilas(request, district_id):
 def schools(request):
     if _limited(request):
         return JsonResponse({"error": "rate_limited"}, status=429)
-    # ?district=&upazila= : the whole district, the student's own area (upazila) first (public form,
-    # dashboard Add school). ?upazila= alone: one area only (dashboard student editor list).
-    district_id, upazila_id = _int(request.GET.get("district")), _int(request.GET.get("upazila"))
-    if not (district_id or upazila_id):
-        return JsonResponse({"error": "district_or_upazila_required"}, status=400)
+    # ?district=&thana= : the whole district, the student's own area (thana) first (public form,
+    # dashboard Add school). ?thana= alone: one area only (dashboard student editor list).
+    district_id, thana_id = _int(request.GET.get("district")), _int(request.GET.get("thana"))
+    if not (district_id or thana_id):
+        return JsonResponse({"error": "district_or_thana_required"}, status=400)
     q = request.GET.get("q", "")[:120]
     if q.strip() and len(q.strip()) < MIN_QUERY:
         return JsonResponse({"schools": []})
@@ -62,14 +62,14 @@ def schools(request):
     with_pending = staff_list or (bool(request.GET.get("pending")) and staff)
     if district_id:
         results = services.search_schools(query=q, limit=500 if staff_list else 8, verified_only=not with_pending,
-                                          district_id=district_id, prefer_upazila_id=upazila_id)
+                                          district_id=district_id, prefer_thana_id=thana_id)
     else:
-        results = services.search_schools(upazila_id, q, limit=500 if staff_list else 8, verified_only=not with_pending)
+        results = services.search_schools(thana_id, q, limit=500 if staff_list else 8, verified_only=not with_pending)
     return JsonResponse({"schools": [
-        {"id": s.pk, "name": s.name, "verified": s.verification_status == "verified",
+        {"id": s.pk, "name": s.name, "eiin": s.eiin, "verified": s.verification_status == "verified",
          # area "" = not known yet (a school listed for the whole district)
-         "area": s.upazila.name if s.upazila_id else "", "area_bn": s.upazila.name_bn if s.upazila_id else "",
-         "same_area": bool(s.upazila_id) and s.upazila_id == upazila_id}
+         "area": s.thana.name if s.thana_id else "", "area_bn": s.thana.name_bn if s.thana_id else "",
+         "same_area": bool(s.thana_id) and s.thana_id == thana_id}
         for s in results
     ]})
 

@@ -21,8 +21,10 @@
 | Guardian declaration on the form; OTP/confirmation wording editable by a Super Admin | **Built** (added later, 10.1 / 10.3) |
 | October 2026 form update: Bangla beside every English text, section, numbers-only roll, "how did you hear" survey, **date of birth removed**, HTML emails, grouped dashboard menu | **Built** (10.1 / 10.2) |
 | City-corporation thanas, cantonments and "Other area" in the upazila list ("Upazila / Area") | **Built** (10.1): no area of Bangladesh is left out |
+| Government district and thana lists (BANBEIS e-survey 2024): "Upazila / Area" becomes **"Thana"**, districts in the government's spelling | **Built** (10.1, 2026-10-12): replaces the city-corporation grouping above |
 | Optional Cloudflare Turnstile; admins change their own password, Super Admin sets others' | **Built** (10.2, 2026-10-06) |
-| Secure query interface for advanced users (5.2) | **Not built**: the filter panel covers the listed filters |
+| Secure query interface for advanced users (5.2) | **Built** (2026-10-12) as a limited query builder: **advanced search** with ALL/ANY condition groups on Students and Schools (whitelisted fields only, no SQL, 5 s time limit) and **shared saved searches** |
+| Government school list (BANBEIS, 19,718 schools) with EIIN and government data; school names in capitals | **Built** (2026-10-12) |
 | Field-level encryption at rest (6) | **Not built**: TLS, disk encryption and least privilege are assumed; stored provider secrets are encrypted |
 | Phase 2+ modules (Section 9) | **Not started**; the module registry and architecture are ready for them |
 
@@ -301,7 +303,7 @@ The form is presented in four steps:
 
 - Filter/sort by any combination of district, region, upazila, school, class, gender, and registration date.
 - Select multiple districts together to build a group (e.g., "everyone from these two districts").
-- A secure **query interface** for advanced users — not direct access to the production database, but through a read-only replica/limited query builder (destructive queries blocked, with timeouts and rate limits). **Update: not built yet.**
+- A secure **query interface** for advanced users — not direct access to the production database, but through a read-only replica/limited query builder (destructive queries blocked, with timeouts and rate limits). **Update (2026-10-12): built as a limited query builder.** Advanced search on Students and Schools combines conditions in ALL/ANY groups over whitelisted fields only (read-only ORM filters, no SQL text, 5-second statement timeout), and searches can be saved and shared with all admins.
 - **Update (added):** the filtered list can be **split into batches** of a size the admin enters; each batch can be viewed, exported to CSV or messaged on its own (Section 10.2).
 - **Duplicate School Review** tool (Section 3.6): surfaces likely duplicate schools for merging.
 
@@ -339,7 +341,7 @@ Since this system holds personal data of minors (name, date of birth, school, ph
 - [ ] Should guardian phone/email also be mandatory (separate from guardian name/relation), to fully match the Youth Safety Policy? **Still open.**
 - [x] Choosing email and SMS API vendors: **email** Brevo (SMTP relay or HTTPS API) or Google Mail/Workspace,
   chosen per installation on the dashboard; **SMS** MiM SMS.
-- [ ] How much query access "advanced users" get, and who qualifies for it. **Still open** (query interface not built).
+- [x] How much query access "advanced users" get, and who qualifies for it. **Decided:** everyone who can see the Students / Schools list can use advanced search and the shared saved searches; only the creator or a Super Admin changes a saved search.
 - [x] Finalizing the tech stack: **Django + PostgreSQL**, server-rendered pages (Section 8).
 
 ## 8. Suggested Tech Stack (for discussion, not final)
@@ -390,6 +392,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | **Answers never lost**: draft kept in the browser tab, browser Back/Forward move between steps, finished steps clickable | users lost data with the browser's Back button |
 | WikiScholar ID year = **programme year** (`WS_ID_YEAR`, now 2027) | IDs start `WS-2027-` |
 | **Upazila / Area**: the thanas of all 13 city corporations, the 31 cantonments and an "Other area (not listed)" per district join the 503 upazilas, grouped in the dropdown | city corporations have no upazila; nobody should be unable to choose their area |
+| **Thana** (থানা) instead of "Upazila / Area": the government's 560 thanas (BANBEIS e-survey 2024) plus the upazilas created since, the cantonments and an "Other thana (not listed)" per district; districts in the government's spelling | the government's list is cleaner and is what schools are registered under |
 | **Bangla beside every English text** on the form (labels, hints, buttons, options, messages), smaller and in natural Bangla; answers stay English | guardians read Bangla more easily; the data stays one script |
 | **Date of birth removed** from the form, database (column dropped), emails, dashboard and export | no longer needed (supersedes field 2 in 4.1 and its rule in 4.2) |
 | **Section** (optional, with instructions) and **class roll numbers only** | classes with sections; rolls are numbers |
@@ -413,6 +416,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | **Change password** for every admin; Super Admin **sets a new password** for others | admins could not change a temporary password, and a forgotten one needed a server command |
 | Optional **Cloudflare Turnstile** on "Send verification code" and sign-in | stop bots sending emails through the form and guessing passwords |
 | **Schools without an area**: the CSV import accepts a blank upazila / area (or no such column); those schools belong to the whole district (suggested, matched and duplicate-checked across its areas) until an admin sets the area; *Area not known* filter | the school lists available have districts but not always upazilas |
+| **Thana replaces "Upazila / Area"** across the dashboard (filters, Add school, import template "District, Thana, School name") | the government's list is the reference |
 
 ### 10.3 Email & SMS settings (Super Admin)
 | Change | Why |
@@ -440,7 +444,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 2. Duplicate-student detection (same name + date of birth + school) with a review/merge screen.
 3. Two-factor authentication for admins (at least Super Admins).
 4. Decide the guardian phone/consent question (Section 7), then add the fields.
-5. Saved queries / limited query builder (Section 5.2).
+5. ~~Saved queries / limited query builder (Section 5.2).~~ **Built** (advanced search + shared saved searches).
 6. Field-level encryption of phone, email and guardian name.
 7. A real job queue (Celery/RQ) if bulk volumes outgrow the cron-driven `send_queued`.
 8. Phase 2: the Exam module, as a new app using `wikischolar_id` (Section 9).

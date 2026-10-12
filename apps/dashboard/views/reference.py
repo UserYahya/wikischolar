@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,10 +12,12 @@ from apps.core.permissions import require_perm
 from apps.core.utils import english_text
 from apps.reference import importer
 from apps.reference import services as ref
-from apps.reference.models import District, Region, School, Upazila
+from apps.reference.models import District, Region, School, Thana
 
-from ..forms import RegionForm
-from ._util import paginate
+from ..forms import GOVERNMENT_FIELDS, RegionForm, SchoolDetailsForm
+from .. import advanced
+from . import searches
+from ._util import advanced_context, paginate
 
 
 def _english(request, raw):
@@ -30,7 +32,7 @@ def _english(request, raw):
 @require_perm("schools.view")
 def school_list(request):
     status = request.GET.get("status", "active")
-    qs = (School.all_objects.filter(is_deleted=status == "removed").select_related("district", "upazila")
+    qs = (School.all_objects.filter(is_deleted=status == "removed").select_related("district", "thana")
           .annotate(n=Count("students", filter=Q(students__is_deleted=False))))
     if status == "active":
         qs = qs.exclude(verification_status="merged")
@@ -39,35 +41,49 @@ def school_list(request):
     district = request.GET.get("district", "")
     if district:
         qs = qs.filter(district_id=district)
-    upazila = request.GET.get("upazila", "")
-    if upazila == "none":  # area not known yet (e.g. imported with the district only)
-        qs = qs.filter(upazila__isnull=True)
-    elif upazila.isdigit():
-        qs = qs.filter(upazila_id=upazila)
+    thana = request.GET.get("thana") or request.GET.get("upazila", "")  # links from before the rename
+    if thana == "none":  # thana not known yet (e.g. imported with the district only)
+        qs = qs.filter(thana__isnull=True)
+    elif thana.isdigit():
+        qs = qs.filter(thana_id=thana)
     q = request.GET.get("q", "").strip()
     if q:
-        qs = qs.filter(Q(name__icontains=q) | Q(aliases__alias_text__icontains=q)).distinct()
+        qs = qs.filter(Q(name__icontains=q) | Q(aliases__alias_text__icontains=q) | Q(eiin=q)).distinct()
+    saved = searches.for_request(request, "schools")
+    adv = advanced.normalize("schools", request.GET.get("adv", "") or (saved.query if saved else ""))
+    if adv:
+        qs = qs.filter(advanced.parse("schools", adv)[0])
+    try:
+        with advanced.time_limit(bool(adv)):
+            return _school_list_page(request, qs, status, district, thana, q, adv)
+    except OperationalError:  # the advanced search hit the time limit
+        messages.error(request, "That advanced search took too long. Narrow it down (e.g. pick a district) and try again.")
+        return redirect("dashboard:schools")
+
+
+def _school_list_page(request, qs, status, district, thana, q, adv):
     page, qstring = paginate(request, qs.order_by("verification_status", "name"))
     return render(request, "dashboard/schools.html", {
         "page": page, "qstring": qstring, "districts": District.objects.all(),
-        "upazilas": ref.areas_of(district) if district else [],
-        "f": {"status": status, "district": district, "upazila": upazila, "q": q},
+        "thanas": ref.areas_of(district) if district else [],
+        "f": {"status": status, "district": district, "thana": thana, "q": q},
         "can_edit": request.user.has_perm_code("schools.edit"),
+        **advanced_context(request, "schools", adv),
     })
 
 
 @require_perm("schools.edit")
 def school_add(request):
-    """Add a verified school. An exact name or alias in the upazila is refused; a similar name asks
+    """Add a verified school. An exact name or alias in the thana is refused; a similar name asks
     for confirmation, so the dashboard doesn't create the duplicates the merge screen cleans up."""
-    data = {"district": request.GET.get("district", ""), "upazila": request.GET.get("upazila", ""), "name": ""}
+    data = {"district": request.GET.get("district", ""), "thana": request.GET.get("thana", ""), "name": ""}
     errors, same, similar = {}, None, []
     if request.method == "POST":
-        data = {k: request.POST.get(k, "").strip() for k in ("district", "upazila", "name")}
-        upz = Upazila.objects.filter(pk=data["upazila"] if data["upazila"].isdigit() else 0,
+        data = {k: request.POST.get(k, "").strip() for k in ("district", "thana", "name")}
+        th = Thana.objects.filter(pk=data["thana"] if data["thana"].isdigit() else 0,
                                      district_id=data["district"] if data["district"].isdigit() else 0).first()
-        if not upz:
-            errors["upazila"] = "Choose the district and upazila."
+        if not th:
+            errors["thana"] = "Choose the district and thana."
         name = ""
         if not data["name"]:
             errors["name"] = "Enter the school's official name."
@@ -79,18 +95,18 @@ def school_add(request):
             if len(name) > 255:
                 errors["name"] = "Keep the name under 255 characters."
         if not errors:
-            same = ref.same_name_school(upz, name)
+            same = ref.same_name_school(th, name)
             if same:
                 errors["name"] = "This school is already listed."
             else:
-                similar = [] if request.POST.get("confirm") else ref.similar_schools(upz, name)
+                similar = [] if request.POST.get("confirm") else ref.similar_schools(th, name)
                 if not similar:
-                    school = ref.add_school(upazila=upz, name=name, request=request)
-                    messages.success(request, f"Added “{school.name}” to {upz.name}.")
+                    school = ref.add_school(thana=th, name=name, request=request)
+                    messages.success(request, f"Added “{school.name}” to {th.name}.")
                     return redirect("dashboard:school", pk=school.pk)
     return render(request, "dashboard/school_add.html", {
         "d": data, "errors": errors, "same": same, "similar": similar, "districts": District.objects.all(),
-        "upazilas": ref.areas_of(data["district"]) if data["district"].isdigit() else [],
+        "thanas": ref.areas_of(data["district"]) if data["district"].isdigit() else [],
     })
 
 
@@ -149,18 +165,29 @@ def school_import_template(request):
 def school_import_locations(request):
     district = District.objects.filter(pk=request.GET.get("district") or 0).first()
     suffix = f"-{district.name.lower().replace(' ', '-')}" if district else ""
-    return _csv_download(importer.locations_csv(district), f"districts-and-upazilas{suffix}.csv")
+    return _csv_download(importer.locations_csv(district), f"districts-and-thanas{suffix}.csv")
 
 
 @require_perm("schools.view")
 def school_detail(request, pk):
-    school = get_object_or_404(School.all_objects.select_related("district__region", "upazila", "merged_into"), pk=pk)
+    school = get_object_or_404(School.all_objects.select_related("district__region", "thana", "merged_into"), pk=pk)
+    details_form = SchoolDetailsForm(instance=school)
     if request.method == "POST":
         if not request.user.has_perm_code("schools.edit"):
             messages.error(request, "You don't have permission to edit schools.")
             return redirect("dashboard:school", pk=pk)
         op = request.POST.get("op")
-        if op == "remove":
+        if op == "details" and not school.is_deleted:
+            before = audit.snapshot(school, fields=GOVERNMENT_FIELDS)
+            details_form = SchoolDetailsForm(request.POST, instance=school)
+            if details_form.is_valid():
+                details_form.save()
+                audit.record("school.details_updated", request=request, entity=school, before=before,
+                             after=audit.snapshot(school, fields=GOVERNMENT_FIELDS))
+                messages.success(request, "Government data saved.")
+                return redirect("dashboard:school", pk=pk)
+            school.refresh_from_db()
+        elif op == "remove":
             try:
                 ref.remove_school(school, request=request, reason=request.POST.get("reason", ""))
             except ValueError as exc:
@@ -168,7 +195,7 @@ def school_detail(request, pk):
                 return redirect("dashboard:school", pk=pk)
             messages.success(request, f"Removed “{school.name}”. You can restore it from Schools → Removed.")
             return redirect(f"{reverse('dashboard:schools')}?district={school.district_id}"
-                            + (f"&upazila={school.upazila_id}" if school.upazila_id else ""))
+                            + (f"&thana={school.thana_id}" if school.thana_id else ""))
         if op == "restore":
             try:
                 ref.restore_school(school, request=request)
@@ -186,17 +213,17 @@ def school_detail(request, pk):
             ref.set_school_status(school, School.Status.PENDING, request=request)
             messages.success(request, "Moved back to pending review.")
         elif op == "set_area":
-            upz = Upazila.objects.filter(pk=request.POST.get("upazila") or 0, district_id=school.district_id).first()
-            if not upz:
-                messages.error(request, "Choose an upazila or area.")
+            th = Thana.objects.filter(pk=request.POST.get("thana") or 0, district_id=school.district_id).first()
+            if not th:
+                messages.error(request, "Choose a thana.")
             else:
                 try:
-                    changed = ref.set_school_area(school, upz, request=request)
+                    changed = ref.set_school_area(school, th, request=request)
                 except ValueError as exc:
                     messages.error(request, str(exc))
                 else:
                     if changed:
-                        messages.success(request, f"Area set to {upz.name}.")
+                        messages.success(request, f"Thana set to {th.name}.")
         elif op == "rename" and request.POST.get("name", "").strip():
             if (name := _english(request, request.POST["name"])) is not None:
                 ref.rename_school(school, name, request=request)
@@ -205,7 +232,8 @@ def school_detail(request, pk):
             if (alias := _english(request, request.POST["alias"])) is not None:
                 ref.add_alias(school, alias, request=request)
                 messages.success(request, "Alias added. Matching entries will now resolve to this school.")
-        return redirect("dashboard:school", pk=pk)
+        if not details_form.is_bound:  # an invalid details form is shown again with its errors
+            return redirect("dashboard:school", pk=pk)
     students = school.students.select_related("district")[:100]
     entered = (school.students.values("school_name_as_entered").annotate(n=Count("id")).order_by("-n")[:20])
     return render(request, "dashboard/school_detail.html", {
@@ -213,6 +241,7 @@ def school_detail(request, pk):
         "students": students, "student_count": school.students.count(), "entered": entered,
         "merged_from": school.merged_from.all(), "can_edit": request.user.has_perm_code("schools.edit"),
         "removal_blocker": "" if school.is_deleted else ref.removal_blocker(school),
+        "details_form": details_form, "edit_details": details_form.is_bound,
         "areas": ref.areas_of(school.district_id),
     })
 
@@ -297,7 +326,7 @@ def locations(request):
                                       s=Count("districts__students", distinct=True,
                                       filter=Q(districts__students__is_deleted=False)))
     districts = (District.objects.select_related("region")
-                 .annotate(upz=Count("upazilas", distinct=True),
+                 .annotate(th=Count("thanas", distinct=True),
                            s=Count("students", distinct=True, filter=Q(students__is_deleted=False)))
                  .order_by("region__sort_order", "name"))
     return render(request, "dashboard/locations.html", {
@@ -319,35 +348,35 @@ def district_detail(request, pk):
                 name = _english(request, request.POST.get("name", ""))
                 if name is None:
                     return redirect("dashboard:district", pk=pk)
-                if op == "add_upazila" and name:
-                    # Optional group: one already used anywhere (a city corporation, Cantonment, Other)
+                if op == "add_thana" and name:
+                    # Optional group: one already used anywhere (Cantonment, Other, or a custom one)
                     groups = dict(_area_groups())
                     group = request.POST.get("group", "")
                     group = group if group in groups else ""
-                    u = Upazila.objects.create(district=district, name=name, group=group, group_bn=groups.get(group, ""),
+                    u = Thana.objects.create(district=district, name=name, group=group, group_bn=groups.get(group, ""),
                                                name_bn=request.POST.get("name_bn", "").strip())
-                    audit.record("reference.upazila_created", request=request, entity=u, after=audit.snapshot(u))
-                    messages.success(request, f"Upazila “{u.name}” added.")
-                elif op == "rename_upazila":
-                    u = get_object_or_404(Upazila, pk=request.POST.get("upazila"), district=district)
+                    audit.record("reference.thana_created", request=request, entity=u, after=audit.snapshot(u))
+                    messages.success(request, f"Thana “{u.name}” added.")
+                elif op == "rename_thana":
+                    u = get_object_or_404(Thana, pk=request.POST.get("thana"), district=district)
                     before = audit.snapshot(u)
                     u.name = name or u.name
                     u.name_bn = request.POST.get("name_bn", u.name_bn).strip()
                     u.save()
-                    audit.record("reference.upazila_updated", request=request, entity=u, before=before,
+                    audit.record("reference.thana_updated", request=request, entity=u, before=before,
                                  after=audit.snapshot(u))
-                    messages.success(request, "Upazila updated.")
+                    messages.success(request, "Thana updated.")
         except IntegrityError:
-            messages.error(request, "An upazila with this name already exists in this district.")
+            messages.error(request, "A thana with this name already exists in this district.")
         return redirect("dashboard:district", pk=pk)
-    upazilas = district.upazilas.annotate(s=Count("students", distinct=True, filter=Q(students__is_deleted=False)),
+    thanas = district.thanas.annotate(s=Count("students", distinct=True, filter=Q(students__is_deleted=False)),
                                          sc=Count("schools", distinct=True, filter=~Q(schools__verification_status="merged")))
     return render(request, "dashboard/district_detail.html", {
-        "district": district, "upazilas": ref.sort_areas(upazilas), "other_groups": _area_groups(),
+        "district": district, "thanas": ref.sort_areas(thanas), "other_groups": _area_groups(),
         "can_edit": request.user.has_perm_code("reference.edit")})
 
 
 def _area_groups():
-    """[(group, group_bn), ...] of the area groups in use (city corporations, Cantonment, Other)."""
-    rows = Upazila.objects.exclude(group="").values_list("group", "group_bn").distinct().order_by("group")
+    """[(group, group_bn), ...] of the thana groups in use (Cantonment, Other, any custom one)."""
+    rows = Thana.objects.exclude(group="").values_list("group", "group_bn").distinct().order_by("group")
     return list(dict(rows).items())

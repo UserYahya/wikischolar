@@ -1,14 +1,15 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Schools{% endblock %}
+{% block head %}{% include "_datefield_assets.html" %}{% endblock %}
 {% block content %}
 <header class="page-head"><h1>Schools <span class="count">{{ page.paginator.count }}</span></h1>
   <div class="row">
     <a class="btn" href="{% url 'dashboard:duplicates' %}">Review duplicates</a>
     {% if can_edit %}<a class="btn" href="{% url 'dashboard:school_import' %}">Import CSV</a>{% endif %}
-    {% if can_edit %}<a class="btn primary" href="{% url 'dashboard:school_add' %}{% if f.district %}?district={{ f.district }}{% if f.upazila %}&amp;upazila={{ f.upazila }}{% endif %}{% endif %}">Add school</a>{% endif %}
+    {% if can_edit %}<a class="btn primary" href="{% url 'dashboard:school_add' %}{% if f.district %}?district={{ f.district }}{% if f.thana %}&amp;thana={{ f.thana }}{% endif %}{% endif %}">Add school</a>{% endif %}
   </div></header>
-<form method="get" class="toolbar">
-  <input name="q" value="{{ f.q }}" placeholder="Name or alias" aria-label="Search schools">
+<form method="get" class="toolbar" id="schoolFilters">
+  <input name="q" value="{{ f.q }}" placeholder="Name, alias or EIIN" aria-label="Search schools">
   <select name="status" aria-label="Status">
     <option value="active" {% if f.status == "active" %}selected{% endif %}>Verified + pending</option>
     <option value="pending" {% if f.status == "pending" %}selected{% endif %}>Pending review</option>
@@ -16,15 +17,16 @@
     <option value="merged" {% if f.status == "merged" %}selected{% endif %}>Merged</option>
     <option value="removed" {% if f.status == "removed" %}selected{% endif %}>Removed</option>
   </select>
-  <select name="district" aria-label="District" onchange="this.form.upazila && (this.form.upazila.value='')"><option value="">All districts</option>{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == f.district %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
-  {% if upazilas %}<select name="upazila" aria-label="Upazila or area"><option value="">All upazilas and areas</option><option value="none" {% if f.upazila == "none" %}selected{% endif %}>Area not known</option>{% include "dashboard/_area_options.html" with areas=upazilas selected=f.upazila %}</select>{% endif %}
+  <select name="district" aria-label="District" onchange="this.form.thana && (this.form.thana.value='')"><option value="">All districts</option>{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == f.district %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
+  {% if thanas %}<select name="thana" aria-label="Thana"><option value="">All thanas</option><option value="none" {% if f.thana == "none" %}selected{% endif %}>Thana not known</option>{% include "dashboard/_area_options.html" with areas=thanas selected=f.thana %}</select>{% endif %}
   <button class="btn">Filter</button>
 </form>
+{% include "dashboard/_advanced_search.html" with form_id="schoolFilters" %}
 {% if page.object_list %}
 <div class="scroll"><table class="data">
-  <thead><tr><th>School</th><th>Upazila / Area</th><th>District</th><th>Status</th><th>Source</th><th class="num">Students</th></tr></thead>
+  <thead><tr><th>School</th><th>EIIN</th><th>Thana</th><th>District</th><th>Status</th><th>Source</th><th class="num">Students</th></tr></thead>
   <tbody>{% for s in page %}<tr>
-    <td><a href="{% url 'dashboard:school' s.pk %}">{{ s.name }}</a></td><td>{% if s.upazila_id %}{{ s.upazila.name }}{% else %}<span class="muted">Not known</span>{% endif %}</td><td>{{ s.district.name }}</td>
+    <td><a href="{% url 'dashboard:school' s.pk %}">{{ s.name }}</a></td><td class="muted">{{ s.eiin|default:"" }}</td><td>{% if s.thana_id %}{{ s.thana.name }}{% else %}<span class="muted">Not known</span>{% endif %}</td><td>{{ s.district.name }}</td>
     <td>{% if s.is_deleted %}<span class="status">Removed</span>{% else %}<span class="tag {% if s.verification_status == 'verified' %}ok{% endif %}">{{ s.get_verification_status_display }}</span>{% endif %}</td>
     <td class="muted">{{ s.get_source_display }}</td><td class="num">{{ s.n }}</td></tr>{% endfor %}</tbody>
 </table></div>

@@ -134,7 +134,7 @@ class SystemEmailTests(WSTestCase):
         wsid = r.json()["summary"]["wikischolar_id"]
         msg = mail.outbox[-1]
         self.assertEqual(msg.subject, f"Welcome Rahim Uddin ({wsid})")
-        self.assertIn(f"ID: {wsid}\nSchool: Tongi Government High School", msg.body)
+        self.assertIn(f"ID: {wsid}\nSchool: TONGI GOVERNMENT HIGH SCHOOL", msg.body)
         self.assertIn("Class: Class 8", msg.body)  # from {details}
         self.assertEqual(msg.reply_to, ["info@wikischolar.bd"])
 

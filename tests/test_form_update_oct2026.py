@@ -77,7 +77,7 @@ class FormFieldTests(WSTestCase):
 class BanglaTests(WSTestCase):
     def test_labels_have_bangla(self):
         page = self.client.get("/").content.decode()
-        for bn in ["শিক্ষার্থীর পুরো নাম", "অভিভাবকের নাম (আপনার নাম)", "জেলা", "উপজেলা", "বিদ্যালয়ের নাম",
+        for bn in ["শিক্ষার্থীর পুরো নাম", "অভিভাবকের নাম (আপনার নাম)", "জেলা", "থানা", "বিদ্যালয়ের নাম",
                    "রোল নম্বর", "শাখা (যদি থাকে)", "মোবাইল নম্বর", "যাচাই কোড পাঠান", "পরের ধাপ", "যুব সুরক্ষা নীতি",
                    "ষষ্ঠ শ্রেণি", "ছেলে", "মেয়ে", "উইকিস্কলারের কথা আপনি কোথা থেকে জানলেন?"]:
             self.assertIn(bn, page)
@@ -97,7 +97,7 @@ class BanglaTests(WSTestCase):
                 msgs |= {m for m in f.error_messages.values() if "%(" not in m}
         msgs |= {"Enter a valid Bangladeshi mobile number (for example 01712345678).",
                  "Write the class roll in numbers only (for example 12).", "Write the email address in English letters.",
-                 "Write the student's relation to the guardian.", "Choose an upazila or area in the selected district."}
+                 "Write the student's relation to the guardian.", "Choose a thana in the selected district."}
         msgs -= {"spam", "Enter a valid UUID."}  # honeypot / not something a person can cause
         missing = sorted(m for m in msgs if m not in bangla.MESSAGES)
         self.assertEqual(missing, [])
@@ -140,7 +140,7 @@ class HtmlEmailTests(WSTestCase):
         html = self.html_of(msg)
         self.assertIn(s["wikischolar_id"], html)
         self.assertIn("<table", html)
-        self.assertIn("Tongi Government High School", html)
+        self.assertIn("TONGI GOVERNMENT HIGH SCHOOL", html)
         self.assertNotIn("{details}", html)
 
     def test_email_card_has_no_coloured_strip(self):
@@ -177,8 +177,11 @@ class DashboardTests(WSTestCase):
 
     def test_single_tool_group_is_a_plain_link(self):
         viewer_groups = nav_groups_for(self.viewer)
+        overview = next(g for g in viewer_groups if "dashboard:home" in g.url_names)
+        self.assertEqual(overview.label, "")
         students = next(g for g in viewer_groups if "dashboard:students" in g.url_names)
-        self.assertEqual(students.label, "")  # a viewer can't open archived records
+        # a viewer can't open archived records, but has saved searches
+        self.assertEqual([i.label for i in students.items], ["All students", "Saved searches"])
 
     def test_sidebar_renders_groups_open_on_current_page(self):
         self.client.force_login(self.super)

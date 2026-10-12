@@ -34,7 +34,7 @@
     <dl class="facts">
       <dt>Region</dt><dd>{{ s.region.name|default:"No region assigned" }}</dd>
       <dt>District</dt><dd>{{ s.district.name }} <span class="muted">{{ s.district.name_bn }}</span></dd>
-      <dt>Upazila / Area</dt><dd>{{ s.upazila.name }} <span class="muted">{{ s.upazila.name_bn }}</span>{% if s.upazila.group %} <span class="tag">{{ s.upazila.group_label }}</span>{% endif %}</dd>
+      <dt>Thana</dt><dd>{{ s.thana.name }} <span class="muted">{{ s.thana.name_bn }}</span>{% if s.thana.group %} <span class="tag">{{ s.thana.group_label }}</span>{% endif %}</dd>
       <dt>School</dt><dd><a href="{% url 'dashboard:school' s.school_id %}">{{ s.school.name }}</a> <span class="tag">{{ s.school.get_verification_status_display }}</span></dd>
       <dt>Typed as</dt><dd>“{{ s.school_name_as_entered }}” <span class="muted">· {{ s.get_school_resolution_display }}</span></dd>
       <dt>Class</dt><dd>{{ s.get_current_class_display }}</dd>

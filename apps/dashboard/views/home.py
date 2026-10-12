@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from apps.core.permissions import require_perm
 from apps.notifications import services as notify
-from apps.reference.models import District, Region, School, Upazila
+from apps.reference.models import District, Region, School, Thana
 from apps.registration.choices import HeardFrom
 from apps.registration.models import Student
 
@@ -34,7 +34,7 @@ def home(request):
         "today": students.filter(created_at__date=today).count(),
         "week": students.filter(created_at__date__gte=today - timedelta(days=6)).count(),
         "pending_schools": School.objects.filter(verification_status="pending").count(),
-        "other_area": students.filter(upazila__group=Upazila.OTHER).count(),
+        "other_area": students.filter(thana__group=Thana.OTHER).count(),
         "unassigned_districts": District.objects.filter(region__isnull=True).count(),
         "days": [(d, n, round(100 * n / peak)) for d, n in days],
         "by_region": [(r, round(100 * r.n / region_peak)) for r in by_region],

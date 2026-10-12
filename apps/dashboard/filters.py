@@ -2,9 +2,10 @@
 from django.db.models import Q
 
 from apps.core.utils import DATE_FORMAT, parse_date
+from apps.dashboard import advanced
 from apps.notifications import services as notify
 from apps.notifications.models import NotificationLog
-from apps.reference.models import Upazila
+from apps.reference.models import Thana
 from apps.registration.choices import FilledBy
 from apps.registration.models import Student
 
@@ -13,13 +14,16 @@ SORTS = {
     "district": "district__name", "school": "school__name", "class": "current_class",
 }
 MULTI = ("district", "region", "class", "gender")
-SINGLE = ("upazila", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
-          "msg_batch", "msg_batch_mode")
+SINGLE = ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
+          "msg_batch", "msg_batch_mode", "adv", "saved")
 # Params that narrow the list (sort and batching only reorder or split it).
-NARROWING = MULTI + ("upazila", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch")
-# Area type filter: what kind of "Upazila / Area" the student chose. "other" finds students to move.
-AREA_KINDS = {"upazila": "Upazila", "city": "City-corporation thana", "cantonment": "Cantonment",
-              "other": "Other area (not listed)"}
+NARROWING = MULTI + ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch", "adv")
+# Thana type filter: what kind of thana the student chose. "other" finds students to move.
+AREA_KINDS = {"thana": "Thana", "cantonment": "Cantonment", "other": "Other thana (not listed)"}
+# Before thanas replaced "Upazila / Area" (Oct 2026): old links and saved batch filters use these.
+OLD_PARAMS = {"upazila": "thana"}
+OLD_AREA_KINDS = {"upazila": "thana"}
+OLD_AREA_KIND_LABELS = {"city": "City-corporation thana"}
 # Message history filter: students a message batch was sent to, not sent to, or not delivered to.
 MSG_BATCH_MODES = {"sent": "Received", "not_sent": "Not sent", "not_delivered": "Not delivered"}
 MAX_BATCH_SIZE = 100_000
@@ -41,6 +45,14 @@ def _positive_int(v, upper):
 def params_from(querydict):
     p = {k: [v for v in querydict.getlist(k) if v] for k in MULTI}
     p.update({k: querydict.get(k, "").strip() for k in SINGLE})
+    for old, new in OLD_PARAMS.items():
+        p[new] = p[new] or querydict.get(old, "").strip()
+    p["area_kind"] = OLD_AREA_KINDS.get(p["area_kind"], p["area_kind"])
+    if not p["adv"] and p["saved"].isdigit():  # a saved search: its latest version
+        from .models import SavedSearch
+        saved = SavedSearch.objects.filter(pk=p["saved"], entity=SavedSearch.Entity.STUDENTS).first()
+        p["adv"] = saved.query if saved else ""
+    p["adv"] = advanced.normalize("students", p["adv"])  # only the valid conditions, as compact JSON
     # Show dates as dd/mm/yyyy even when a link carries yyyy-mm-dd.
     p["from"], p["to"] = _date_label(p["from"]), _date_label(p["to"])
     if not p["msg_batch"]:
@@ -67,13 +79,13 @@ def snapshot(p):
 
 def apply(p, qs=None):
     qs = (qs if qs is not None else Student.objects.all()).select_related(
-        "district__region", "upazila", "school")
+        "district__region", "thana", "school")
     if p["district"]:
         qs = qs.filter(district_id__in=p["district"])
     if p["region"]:
         qs = qs.filter(district__region_id__in=p["region"])
-    if p["upazila"]:
-        qs = qs.filter(upazila_id=p["upazila"])
+    if p["thana"]:
+        qs = qs.filter(thana_id=p["thana"])
     if p["school"]:
         qs = qs.filter(school_id=p["school"])
     if p["class"]:
@@ -88,14 +100,14 @@ def apply(p, qs=None):
         qs = qs.filter(updates_opt_in=True)
     if p["filled_by"] in FilledBy.values:
         qs = qs.filter(filled_by=p["filled_by"])
-    if p["area_kind"] == "upazila":
-        qs = qs.filter(upazila__group="")
+    if p["area_kind"] == "thana":
+        qs = qs.filter(thana__group="")
     elif p["area_kind"] == "cantonment":
-        qs = qs.filter(upazila__group=Upazila.CANTONMENT)
+        qs = qs.filter(thana__group=Thana.CANTONMENT)
     elif p["area_kind"] == "other":
-        qs = qs.filter(upazila__group=Upazila.OTHER)
-    elif p["area_kind"] == "city":
-        qs = qs.exclude(upazila__group__in=["", Upazila.CANTONMENT, Upazila.OTHER])
+        qs = qs.filter(thana__group=Thana.OTHER)
+    if p.get("adv"):
+        qs = qs.filter(advanced.parse("students", p["adv"])[0])
     if p["msg_batch"]:
         if p["msg_batch_mode"] == "not_sent":
             qs = qs.exclude(pk__in=notify.student_ids_in_batch(p["msg_batch"]))
@@ -143,8 +155,8 @@ def describe(snap):
         out.append(("Region", names(Region, snap["region"])))
     if snap.get("district"):
         out.append(("District", names(District, snap["district"])))
-    if snap.get("upazila"):
-        out.append(("Upazila / Area", names(Upazila, snap["upazila"])))
+    if snap.get("thana") or snap.get("upazila"):  # batches saved before the rename say "upazila"
+        out.append(("Thana", names(Thana, snap.get("thana") or snap["upazila"])))
     if snap.get("school"):
         out.append(("School", names(School, snap["school"])))
     if snap.get("class"):
@@ -154,14 +166,17 @@ def describe(snap):
         out.append(("Gender", ", ".join(str(labels.get(g, g)) for g in snap["gender"])))
     if snap.get("from") or snap.get("to"):
         out.append(("Registered", f"{_date_label(snap.get('from') or '') or '…'} to {_date_label(snap.get('to') or '') or '…'}"))
-    if snap.get("area_kind") in AREA_KINDS:
-        out.append(("Area type", AREA_KINDS[snap["area_kind"]]))
+    kind = OLD_AREA_KINDS.get(snap.get("area_kind"), snap.get("area_kind"))
+    if kind in AREA_KINDS or kind in OLD_AREA_KIND_LABELS:
+        out.append(("Thana type", AREA_KINDS.get(kind) or OLD_AREA_KIND_LABELS[kind]))
     if snap.get("filled_by") in FilledBy.values:
         out.append(("Filled in by", FilledBy(snap["filled_by"]).label))
     if snap.get("opt_in") == "1":
         out.append(("Email updates", "opted in"))
     if snap.get("q"):
         out.append(("Search", f"“{snap['q']}”"))
+    if snap.get("adv"):
+        out.append(("Advanced search", advanced.describe("students", snap["adv"])))
     if snap.get("msg_batch"):
         batch = notify.get_batch(snap["msg_batch"])
         label = batch.label if batch else snap["msg_batch"]

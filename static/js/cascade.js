@@ -1,13 +1,13 @@
-/* Dashboard student editor: district → upazila/area → school cascade (Add school: district → upazila/area).
-   Areas are grouped like the public form (city-corporation thanas, cantonments, upazilas, "Other area").
+/* Dashboard student editor: district → thana → school cascade (Add school: district → thana).
+   Thanas are grouped like the public form (cantonments, thanas, "Other thana").
    Uses the same reference API as the public form, so region/district data
    always comes from the database. */
 (function () {
   "use strict";
   const district = document.querySelector('[data-cascade="district"]');
-  const upazila = document.querySelector('[data-cascade="upazila"]');
+  const thana = document.querySelector('[data-cascade="thana"]');
   const school = document.querySelector('[data-cascade="school"]');
-  if (!district || !upazila) return;
+  if (!district || !thana) return;
 
   // items: [{id, text, group?}]; consecutive items with the same group go in one <optgroup>.
   function fill(select, items, label) {
@@ -39,28 +39,28 @@
   async function loadSchools() {
     if (!school) return;
     school.disabled = true;
-    if (!upazila.value) { fill(school, [], "school"); return; }
+    if (!thana.value) { fill(school, [], "school"); return; }
     try {
-      const data = await getJSON(`/api/reference/schools/?upazila=${encodeURIComponent(upazila.value)}&all=1`);
+      const data = await getJSON(`/api/reference/schools/?thana=${encodeURIComponent(thana.value)}&all=1`);
       // also lists the district's schools whose area isn't known yet
-      fill(school, data.schools.map((s) => ({ id: s.id, text: s.name + (s.area ? "" : " (area not known)")
+      fill(school, data.schools.map((s) => ({ id: s.id, text: s.name + (s.area ? "" : " (thana not known)")
         + (s.verified ? "" : " (pending)") })), "school");
     } catch (e) {
       fill(school, [], "school");
     } finally { school.disabled = false; }
   }
 
-  async function loadUpazilas() {
-    upazila.disabled = true;
+  async function loadThanas() {
+    thana.disabled = true;
     try {
-      const data = await getJSON(`/api/reference/districts/${encodeURIComponent(district.value)}/upazilas/`);
-      fill(upazila, data.upazilas.map((u) => ({ id: u.id, text: u.name, group: u.group })), "upazila or area");
+      const data = await getJSON(`/api/reference/districts/${encodeURIComponent(district.value)}/thanas/`);
+      fill(thana, data.thanas.map((u) => ({ id: u.id, text: u.name, group: u.group })), "thana");
     } catch (e) {
-      fill(upazila, [], "upazila or area");
-    } finally { upazila.disabled = false; }
+      fill(thana, [], "thana");
+    } finally { thana.disabled = false; }
     if (school) fill(school, [], "school");
   }
 
-  district.addEventListener("change", loadUpazilas);
-  upazila.addEventListener("change", loadSchools);
+  district.addEventListener("change", loadThanas);
+  thana.addEventListener("change", loadSchools);
 })();
