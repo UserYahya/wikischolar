@@ -105,6 +105,62 @@ class School(SoftDeleteModel):
         REGISTRATION = "registration", "Added during registration"
         ADMIN = "admin", "Added by admin"
         IMPORT = "import", "Bulk import"
+        GOVERNMENT = "government", "BANBEIS list"
+
+    # Government data (BANBEIS institution list, `manage.py import_banbeis_schools`); blank when unknown.
+    class InstituteType(models.TextChoices):
+        SCHOOL = "school", "School"
+
+    class EducationLevel(models.TextChoices):
+        SECONDARY = "secondary", "Secondary"
+        JUNIOR_SECONDARY = "junior_secondary", "Junior secondary"
+        PRIMARY_TO_EIGHT = "primary_to_eight", "Govt. primary (pre to eight)"
+
+    class Management(models.TextChoices):
+        GOVERNMENT = "government", "Government"
+        NON_GOVERNMENT = "non_government", "Non-government"
+        LOCAL_GOVERNMENT = "local_government", "Local government"
+        AUTONOMOUS = "autonomous", "Autonomous"
+        CANTONMENT_BOARD = "cantonment_board", "Cantonment board"
+        CHRISTIAN_MISSIONARY = "christian_missionary", "Christian missionary"
+        NGO = "ngo", "NGO"
+        OTHER = "other", "Other"
+
+    class Mpo(models.TextChoices):
+        YES = "yes", "Yes"
+        NO = "no", "No"
+        NOT_APPLICABLE = "not_applicable", "Not applicable"
+
+    class InstituteFor(models.TextChoices):
+        CO_EDUCATION = "co_education", "Co-education"
+        SEPARATE_SHIFT = "co_education_separate_shift", "Co-education (separate shifts)"
+        GIRLS = "girls", "Girls"
+        BOYS = "boys", "Boys"
+
+    class GeographicalPosition(models.TextChoices):
+        PLAIN_LAND = "plain_land", "Plain land"
+        RIVER_SIDE = "river_side", "River side"
+        HILLY_AREA = "hilly_area", "Hilly area"
+        COASTAL_INSIDE = "coastal_inside", "Coastal area (inside embankment)"
+        COASTAL_OUTSIDE = "coastal_outside", "Coastal area (outside embankment)"
+        HAOR_INSIDE = "haor_inside", "Haor/Bil (inside embankment)"
+        HAOR_OUTSIDE = "haor_outside", "Haor/Bil (outside embankment)"
+        TEA_GARDEN = "tea_garden", "Tea garden"
+        CHAR = "char", "Char"
+        BORDER_AREA = "border_area", "Border area"
+        INDUSTRIAL_AREA = "industrial_area", "Industrial area"
+        ISLAND = "island", "Island (dwip)"
+        SALINE_AREA = "saline_area", "Saline area"
+        WATER_LOGGED = "water_logged", "Water logged"
+        OTHER = "other", "Other"
+
+    class AreaStatus(models.TextChoices):
+        RURAL = "rural", "Rural"
+        CITY_CORPORATION = "city_corporation", "City corporation"
+        DISTRICT_SADAR_POURA = "district_sadar_poura", "District sadar paurashava"
+        UPAZILA_SADAR_POURA = "upazila_sadar_poura", "Upazila sadar paurashava"
+        UPAZILA_SADAR_NOT_POURA = "upazila_sadar_not_poura", "Upazila sadar (not paurashava)"
+        OTHER_POURA = "other_poura", "Other paurashava areas"
 
     name = models.CharField(max_length=255)
     name_normalized = models.CharField(max_length=255, editable=False)
@@ -117,6 +173,18 @@ class School(SoftDeleteModel):
     merged_into = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="merged_from")
     verified_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+")
     verified_at = models.DateTimeField(null=True, blank=True)
+    # Government data (blank when unknown). EIIN: the 6-digit Educational Institute Identification Number.
+    eiin = models.CharField("EIIN", max_length=6, blank=True)
+    division = models.CharField(max_length=40, blank=True)
+    institute_type = models.CharField(max_length=10, choices=InstituteType.choices, blank=True)
+    education_level = models.CharField(max_length=20, choices=EducationLevel.choices, blank=True, db_index=True)
+    management = models.CharField(max_length=24, choices=Management.choices, blank=True, db_index=True)
+    mpo = models.CharField("MPO", max_length=16, choices=Mpo.choices, blank=True)
+    institute_for = models.CharField(max_length=30, choices=InstituteFor.choices, blank=True)
+    geographical_position = models.CharField(max_length=20, choices=GeographicalPosition.choices, blank=True)
+    area_status = models.CharField(max_length=26, choices=AreaStatus.choices, blank=True, db_index=True)
+    post_office = models.CharField(max_length=80, blank=True)
+    email = models.EmailField(blank=True)
 
     class Meta:
         db_table = "schools"
@@ -131,10 +199,13 @@ class School(SoftDeleteModel):
                            | (~models.Q(verification_status="merged") & models.Q(merged_into__isnull=True))),
                 name="school_merged_has_target",
             ),
+            models.UniqueConstraint(fields=["eiin"], condition=~models.Q(eiin=""), name="school_eiin_uniq"),
+            models.CheckConstraint(condition=models.Q(eiin="") | models.Q(eiin__regex=r"^[0-9]{6}$"),
+                                   name="school_eiin_six_digits"),
         ]
 
     def save(self, *args, **kwargs):
-        self.name = " ".join((self.name or "").split())
+        self.name = " ".join((self.name or "").split()).upper()  # school names are always in capitals
         self.name_normalized = normalize_school_name(self.name)
         if self.thana_id and not self.district_id:
             self.district_id = self.thana.district_id
@@ -178,6 +249,7 @@ class SchoolAlias(SoftDeleteModel):
         constraints = [models.UniqueConstraint(fields=["school", "alias_normalized"], name="alias_school_text_uniq")]
 
     def save(self, *args, **kwargs):
+        self.alias_text = " ".join((self.alias_text or "").split()).upper()
         self.alias_normalized = normalize_school_name(self.alias_text)
         super().save(*args, **kwargs)
 

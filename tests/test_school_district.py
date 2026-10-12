@@ -11,15 +11,15 @@ class DistrictSuggestionTests(WSTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         # The same common name in two areas of Gazipur, and one in another district
-        cls.ghs_tongi = School.objects.create(name="Government Girls High School", district=cls.gazipur,
+        cls.ghs_tongi = School.objects.create(name="GOVERNMENT GIRLS HIGH SCHOOL", district=cls.gazipur,
                                               thana=cls.tongi, verification_status="verified")
-        cls.ghs_kaliakair = School.objects.create(name="Government Girls High School", district=cls.gazipur,
+        cls.ghs_kaliakair = School.objects.create(name="GOVERNMENT GIRLS HIGH SCHOOL", district=cls.gazipur,
                                                   thana=cls.kaliakair, verification_status="verified")
-        cls.kaliakair_pilot = School.objects.create(name="Kaliakair Pilot High School", district=cls.gazipur,
+        cls.kaliakair_pilot = School.objects.create(name="KALIAKAIR PILOT HIGH SCHOOL", district=cls.gazipur,
                                                     thana=cls.kaliakair, verification_status="verified")
-        cls.pending = School.objects.create(name="Kaliakair New Academy", district=cls.gazipur,
+        cls.pending = School.objects.create(name="KALIAKAIR NEW ACADEMY", district=cls.gazipur,
                                             thana=cls.kaliakair, verification_status="pending")
-        cls.jessore_school = School.objects.create(name="Sharsha Pilot High School", district=cls.jessore,
+        cls.jessore_school = School.objects.create(name="SHARSHA PILOT HIGH SCHOOL", district=cls.jessore,
                                                    thana=cls.sharsha, verification_status="verified")
 
     def suggest(self, q, thana=None, district=None):
@@ -31,24 +31,24 @@ class DistrictSuggestionTests(WSTestCase):
         self.assertEqual(self.suggest("t"), [])
         self.assertEqual(self.suggest("to"), [])
         self.assertEqual(self.suggest("%20to%20"), [])
-        self.assertIn("Tongi Government High School", [s["name"] for s in self.suggest("ton")])
+        self.assertIn("TONGI GOVERNMENT HIGH SCHOOL", [s["name"] for s in self.suggest("ton")])
         self.client.force_login(self.admin)  # the student editor's full list sends no query at all
         names = [s["name"] for s in self.client.get(f"/api/reference/schools/?thana={self.kaliakair.pk}&all=1")
                  .json()["schools"]]
-        self.assertIn("Kaliakair New Academy", names)
+        self.assertIn("KALIAKAIR NEW ACADEMY", names)
 
     def test_whole_district_with_own_area_first(self):
         rows = self.suggest("pilot high school", thana=self.tongi)
         names = [r["name"] for r in rows]
-        self.assertIn("Kaliakair Pilot High School", names)       # another area of the district
-        self.assertNotIn("Sharsha Pilot High School", names)       # another district
+        self.assertIn("KALIAKAIR PILOT HIGH SCHOOL", names)       # another area of the district
+        self.assertNotIn("SHARSHA PILOT HIGH SCHOOL", names)       # another district
         rows = self.suggest("government girls", thana=self.kaliakair)
         self.assertEqual([(r["area"], r["same_area"]) for r in rows[:2]], [("Kaliakair", True), ("Tongi", False)])
         self.assertEqual(rows[0]["area_bn"], "কালিয়াকৈর")
 
     def test_public_suggestions_stay_approved_only(self):
         names = [r["name"] for r in self.suggest("kaliakair", thana=self.kaliakair)]
-        self.assertNotIn("Kaliakair New Academy", names)
+        self.assertNotIn("KALIAKAIR NEW ACADEMY", names)
 
     def test_needs_district_or_thana(self):
         r = self.client.get("/api/reference/schools/?q=x")
@@ -80,7 +80,7 @@ class DistrictSuggestionTests(WSTestCase):
         st = Student.objects.get(wikischolar_id=wsid)
         self.client.force_login(self.admin)
         page = self.client.get(f"/dashboard/students/{wsid}/edit/").content.decode()
-        self.assertIn("Kaliakair Pilot High School (Kaliakair)", page)
+        self.assertIn("KALIAKAIR PILOT HIGH SCHOOL (Kaliakair)", page)
         data = {"student_name": st.student_name, "gender": st.gender, "guardian_name": "New Guardian",
                 "guardian_relation": st.guardian_relation, "guardian_relation_other": "",
                 "district": st.district_id, "thana": st.thana_id, "school": st.school_id,

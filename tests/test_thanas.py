@@ -227,7 +227,7 @@ class BeforeTheRenameTests(AreaTestCase):
         r = self.client.get("/dashboard/students/?area_kind=upazila")
         self.assertEqual(r.context["count"], 1)
         r = self.client.get(f"/dashboard/schools/?district={self.gazipur.pk}&upazila={self.tongi.pk}")
-        self.assertContains(r, "Tongi Government High School")
+        self.assertContains(r, "TONGI GOVERNMENT HIGH SCHOOL")
 
     def test_import_accepts_the_old_headings(self):
         from apps.reference import importer

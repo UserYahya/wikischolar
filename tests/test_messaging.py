@@ -50,35 +50,35 @@ class PublicPageTests(WSTestCase):
 
 class SchoolSuggestionTests(WSTestCase):
     def test_public_typeahead_suggests_only_approved_schools(self):
-        School.objects.create(name="Tongi Pilot School", district=self.gazipur, thana=self.tongi,
+        School.objects.create(name="TONGI PILOT SCHOOL", district=self.gazipur, thana=self.tongi,
                               verification_status="pending", source="registration")
         names = [s["name"] for s in self.client.get(
             "/api/reference/schools/", {"thana": self.tongi.pk, "q": "tongi"}).json()["schools"]]
-        self.assertEqual(names, ["Tongi Government High School"])
+        self.assertEqual(names, ["TONGI GOVERNMENT HIGH SCHOOL"])
 
     def test_suggestions_start_while_typing(self):
         for typed in ["ton", "tongi gov", "govt high", "high school"]:
             names = [s["name"] for s in self.client.get(
                 "/api/reference/schools/", {"thana": self.tongi.pk, "q": typed}).json()["schools"]]
-            self.assertIn("Tongi Government High School", names, typed)
+            self.assertIn("TONGI GOVERNMENT HIGH SCHOOL", names, typed)
 
     def test_dashboard_editor_still_lists_pending_schools(self):
-        School.objects.create(name="Tongi Pilot School", district=self.gazipur, thana=self.tongi,
+        School.objects.create(name="TONGI PILOT SCHOOL", district=self.gazipur, thana=self.tongi,
                               verification_status="pending", source="registration")
         self.client.force_login(self.admin)
         names = [s["name"] for s in self.client.get(
             "/api/reference/schools/", {"thana": self.tongi.pk, "all": 1}).json()["schools"]]
-        self.assertEqual(sorted(names), ["Tongi Government High School", "Tongi Pilot School"])
+        self.assertEqual(sorted(names), ["TONGI GOVERNMENT HIGH SCHOOL", "TONGI PILOT SCHOOL"])
 
     def test_approving_a_school_makes_it_suggested(self):
-        pending = School.objects.create(name="Tongi Pilot School", district=self.gazipur, thana=self.tongi,
+        pending = School.objects.create(name="TONGI PILOT SCHOOL", district=self.gazipur, thana=self.tongi,
                                         verification_status="pending", source="registration")
         self.client.force_login(self.admin)
         self.client.post(f"/dashboard/schools/{pending.pk}/", {"op": "verify"})
         self.client.logout()
         names = [s["name"] for s in self.client.get(
             "/api/reference/schools/", {"thana": self.tongi.pk, "q": "pilot"}).json()["schools"]]
-        self.assertEqual(names, ["Tongi Pilot School"])
+        self.assertEqual(names, ["TONGI PILOT SCHOOL"])
 
 
 class ReplyToTests(WSTestCase):

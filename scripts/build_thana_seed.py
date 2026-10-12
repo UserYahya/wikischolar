@@ -21,12 +21,13 @@ import difflib
 import json
 import re
 import sys
-import zipfile
-import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from apps.reference.xlsx import read_table  # noqa: E402  (standard library only)
+
 SEED = ROOT / "data" / "reference_seed.json"
 MAPPING = ROOT / "data" / "thana_mapping.csv"
 COLUMNS = ["district_code", "district", "thana", "thana_bn", "group", "group_bn", "source", "replaces",
@@ -104,26 +105,11 @@ def _key(name):
 
 
 def read_sheet(path):
-    """(district, raw thana) -> number of schools, from the xlsx (first sheet; header row has DISTRICT_NAME)."""
-    ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
-    z = zipfile.ZipFile(path)
-    strings = ["".join(t.text or "" for t in si.iter(ns + "t"))
-               for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall(ns + "si")]
-    rows = []
-    for r in ET.fromstring(z.read("xl/worksheets/sheet1.xml")).find(ns + "sheetData").findall(ns + "row"):
-        row = {}
-        for c in r.findall(ns + "c"):
-            v = c.find(ns + "v")
-            col = re.match(r"[A-Z]+", c.get("r")).group()
-            row[col] = "" if v is None else (strings[int(v.text)] if c.get("t") == "s" else v.text)
-        rows.append(row)
-    header_at = next(i for i, r in enumerate(rows) if "DISTRICT_NAME" in r.values())
-    cols = {v: k for k, v in rows[header_at].items()}
+    """(district, raw thana) -> number of schools, from the xlsx."""
     out = Counter()
-    for r in rows[header_at + 1:]:
-        district = r.get(cols["DISTRICT_NAME"], "").strip()
-        if district:
-            out[(DISTRICT_FIXES.get(district, district), r.get(cols["THANA_NAME"], "").strip())] += 1
+    for r in read_table(path, "DISTRICT_NAME"):
+        if r["DISTRICT_NAME"]:
+            out[(DISTRICT_FIXES.get(r["DISTRICT_NAME"], r["DISTRICT_NAME"]), r["THANA_NAME"])] += 1
     return out
 
 

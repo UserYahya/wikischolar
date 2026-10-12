@@ -207,7 +207,7 @@ class SchoolResolutionTests(WSTestCase):
     def test_new_school_created_pending_and_reused(self):
         s1 = self.register(school_id=None, school_name="Tongi Pilot  School")
         self.assertTrue(s1["school_pending"])
-        pending = School.objects.get(name="Tongi Pilot School")
+        pending = School.objects.get(name="TONGI PILOT SCHOOL")
         self.assertEqual(pending.verification_status, "pending")
         self.register(email="b@gmail.com", school_id=None, school_name="tongi pilot school")
         self.assertEqual(Student.objects.filter(school=pending).count(), 2)
@@ -219,15 +219,15 @@ class SchoolResolutionTests(WSTestCase):
         self.assertEqual(student.school_name_as_entered, "Tongi Govt. High School")
 
     def test_school_id_from_other_thana_is_ignored(self):
-        other = School.objects.create(name="Sharsha School", district=self.jessore, thana=self.sharsha)
+        other = School.objects.create(name="SHARSHA SCHOOL", district=self.jessore, thana=self.sharsha)
         self.register(school_id=other.pk, school_name="Tongi Government High School")
         self.assertEqual(Student.objects.get().school, self.school)
 
     def test_typeahead_api_scoped_to_thana(self):
-        School.objects.create(name="Kaliakair Girls School", district=self.gazipur, thana=self.kaliakair)
+        School.objects.create(name="KALIAKAIR GIRLS SCHOOL", district=self.gazipur, thana=self.kaliakair)
         r = self.client.get("/api/reference/schools/", {"thana": self.tongi.pk, "q": "tongi high"})
         names = [s["name"] for s in r.json()["schools"]]
-        self.assertEqual(names, ["Tongi Government High School"])
+        self.assertEqual(names, ["TONGI GOVERNMENT HIGH SCHOOL"])
         r = self.client.get("/api/reference/schools/", {"thana": self.tongi.pk, "q": "kaliakair"})
         self.assertEqual(r.json()["schools"], [])
 

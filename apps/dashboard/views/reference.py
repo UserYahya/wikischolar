@@ -14,7 +14,7 @@ from apps.reference import importer
 from apps.reference import services as ref
 from apps.reference.models import District, Region, School, Thana
 
-from ..forms import RegionForm
+from ..forms import GOVERNMENT_FIELDS, RegionForm, SchoolDetailsForm
 from ._util import paginate
 
 
@@ -46,7 +46,7 @@ def school_list(request):
         qs = qs.filter(thana_id=thana)
     q = request.GET.get("q", "").strip()
     if q:
-        qs = qs.filter(Q(name__icontains=q) | Q(aliases__alias_text__icontains=q)).distinct()
+        qs = qs.filter(Q(name__icontains=q) | Q(aliases__alias_text__icontains=q) | Q(eiin=q)).distinct()
     page, qstring = paginate(request, qs.order_by("verification_status", "name"))
     return render(request, "dashboard/schools.html", {
         "page": page, "qstring": qstring, "districts": District.objects.all(),
@@ -155,12 +155,23 @@ def school_import_locations(request):
 @require_perm("schools.view")
 def school_detail(request, pk):
     school = get_object_or_404(School.all_objects.select_related("district__region", "thana", "merged_into"), pk=pk)
+    details_form = SchoolDetailsForm(instance=school)
     if request.method == "POST":
         if not request.user.has_perm_code("schools.edit"):
             messages.error(request, "You don't have permission to edit schools.")
             return redirect("dashboard:school", pk=pk)
         op = request.POST.get("op")
-        if op == "remove":
+        if op == "details" and not school.is_deleted:
+            before = audit.snapshot(school, fields=GOVERNMENT_FIELDS)
+            details_form = SchoolDetailsForm(request.POST, instance=school)
+            if details_form.is_valid():
+                details_form.save()
+                audit.record("school.details_updated", request=request, entity=school, before=before,
+                             after=audit.snapshot(school, fields=GOVERNMENT_FIELDS))
+                messages.success(request, "Government data saved.")
+                return redirect("dashboard:school", pk=pk)
+            school.refresh_from_db()
+        elif op == "remove":
             try:
                 ref.remove_school(school, request=request, reason=request.POST.get("reason", ""))
             except ValueError as exc:
@@ -205,7 +216,8 @@ def school_detail(request, pk):
             if (alias := _english(request, request.POST["alias"])) is not None:
                 ref.add_alias(school, alias, request=request)
                 messages.success(request, "Alias added. Matching entries will now resolve to this school.")
-        return redirect("dashboard:school", pk=pk)
+        if not details_form.is_bound:  # an invalid details form is shown again with its errors
+            return redirect("dashboard:school", pk=pk)
     students = school.students.select_related("district")[:100]
     entered = (school.students.values("school_name_as_entered").annotate(n=Count("id")).order_by("-n")[:20])
     return render(request, "dashboard/school_detail.html", {
@@ -213,6 +225,7 @@ def school_detail(request, pk):
         "students": students, "student_count": school.students.count(), "entered": entered,
         "merged_from": school.merged_from.all(), "can_edit": request.user.has_perm_code("schools.edit"),
         "removal_blocker": "" if school.is_deleted else ref.removal_blocker(school),
+        "details_form": details_form, "edit_details": details_form.is_bound,
         "areas": ref.areas_of(school.district_id),
     })
 

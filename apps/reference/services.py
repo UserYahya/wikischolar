@@ -2,6 +2,8 @@
 Public interface of the Reference Data module.
 Other modules call these functions; they never touch reference tables directly.
 """
+import re
+
 from django.conf import settings
 from django.contrib.postgres.search import TrigramSimilarity, TrigramWordSimilarity
 from django.db import connection, transaction
@@ -87,6 +89,8 @@ def search_schools(thana_id=None, query="", limit=8, verified_only=False, *, dis
         qs = qs.filter(Q(thana_id=thana_id) | Q(thana__isnull=True, district_id=Subquery(thana_district)))
     if verified_only:
         qs = qs.filter(verification_status=School.Status.VERIFIED)
+    if re.fullmatch(r"\s*[0-9]{6}\s*", query or ""):  # an EIIN: that school only
+        return list(qs.filter(eiin=query.strip())[:limit])
     prefer = prefer_thana_id or 0
     same_area = Case(When(thana_id=prefer, then=Value(1)), default=Value(0), output_field=IntegerField())
     qn = normalize_school_name(query)

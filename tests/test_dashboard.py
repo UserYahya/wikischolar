@@ -158,7 +158,7 @@ class StudentAdminTests(WSTestCase):
         self.assertFalse(School.objects.filter(name="টঙ্গী স্কুল").exists())
         self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "rename", "name": "টঙ্গী"})
         self.school.refresh_from_db()
-        self.assertEqual(self.school.name, "Tongi Government High School")
+        self.assertEqual(self.school.name, "TONGI GOVERNMENT HIGH SCHOOL")
 
 
 class RegionAssignmentTests(WSTestCase):
@@ -212,7 +212,7 @@ class SchoolMergeTests(WSTestCase):
         self.assertEqual(st.school, self.school)
         self.assertEqual(st.school_name_as_entered, "Tongi Govt High Skool")  # dual storage preserved
         self.assertEqual((dup.verification_status, dup.merged_into), ("merged", self.school))
-        self.assertTrue(SchoolAlias.objects.filter(school=self.school, alias_text="Tongi Govt High Skool").exists())
+        self.assertTrue(SchoolAlias.objects.filter(school=self.school, alias_text="TONGI GOVT HIGH SKOOL").exists())
         self.assertTrue(EditHistory.objects.filter(student=st, field_name="school").exists())
         # the next registrant typing the misspelling lands on the canonical school
         self.register(email="n@gmail.com", school_id=None, school_name="tongi govt high skool")
@@ -230,13 +230,13 @@ class SchoolAddRemoveTests(WSTestCase):
 
     def test_add_new_school(self):
         r = self.add("Tongi  Pilot Girls School")
-        school = School.objects.get(name="Tongi Pilot Girls School")
+        school = School.objects.get(name="TONGI PILOT GIRLS SCHOOL")
         self.assertRedirects(r, f"/dashboard/schools/{school.pk}/")
         self.assertEqual((school.verification_status, school.source, school.verified_by), ("verified", "admin", self.admin))
         self.assertTrue(AuditLog.objects.filter(action="school.created", entity_id=str(school.pk)).exists())
 
     def test_same_name_or_alias_is_refused(self):
-        SchoolAlias.objects.create(school=self.school, alias_text="Tongi Boys School")
+        SchoolAlias.objects.create(school=self.school, alias_text="TONGI BOYS SCHOOL")
         for name in ["tongi government high school", "TONGI BOYS SCHOOL"]:
             r = self.add(name)
             self.assertContains(r, "This school is already listed.")
@@ -249,16 +249,16 @@ class SchoolAddRemoveTests(WSTestCase):
     def test_similar_name_needs_confirmation(self):
         r = self.add("Tongi Goverment High Scool")
         self.assertContains(r, "have a similar name")
-        self.assertFalse(School.objects.filter(name="Tongi Goverment High Scool").exists())
+        self.assertFalse(School.objects.filter(name="TONGI GOVERMENT HIGH SCOOL").exists())
         self.add("Tongi Goverment High Scool", confirm="1")
-        self.assertTrue(School.objects.filter(name="Tongi Goverment High Scool").exists())
+        self.assertTrue(School.objects.filter(name="TONGI GOVERMENT HIGH SCOOL").exists())
         # "Govt" is the same name once abbreviations are expanded, so it is refused outright
-        self.assertContains(self.add("Tongi Govt. High School", confirm="1"), "This school is already listed.")
+        self.assertContains(self.add("TONGI GOVT. HIGH SCHOOL", confirm="1"), "This school is already listed.")
 
     def test_thana_must_be_in_district(self):
         r = self.add("Sharsha Model School", thana=self.sharsha, district=self.gazipur)
         self.assertContains(r, "Choose the district and thana.")
-        self.assertFalse(School.objects.filter(name="Sharsha Model School").exists())
+        self.assertFalse(School.objects.filter(name="SHARSHA MODEL SCHOOL").exists())
 
     def test_viewer_cannot_add_or_remove(self):
         self.client.force_login(self.viewer)
@@ -295,13 +295,13 @@ class SchoolAddRemoveTests(WSTestCase):
         self.assertFalse(School.objects.filter(pk=self.school.pk).exists())
 
     def test_typeahead_shows_pending_schools_to_staff_only(self):
-        School.objects.create(name="Tongi Pending School", district=self.gazipur, thana=self.tongi)
+        School.objects.create(name="TONGI PENDING SCHOOL", district=self.gazipur, thana=self.tongi)
         url = f"/api/reference/schools/?thana={self.tongi.pk}&q=tongi&pending=1"
         names = [s["name"] for s in self.client.get(url).json()["schools"]]
-        self.assertIn("Tongi Pending School", names)
+        self.assertIn("TONGI PENDING SCHOOL", names)
         self.client.logout()
         names = [s["name"] for s in self.client.get(url).json()["schools"]]
-        self.assertNotIn("Tongi Pending School", names)
+        self.assertNotIn("TONGI PENDING SCHOOL", names)
 
 
 class SchoolImportTests(WSTestCase):
@@ -353,9 +353,9 @@ class SchoolImportTests(WSTestCase):
         r = self.client.post("/dashboard/schools/import/", {"op": "confirm", "add_similar": [similar_line]})
         self.assertRedirects(r, "/dashboard/schools/")
         names = set(School.objects.values_list("name", flat=True))
-        self.assertEqual(names, {"Tongi Government High School", "Tongi Pilot School",
-                                 "Tongi Goverment High Scool", "Sharsha Model School"})
-        new = School.objects.get(name="Sharsha Model School")
+        self.assertEqual(names, {"TONGI GOVERNMENT HIGH SCHOOL", "TONGI PILOT SCHOOL",
+                                 "TONGI GOVERMENT HIGH SCOOL", "SHARSHA MODEL SCHOOL"})
+        new = School.objects.get(name="SHARSHA MODEL SCHOOL")
         self.assertEqual((new.verification_status, new.source, new.thana), ("verified", "import", self.sharsha))
         self.assertEqual(AuditLog.objects.get(action="school.imported").meta["created"], 3)
         # the upload is used once
@@ -366,15 +366,15 @@ class SchoolImportTests(WSTestCase):
         self.upload("district,thana,name\nGazipur,Tongi,Tongi Goverment High Scool\nGazipur,Tongi,Tongi Pilot School\n",
                     status="pending")
         self.client.post("/dashboard/schools/import/", {"op": "confirm"})
-        self.assertEqual(School.objects.get(name="Tongi Pilot School").verification_status, "pending")
-        self.assertFalse(School.objects.filter(name="Tongi Goverment High Scool").exists())
+        self.assertEqual(School.objects.get(name="TONGI PILOT SCHOOL").verification_status, "pending")
+        self.assertFalse(School.objects.filter(name="TONGI GOVERMENT HIGH SCOOL").exists())
 
     def test_rechecked_on_confirm(self):
         self.upload("district,thana,name\nGazipur,Tongi,Tongi Pilot School\n")
         self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "thana": self.tongi.pk,
                                                      "name": "Tongi Pilot School"})
         self.client.post("/dashboard/schools/import/", {"op": "confirm"})
-        self.assertEqual(School.objects.filter(name="Tongi Pilot School").count(), 1)
+        self.assertEqual(School.objects.filter(name="TONGI PILOT SCHOOL").count(), 1)
 
     def test_bad_files(self):
         self.assertContains(self.upload("school,place\nA,B\n"), "The first row must be the column headings")
@@ -397,7 +397,7 @@ class SchoolImportTests(WSTestCase):
         os.unlink(fh.name)
         self.assertIn("1 created, 1 already existed, 0 repeated, 1 with errors.", out.getvalue())
         self.assertIn("Row 4: No thana “Nowhere” in Gazipur.", err.getvalue())
-        self.assertEqual(School.objects.get(name="Tongi Pilot School").source, "import")
+        self.assertEqual(School.objects.get(name="TONGI PILOT SCHOOL").source, "import")
 
     def import_two(self):
         self.upload("district,thana,name\nGazipur,Tongi,Tongi Pilot School\nGazipur,Kaliakair,Kaliakair Model School\n")
@@ -424,15 +424,15 @@ class SchoolImportTests(WSTestCase):
         # the corrected list can be imported again
         self.upload("district,thana,name\nGazipur,Tongi,Tongi Pilot School\n")
         self.client.post("/dashboard/schools/import/", {"op": "confirm"})
-        self.assertTrue(School.objects.filter(name="Tongi Pilot School").exists())
+        self.assertTrue(School.objects.filter(name="TONGI PILOT SCHOOL").exists())
 
     def test_undo_import_keeps_schools_with_students(self):
         entry = self.import_two()
-        pilot = School.objects.get(name="Tongi Pilot School")
+        pilot = School.objects.get(name="TONGI PILOT SCHOOL")
         self.register(school_id=pilot.pk, school_name=pilot.name)
         out = io.StringIO()
         call_command("undo_school_import", str(entry.pk), "--yes", stdout=out)
-        self.assertIn(f"Keep: #{pilot.pk} Tongi Pilot School — 1 student is linked", out.getvalue())
+        self.assertIn(f"Keep: #{pilot.pk} TONGI PILOT SCHOOL — 1 student is linked", out.getvalue())
         self.assertIn("1 removed, 1 kept", out.getvalue())
         self.assertTrue(School.objects.filter(pk=pilot.pk).exists())
 
@@ -442,9 +442,9 @@ class SchoolImportTests(WSTestCase):
         entry = AuditLog.objects.get(action="school.imported")
         out = io.StringIO()
         call_command("undo_school_import", str(entry.pk), "--dry-run", stdout=out)
-        self.assertIn("Gazipur Ideal School (Gazipur (thana not known))", out.getvalue())
+        self.assertIn("GAZIPUR IDEAL SCHOOL (Gazipur (thana not known))", out.getvalue())
         call_command("undo_school_import", str(entry.pk), "--yes", stdout=out)
-        self.assertFalse(School.objects.filter(name="Gazipur Ideal School").exists())
+        self.assertFalse(School.objects.filter(name="GAZIPUR IDEAL SCHOOL").exists())
 
     def test_undo_import_unknown_id(self):
         other = AuditLog.objects.create(actor_type="system", action="school.removed")
@@ -821,3 +821,21 @@ class SmsSettingsTests(WSTestCase):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.post("/dashboard/settings/email/", self.form()).status_code, 403)
         self.assertEqual(notify.provider_for(Channel.SMS).name, "console-sms")
+
+
+class SchoolNamesInCapitalsTests(WSTestCase):
+    """School names are stored in capitals wherever a school comes from."""
+
+    def test_public_form_dashboard_and_rename_store_capitals(self):
+        s = self.register(school_id=None, school_name="Tongi Pilot Girls School")
+        self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).school.name, "TONGI PILOT GIRLS SCHOOL")
+        self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).school_name_as_entered,
+                         "Tongi Pilot Girls School")  # what the student typed is kept as typed
+        self.client.force_login(self.admin)
+        self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "thana": self.kaliakair.pk,
+                                                     "name": "Kaliakair  Model school", "confirm": "1"})
+        self.assertTrue(School.objects.filter(name="KALIAKAIR MODEL SCHOOL").exists())
+        self.client.post(f"/dashboard/schools/{self.school.pk}/", {"op": "rename", "name": "Tongi Model High School"})
+        self.school.refresh_from_db()
+        self.assertEqual(self.school.name, "TONGI MODEL HIGH SCHOOL")
+        self.assertTrue(SchoolAlias.objects.filter(school=self.school, alias_text="TONGI GOVERNMENT HIGH SCHOOL").exists())

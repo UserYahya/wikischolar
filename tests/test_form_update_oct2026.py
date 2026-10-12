@@ -140,7 +140,7 @@ class HtmlEmailTests(WSTestCase):
         html = self.html_of(msg)
         self.assertIn(s["wikischolar_id"], html)
         self.assertIn("<table", html)
-        self.assertIn("Tongi Government High School", html)
+        self.assertIn("TONGI GOVERNMENT HIGH SCHOOL", html)
         self.assertNotIn("{details}", html)
 
     def test_email_card_has_no_coloured_strip(self):

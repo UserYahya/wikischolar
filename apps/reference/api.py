@@ -66,7 +66,7 @@ def schools(request):
     else:
         results = services.search_schools(thana_id, q, limit=500 if staff_list else 8, verified_only=not with_pending)
     return JsonResponse({"schools": [
-        {"id": s.pk, "name": s.name, "verified": s.verification_status == "verified",
+        {"id": s.pk, "name": s.name, "eiin": s.eiin, "verified": s.verification_status == "verified",
          # area "" = not known yet (a school listed for the whole district)
          "area": s.thana.name if s.thana_id else "", "area_bn": s.thana.name_bn if s.thana_id else "",
          "same_area": bool(s.thana_id) and s.thana_id == thana_id}
