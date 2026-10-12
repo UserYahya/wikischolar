@@ -1,10 +1,13 @@
+import csv
+
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, OperationalError, transaction
 from django.db.models import Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.core import audit
@@ -29,17 +32,18 @@ def _english(request, raw):
         return None
 
 
-@require_perm("schools.view")
-def school_list(request):
+def _filtered_schools(request):
+    """The Schools list's query (status, district, thana, search box, advanced or saved search), shared
+    by the list and its CSV export so both always show the same schools."""
     status = request.GET.get("status", "active")
-    qs = (School.all_objects.filter(is_deleted=status == "removed").select_related("district", "thana")
+    qs = (School.all_objects.filter(is_deleted=status == "removed").select_related("district__region", "thana")
           .annotate(n=Count("students", filter=Q(students__is_deleted=False))))
     if status == "active":
         qs = qs.exclude(verification_status="merged")
     elif status and status != "removed":
         qs = qs.filter(verification_status=status)
     district = request.GET.get("district", "")
-    if district:
+    if district.isdigit():
         qs = qs.filter(district_id=district)
     thana = request.GET.get("thana") or request.GET.get("upazila", "")  # links from before the rename
     if thana == "none":  # thana not known yet (e.g. imported with the district only)
@@ -53,22 +57,69 @@ def school_list(request):
     adv = advanced.normalize("schools", request.GET.get("adv", "") or (saved.query if saved else ""))
     if adv:
         qs = qs.filter(advanced.parse("schools", adv)[0])
+    return qs.order_by("verification_status", "name"), {"status": status, "district": district, "thana": thana,
+                                                         "q": q, "adv": adv}
+
+
+@require_perm("schools.view")
+def school_list(request):
+    qs, f = _filtered_schools(request)
     try:
-        with advanced.time_limit(bool(adv)):
-            return _school_list_page(request, qs, status, district, thana, q, adv)
+        with advanced.time_limit(bool(f["adv"])):
+            return _school_list_page(request, qs, f)
     except OperationalError:  # the advanced search hit the time limit
         messages.error(request, "That advanced search took too long. Narrow it down (e.g. pick a district) and try again.")
         return redirect("dashboard:schools")
 
 
-def _school_list_page(request, qs, status, district, thana, q, adv):
-    page, qstring = paginate(request, qs.order_by("verification_status", "name"))
+SCHOOL_EXPORT_COLUMNS = [
+    ("school_id", lambda s: s.pk), ("eiin", lambda s: s.eiin), ("name", lambda s: s.name),
+    ("status", lambda s: "removed" if s.is_deleted else s.verification_status), ("source", lambda s: s.source),
+    ("region", lambda s: s.district.region.name if s.district.region_id else ""),
+    ("district", lambda s: s.district.name), ("division", lambda s: s.division),
+    ("thana", lambda s: s.thana.name if s.thana_id else ""), ("post_office", lambda s: s.post_office),
+    ("institute_type", lambda s: s.get_institute_type_display()),
+    ("education_level", lambda s: s.get_education_level_display()),
+    ("management", lambda s: s.get_management_display()), ("mpo", lambda s: s.get_mpo_display()),
+    ("institute_for", lambda s: s.get_institute_for_display()),
+    ("geographical_position", lambda s: s.get_geographical_position_display()),
+    ("area_status", lambda s: s.get_area_status_display()), ("email", lambda s: s.email),
+    ("students", lambda s: s.n), ("added_on", lambda s: s.created_at.date().isoformat()),
+]
+
+
+@require_perm("schools.view")
+def school_export(request):
+    """CSV of exactly the schools the list shows (all pages): quick filters, advanced or saved search."""
+    qs, f = _filtered_schools(request)
+    rows = qs.count()
+    audit.record("schools.exported", request=request, entity_type="schools",
+                 meta={"filter": {k: v for k, v in f.items() if v}, "rows": rows})
+    writer = csv.writer(_Echo())
+
+    def lines():
+        yield "\ufeff"  # BOM so Excel reads it as UTF-8
+        yield writer.writerow([c for c, _ in SCHOOL_EXPORT_COLUMNS])
+        for s in qs.iterator(chunk_size=2000):
+            yield writer.writerow([fn(s) for _, fn in SCHOOL_EXPORT_COLUMNS])
+
+    resp = StreamingHttpResponse(lines(), content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = f'attachment; filename="schools-{timezone.localdate():%Y-%m-%d}.csv"'
+    return resp
+
+
+class _Echo:
+    def write(self, value):
+        return value
+
+
+def _school_list_page(request, qs, f):
+    page, qstring = paginate(request, qs)
     return render(request, "dashboard/schools.html", {
         "page": page, "qstring": qstring, "districts": District.objects.all(),
-        "thanas": ref.areas_of(district) if district else [],
-        "f": {"status": status, "district": district, "thana": thana, "q": q},
-        "can_edit": request.user.has_perm_code("schools.edit"),
-        **advanced_context(request, "schools", adv),
+        "thanas": ref.areas_of(f["district"]) if f["district"] else [],
+        "f": f, "can_edit": request.user.has_perm_code("schools.edit"),
+        **advanced_context(request, "schools", f["adv"]),
     })
 
 

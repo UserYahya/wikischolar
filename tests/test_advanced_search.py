@@ -214,3 +214,56 @@ class SavedSearchTests(WSTestCase):
         self.assertEqual([x.pk for x in r.context["page"]], [self.school.pk])
         r = self.client.get(f"/dashboard/students/?saved={s.pk}")  # not a student search: ignored
         self.assertEqual(r.context["count"], 2)
+
+
+class SchoolExportTests(WSTestCase):
+    """Schools → Export CSV: exactly the schools the list shows, quick filters, advanced and saved search."""
+
+    def setUp(self):
+        super().setUp()
+        School.objects.filter(pk=self.school.pk).update(eiin="100014", management="government", mpo="no",
+                                                         area_status="city_corporation", division="Dhaka")
+        self.other = School.objects.create(name="Kaliakair Model School", district=self.gazipur, thana=self.kaliakair,
+                                           verification_status="verified", management="non_government", eiin="100015")
+        self.register()
+
+    def export(self, query=""):
+        r = self.client.get("/dashboard/schools/export.csv" + query)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('filename="schools-', r["Content-Disposition"])
+        rows = b"".join(r.streaming_content).decode("utf-8-sig").splitlines()
+        return rows[0].split(","), [line.split(",") for line in rows[1:]]
+
+    def test_exports_what_the_advanced_search_shows(self):
+        from apps.core.models import AuditLog
+        self.client.force_login(self.viewer)
+        query = "?adv=" + quote(adv(("all", [cond("management", "in", ["government"])])))
+        self.assertContains(self.client.get("/dashboard/schools/" + query), "/dashboard/schools/export.csv?adv=")
+        header, rows = self.export(query)
+        self.assertEqual(header[:5], ["school_id", "eiin", "name", "status", "source"])
+        self.assertEqual(len(rows), 1)
+        row = dict(zip(header, rows[0]))
+        self.assertEqual((row["eiin"], row["name"], row["management"], row["mpo"], row["area_status"], row["students"],
+                          row["district"], row["thana"], row["division"]),
+                         ("100014", "TONGI GOVERNMENT HIGH SCHOOL", "Government", "No", "City corporation", "1",
+                          "Gazipur", "Tongi", "Dhaka"))
+        log = AuditLog.objects.get(action="schools.exported")
+        self.assertEqual(log.meta["rows"], 1)
+        self.assertIn("adv", log.meta["filter"])
+
+    def test_quick_filters_and_saved_searches(self):
+        from apps.dashboard.models import SavedSearch
+        self.client.force_login(self.admin)
+        self.assertEqual(len(self.export()[1]), 2)
+        self.assertEqual([r[1] for r in self.export(f"?thana={self.kaliakair.pk}&district={self.gazipur.pk}")[1]], ["100015"])
+        self.assertEqual([r[1] for r in self.export("?q=100015")[1]], ["100015"])
+        s = SavedSearch.objects.create(entity="schools", name="Non-govt", created_by=self.admin, query={
+            "match": "all", "groups": [{"match": "all", "conditions": [cond("management", "in", ["non_government"])]}]})
+        self.assertEqual([r[1] for r in self.export(f"?saved={s.pk}")[1]], ["100015"])
+
+    def test_student_export_has_the_school_government_data(self):
+        self.client.force_login(self.admin)
+        body = b"".join(self.client.get("/dashboard/students/export.csv").streaming_content).decode("utf-8-sig")
+        header, row = [line.split(",") for line in body.splitlines()[:2]]
+        data = dict(zip(header, row))
+        self.assertEqual((data["school_eiin"], data["school_management"]), ("100014", "Government"))

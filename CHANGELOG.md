@@ -5,6 +5,19 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-13
 
+### Added
+- **Schools → Export CSV.** It downloads exactly the schools the list shows, across all pages,
+  following the status, district and thana filters, the search box, an advanced search or a saved
+  search.
+  - Columns: id, EIIN, name, status, source, region, district, division, thana, post office,
+    institute type, education level, management, MPO, institute for, geographical position, area
+    status, email, number of students, date added.
+  - Excel-friendly (UTF-8 with BOM). Audited as `schools.exported`, with the filter and the row
+    count. Locally, all 19,720 schools export in about 3 s.
+- **Students → Export CSV** (which already followed the advanced search) now includes the school's
+  EIIN, management, education level, MPO, institute for and area status.
+- 3 new tests (265 in total).
+
 ### Changed
 - **District and thana are searchable pickers** instead of long dropdowns, on the registration form
   and in the dashboard.

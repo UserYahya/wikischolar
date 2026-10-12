@@ -4,6 +4,7 @@
 {% block content %}
 <header class="page-head"><h1>Schools <span class="count">{{ page.paginator.count }}</span></h1>
   <div class="row">
+    {% if page.paginator.count %}<a class="btn" href="{% url 'dashboard:schools_export' %}?{{ qstring }}">Export CSV</a>{% endif %}
     <a class="btn" href="{% url 'dashboard:duplicates' %}">Review duplicates</a>
     {% if can_edit %}<a class="btn" href="{% url 'dashboard:school_import' %}">Import CSV</a>{% endif %}
     {% if can_edit %}<a class="btn primary" href="{% url 'dashboard:school_add' %}{% if f.district %}?district={{ f.district }}{% if f.thana %}&amp;thana={{ f.thana }}{% endif %}{% endif %}">Add school</a>{% endif %}

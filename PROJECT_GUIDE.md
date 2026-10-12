@@ -185,6 +185,10 @@ Analytics) will plug into the same app.
   * **It combines with everything else:** the other filters still apply. On Students the query is
     the `adv` filter param, so Export CSV, batches, *Message this group* and a batch's saved filter
     follow it.
+  * **Export CSV:** both lists download exactly what they show, across all pages, including an
+    advanced or saved search. On Schools this is `views/reference._filtered_schools`, shared by the
+    list and `school_export`; it includes the government data and student counts, and is audited as
+    `schools.exported`. The Students export includes the school's EIIN and government data.
   * **Safe to run:** `apps/dashboard/advanced.py` allows registered fields and operators only, and
     no SQL is built from text. Limits: 10 groups, 20 conditions, 200-character text. An invalid
     condition is left out and shown as a notice, never run. A search stops after 5 s
@@ -560,7 +564,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-262 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+265 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
