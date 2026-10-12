@@ -3,6 +3,19 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-12
+
+### Added
+- **`manage.py undo_school_import`** takes back a wrong school import. `--list` shows the 20 most
+  recent imports (audit id, date, who, how many schools, verified/pending, and whether it was already
+  undone). `undo_school_import ID --dry-run` lists what would be removed, and without `--dry-run` it asks you
+  to type REMOVE (`--yes` skips the question). The import's schools are removed in the same way as a school
+  page's *Remove school* (archived, so they can be restored from Schools → Removed). They leave the list,
+  suggestions and duplicate checks, so the corrected file imports cleanly. Schools that students are
+  linked to, or that other schools were merged into, are kept and listed with the reason. One
+  `school.import_undone` audit entry records it. Works for schools imported without an area.
+  4 new tests (218 in total).
+
 ## 2026-10-09
 
 ### Changed
