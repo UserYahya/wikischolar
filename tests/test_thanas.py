@@ -293,3 +293,14 @@ class GovernmentListMigrationTests(AreaTestCase):
                                {"name": "Other thana (not listed)", "group": "Other"}], mapping=[])
         self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).thana_id, self.other.pk)
         self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).school.thana_id, self.other.pk)
+
+
+class SeedBanglaTests(SeedCoverageTests):
+    def test_bangla_fits_the_government_name(self):
+        # "Mirpur" must not keep "মিরপুর মডেল" from the old "Mirpur Model"
+        for d in self.seed["districts"]:
+            for t in d["thanas"]:
+                if "মডেল" in t.get("name_bn", ""):
+                    self.assertIn("Model", t["name"], (d["code"], t["name"]))
+        dhaka = {t["name"]: t["name_bn"] for t in next(d for d in self.seed["districts"] if d["code"] == "dhaka")["thanas"]}
+        self.assertEqual((dhaka["Mirpur"], dhaka["Uttara"], dhaka["Uttara Paschim"]), ("মিরপুর", "উত্তরা", "উত্তরা পশ্চিম"))
