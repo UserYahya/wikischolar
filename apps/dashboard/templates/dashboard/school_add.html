@@ -11,12 +11,12 @@
   {% csrf_token %}
   <div class="form-grid">
     <div><label for="id_district">District</label>
-      <select name="district" id="id_district" data-cascade="district" required>
+      <select name="district" id="id_district" data-cascade="district" required data-picker>
         <option value="" {% if not d.district %}selected{% endif %} disabled>Choose district…</option>
         {% for x in districts %}<option value="{{ x.pk }}" {% if x.pk|stringformat:"s" == d.district %}selected{% endif %}>{{ x.name }}</option>{% endfor %}
       </select></div>
     <div><label for="id_thana">Thana</label>
-      <select name="thana" id="id_thana" data-cascade="thana" required {% if not thanas %}disabled{% endif %}>
+      <select name="thana" id="id_thana" data-cascade="thana" required data-picker {% if not thanas %}disabled{% endif %}>
         <option value="" {% if not d.thana %}selected{% endif %} disabled>{% if thanas %}Choose thana…{% else %}Choose a district first{% endif %}</option>
         {% include "dashboard/_area_options.html" with areas=thanas selected=d.thana %}
       </select>

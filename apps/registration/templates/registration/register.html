@@ -1,5 +1,6 @@
 {% extends "public_base.html" %}{% load static %}
 {% block title %}WikiScholar Registration{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/picker.css' %}">{% endblock %}
 {% block content %}
 {# Every label, hint and message is English with a smaller Bangla line (class "bn"). Messages from Python and #}
 {# register.js get their Bangla from apps/registration/bangla.py, passed to the script below. #}
@@ -83,7 +84,8 @@
       <div class="grid">
         <div class="field">
           <label for="district">District <span class="bn" lang="bn">জেলা</span></label>
-          <select id="district" name="district" required><option value="">Loading…</option></select>
+          <select id="district" name="district" required data-picker data-picker-search="Type to search · খুঁজতে লিখুন" data-picker-close="Close · বন্ধ করুন" data-picker-title="Choose district · জেলা বেছে নিন"
+                  data-picker-empty="No district matches. Try the English or Bangla name. · কোনো জেলা মেলেনি। ইংরেজি বা বাংলা নাম লিখে দেখুন।"><option value="">Loading…</option></select>
           <p class="err" data-err="district"></p>
         </div>
         <div class="field">
@@ -92,7 +94,9 @@
         </div>
         <div class="field span2">
           <label for="thana">Thana <span class="bn" lang="bn">থানা</span></label>
-          <select id="thana" name="thana" required disabled aria-describedby="areaHelp"><option value="">Choose a district first</option></select>
+          <select id="thana" name="thana" required disabled aria-describedby="areaHelp" data-picker data-picker-search="Type to search · খুঁজতে লিখুন" data-picker-close="Close · বন্ধ করুন"
+                  data-picker-title="Choose thana · থানা বেছে নিন"
+                  data-picker-empty="No thana matches. Choose “Other thana (not listed)”. · কোনো থানা মেলেনি। “Other thana (not listed)” বেছে নিন।"><option value="">Choose a district first</option></select>
           <p class="hint" id="areaHelp">Not listed? Choose “Other thana (not listed)” at the end.
             <span class="bn" lang="bn">তালিকায় না থাকলে শেষের “Other thana (not listed)” বেছে নিন।</span></p>
           <p class="err" data-err="thana"></p>
@@ -249,4 +253,5 @@
 {{ bangla_messages|json_script:"bnMessages" }}
 {% endblock %}
 {% block scripts %}{% if TURNSTILE_SITE_KEY %}<script src="{{ TURNSTILE_SCRIPT }}?render=explicit" id="turnstileScript" async defer></script>{% endif %}
+<script src="{% static 'js/picker.js' %}" defer></script>
 <script src="{% static 'js/register.js' %}" defer></script>{% endblock %}
