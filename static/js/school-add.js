@@ -1,11 +1,11 @@
 /* Dashboard "Add a school": as the name is typed, list the schools already in the chosen
-   upazila (verified and pending), like the public form's typeahead. Picking one opens that
+   thana (verified and pending), like the public form's typeahead. Picking one opens that
    school instead of adding a duplicate; the server re-checks on submit. */
 (function () {
   "use strict";
   const form = document.getElementById("addSchool");
   if (!form) return;
-  const upazila = document.getElementById("id_upazila"), nameIn = document.getElementById("id_name");
+  const thana = document.getElementById("id_thana"), nameIn = document.getElementById("id_name");
   const district = document.getElementById("id_district");
   const list = document.getElementById("schoolList"), schoolUrl = form.dataset.schoolUrl;
   let items = [], active = -1, timer = null, seq = 0;
@@ -29,14 +29,14 @@
       const name = document.createElement("span"); name.textContent = s.name; li.append(name);
       const tags = document.createElement("span"); tags.className = "tags";
       // the school's area (same names exist across areas); "" = listed for the whole district
-      tags.textContent = (s.area || "area not known") + (s.verified ? "" : " · pending");
+      tags.textContent = (s.area || "thana not known") + (s.verified ? "" : " · pending");
       li.append(tags);
       list.append(li);
     });
     const add = document.createElement("li");
     add.id = `opt${items.length}`; add.dataset.i = items.length; add.className = "add";
     add.setAttribute("role", "option"); add.setAttribute("aria-selected", String(active === items.length));
-    add.textContent = items.length ? `Not in the list? Add “${q}” as a new school` : `No match in this upazila or area. Add “${q}” as a new school`;
+    add.textContent = items.length ? `Not in the list? Add “${q}” as a new school` : `No match in this thana. Add “${q}” as a new school`;
     list.append(add);
     list.hidden = !q;
     nameIn.setAttribute("aria-expanded", String(!list.hidden));
@@ -46,14 +46,14 @@
     if (i < items.length) { window.location.href = schoolUrl.replace(/0\/$/, `${items[i].id}/`); return; }
     closeList();
   }
-  // A changed name or upazila makes an earlier "similar schools" warning stale.
+  // A changed name or thana makes an earlier "similar schools" warning stale.
   function clearWarning() {
     const box = document.getElementById("similarBox");
     if (box) { box.remove(); document.getElementById("addBtn").hidden = false; }
   }
   function syncEnabled() {
-    nameIn.disabled = !upazila.value;
-    nameIn.placeholder = upazila.value ? "Type the name in English" : "Choose an upazila first";
+    nameIn.disabled = !thana.value;
+    nameIn.placeholder = thana.value ? "Type the name in English" : "Choose a thana first";
   }
 
   nameIn.addEventListener("input", () => {
@@ -63,13 +63,13 @@
     seq++;  // a reply still on its way is dropped
     const short = q.length > 0 && q.length < MIN_QUERY;
     setHelp(short ? "Type at least 3 letters to see the schools already listed." : helpText);
-    if (!q || short || !upazila.value) { items = []; closeList(); return; }
+    if (!q || short || !thana.value) { items = []; closeList(); return; }
     timer = setTimeout(async () => {
       const mine = ++seq;
       try {
         // The whole district, the chosen area first: shows a school filed under a neighbouring area too
         const r = await fetch(`/api/reference/schools/?district=${encodeURIComponent(district.value)}` +
-                              `&upazila=${encodeURIComponent(upazila.value)}&q=${encodeURIComponent(q)}&pending=1`,
+                              `&thana=${encodeURIComponent(thana.value)}&q=${encodeURIComponent(q)}&pending=1`,
                               { headers: { Accept: "application/json" }, credentials: "same-origin" });
         const data = r.ok ? await r.json() : { schools: [] };
         if (mine !== seq || nameIn.value.trim() !== q) return;
@@ -89,10 +89,10 @@
     if (li) { e.preventDefault(); choose(Number(li.dataset.i)); }
   });
   nameIn.addEventListener("blur", () => setTimeout(closeList, 120));
-  upazila.addEventListener("change", () => { clearWarning(); items = []; closeList(); syncEnabled(); });
-  // The upazila list reloads (cascade.js), so no upazila is chosen until the user picks one.
+  thana.addEventListener("change", () => { clearWarning(); items = []; closeList(); syncEnabled(); });
+  // The thana list reloads (cascade.js), so no thana is chosen until the user picks one.
   document.getElementById("id_district").addEventListener("change", () => {
-    clearWarning(); items = []; closeList(); nameIn.disabled = true; nameIn.placeholder = "Choose an upazila first";
+    clearWarning(); items = []; closeList(); nameIn.disabled = true; nameIn.placeholder = "Choose a thana first";
   });
   syncEnabled();
 })();

@@ -1,4 +1,4 @@
-"""Schools whose upazila / area isn't known (e.g. imported from a list with districts only) belong to
+"""Schools whose thana isn't known (e.g. imported from a list with districts only) belong to
 their whole district: suggested and duplicate-checked from every area, until an admin sets the area."""
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -21,12 +21,12 @@ class SchoolsWithoutAreaTests(WSTestCase):
         return self.client.post("/dashboard/schools/import/", {"file": f, "status": "verified"})
 
     def district_school(self, name="Gazipur Ideal School", **extra):
-        return School.objects.create(name=name, district=self.gazipur, upazila=None,
+        return School.objects.create(name=name, district=self.gazipur, thana=None,
                                      verification_status="verified", source="import", **extra)
 
     # ---- import ----------------------------------------------------------------------------- #
     def test_import_with_blank_areas(self):
-        r = self.upload("District,Upazila / Area,School name\n"
+        r = self.upload("District,Thana,School name\n"
                         "Gazipur,,Gazipur Ideal School\n"
                         "Gazipur,Tongi,Tongi Pilot School\n"
                         "Jessore,  ,Jessore Zilla School\n")
@@ -34,20 +34,20 @@ class SchoolsWithoutAreaTests(WSTestCase):
         self.assertContains(r, "Not known")
         self.client.post("/dashboard/schools/import/", {"op": "confirm"})
         ideal = School.objects.get(name="Gazipur Ideal School")
-        self.assertEqual((ideal.district, ideal.upazila, ideal.verification_status), (self.gazipur, None, "verified"))
+        self.assertEqual((ideal.district, ideal.thana, ideal.verification_status), (self.gazipur, None, "verified"))
         self.assertEqual(School.objects.get(name="Jessore Zilla School").district, self.jessore)
-        self.assertEqual(School.objects.get(name="Tongi Pilot School").upazila, self.tongi)
+        self.assertEqual(School.objects.get(name="Tongi Pilot School").thana, self.tongi)
 
     def test_import_without_the_area_column(self):
         rows = importer.read_rows("District,School name\nGazipur,Gazipur Ideal School\n".encode())
         created, planned = importer.apply(rows, actor=self.admin)
         self.assertEqual(planned[0]["result"], "new")
-        self.assertEqual((created[0].district, created[0].upazila), (self.gazipur, None))
+        self.assertEqual((created[0].district, created[0].thana), (self.gazipur, None))
 
     def test_duplicate_checks_cover_the_whole_district(self):
         self.district_school()
         planned = importer.plan(importer.read_rows((
-            "District,Upazila / Area,School name\n"
+            "District,Thana,School name\n"
             "Gazipur,,Tongi Govt High School\n"         # listed in Tongi: a district-wide row matches it
             "Gazipur,Kaliakair,Gazipur Ideal School\n"  # listed without an area: matches from any area
             "Gazipur,,Kaliakair Model School\n"
@@ -59,12 +59,12 @@ class SchoolsWithoutAreaTests(WSTestCase):
 
     def test_missing_district_column_is_refused(self):
         with self.assertRaises(importer.ImportFileError):
-            importer.read_rows("Upazila,School name\nTongi,X School\n".encode())
+            importer.read_rows("Thana,School name\nTongi,X School\n".encode())
 
     # ---- public form ---------------------------------------------------------------------------- #
     def test_suggested_from_every_area_and_matched_when_typed(self):
         school = self.district_school()
-        url = f"/api/reference/schools/?district={self.gazipur.pk}&upazila={self.kaliakair.pk}&q=ideal"
+        url = f"/api/reference/schools/?district={self.gazipur.pk}&thana={self.kaliakair.pk}&q=ideal"
         self.client.logout()
         found = {s["name"]: s for s in self.client.get(url).json()["schools"]}
         self.assertEqual((found["Gazipur Ideal School"]["area"], found["Gazipur Ideal School"]["same_area"]),
@@ -72,10 +72,10 @@ class SchoolsWithoutAreaTests(WSTestCase):
         page = self.client.get("/").content.decode()  # the form still renders
         self.assertIn("school_name", page)
         # picked from the suggestions
-        s = self.register(upazila=self.kaliakair.pk, school_id=school.pk, school_name=school.name)
+        s = self.register(thana=self.kaliakair.pk, school_id=school.pk, school_name=school.name)
         self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).school, school)
         # typed by hand in another area: matched, not added again as a new pending school
-        s = self.register(email="typed@gmail.com", phone="01812345678", upazila=self.tongi.pk, school_id="",
+        s = self.register(email="typed@gmail.com", phone="01812345678", thana=self.tongi.pk, school_id="",
                           school_name="gazipur ideal school")
         self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).school, school)
         self.assertEqual(School.objects.filter(name__iexact="Gazipur Ideal School").count(), 1)
@@ -83,38 +83,38 @@ class SchoolsWithoutAreaTests(WSTestCase):
     # ---- dashboard ------------------------------------------------------------------------------ #
     def test_list_filter_detail_and_student_editor(self):
         school = self.district_school()
-        r = self.client.get(f"/dashboard/schools/?district={self.gazipur.pk}&upazila=none")
+        r = self.client.get(f"/dashboard/schools/?district={self.gazipur.pk}&thana=none")
         self.assertEqual([s.name for s in r.context["page"]], ["Gazipur Ideal School"])
-        self.assertContains(r, "Area not known")
+        self.assertContains(r, "Thana not known")
         r = self.client.get(f"/dashboard/schools/{school.pk}/")
-        self.assertContains(r, "Area not known, Gazipur")
-        self.assertContains(r, "Set area")
+        self.assertContains(r, "Thana not known, Gazipur")
+        self.assertContains(r, "Set thana")
         # the student editor's school list for an area includes the district's schools without an area
-        names = [s["name"] for s in self.client.get(f"/api/reference/schools/?upazila={self.tongi.pk}&all=1")
+        names = [s["name"] for s in self.client.get(f"/api/reference/schools/?thana={self.tongi.pk}&all=1")
                  .json()["schools"]]
         self.assertIn("Gazipur Ideal School", names)
         self.assertIn("Tongi Government High School", names)
-        r = self.client.get(f"/api/reference/schools/?upazila={self.sharsha.pk}&all=1")
+        r = self.client.get(f"/api/reference/schools/?thana={self.sharsha.pk}&all=1")
         self.assertNotIn("Gazipur Ideal School", [s["name"] for s in r.json()["schools"]])  # other district
 
     def test_set_area_later(self):
         school = self.district_school()
-        self.client.post(f"/dashboard/schools/{school.pk}/", {"op": "set_area", "upazila": self.kaliakair.pk})
+        self.client.post(f"/dashboard/schools/{school.pk}/", {"op": "set_area", "thana": self.kaliakair.pk})
         school.refresh_from_db()
-        self.assertEqual(school.upazila, self.kaliakair)
+        self.assertEqual(school.thana, self.kaliakair)
         self.assertTrue(AuditLog.objects.filter(action="school.area_set", entity_id=str(school.pk)).exists())
         # an area of another district is refused
-        self.client.post(f"/dashboard/schools/{school.pk}/", {"op": "set_area", "upazila": self.sharsha.pk})
+        self.client.post(f"/dashboard/schools/{school.pk}/", {"op": "set_area", "thana": self.sharsha.pk})
         school.refresh_from_db()
-        self.assertEqual(school.upazila, self.kaliakair)
+        self.assertEqual(school.thana, self.kaliakair)
 
     def test_set_area_refused_when_that_area_lists_the_name(self):
         school = self.district_school("Tongi Government High School")  # same name as the Tongi school
-        r = self.client.post(f"/dashboard/schools/{school.pk}/", {"op": "set_area", "upazila": self.tongi.pk},
+        r = self.client.post(f"/dashboard/schools/{school.pk}/", {"op": "set_area", "thana": self.tongi.pk},
                              follow=True)
         self.assertContains(r, "already listed in Tongi")
         school.refresh_from_db()
-        self.assertIsNone(school.upazila)
+        self.assertIsNone(school.thana)
 
     def test_duplicate_review_and_merge_take_the_area(self):
         keep = self.district_school("Tongi Govt High School")
@@ -122,26 +122,26 @@ class SchoolsWithoutAreaTests(WSTestCase):
         self.assertIn({keep.pk, self.school.pk}, [{a.pk, b.pk} for a, b, _ in pairs])
         self.client.post("/dashboard/schools/merge/", {"keep": keep.pk, "duplicate": self.school.pk})
         keep.refresh_from_db()
-        self.assertEqual(keep.upazila, self.tongi)  # learnt from the merged duplicate
+        self.assertEqual(keep.thana, self.tongi)  # learnt from the merged duplicate
         self.assertEqual(School.all_objects.get(pk=self.school.pk).merged_into, keep)
         # schools in different districts are never merged
-        other = School.objects.create(name="Tongi Govt High School", district=self.jessore, upazila=None,
+        other = School.objects.create(name="Tongi Govt High School", district=self.jessore, thana=None,
                                       verification_status="verified", source="import")
         with self.assertRaises(ValueError):
             ref.merge_schools(keep=keep, duplicate=other, request=self.fake_request())
 
     def test_messages_name_the_district_when_the_area_is_unknown(self):
         self.district_school()
-        r = self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "upazila": self.kaliakair.pk,
+        r = self.client.post("/dashboard/schools/add/", {"district": self.gazipur.pk, "thana": self.kaliakair.pk,
                                                           "name": "Gazipur Ideal School"})
-        self.assertContains(r, "already listed in Gazipur (area not known)")
-        in_tongi = School.objects.create(name="Gazipur Ideal School", district=self.gazipur, upazila=self.tongi,
+        self.assertContains(r, "already listed in Gazipur (thana not known)")
+        in_tongi = School.objects.create(name="Gazipur Ideal School", district=self.gazipur, thana=self.tongi,
                                          verification_status="verified")
-        r = self.client.post(f"/dashboard/schools/{in_tongi.pk}/", {"op": "set_area", "upazila": self.kaliakair.pk},
+        r = self.client.post(f"/dashboard/schools/{in_tongi.pk}/", {"op": "set_area", "thana": self.kaliakair.pk},
                              follow=True)
-        self.assertContains(r, "already listed in Gazipur (area not known)")
+        self.assertContains(r, "already listed in Gazipur (thana not known)")
         r = self.client.get(f"/dashboard/schools/duplicates/?district={self.gazipur.pk}")
-        self.assertContains(r, "Area not known")
+        self.assertContains(r, "Thana not known")
         self.assertNotContains(r, "<td>, Gazipur</td>", html=False)
 
     def test_remove_and_restore(self):

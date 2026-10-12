@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from apps.core import audit
 
-from .models import District, School, SchoolAlias, Upazila
+from .models import District, School, SchoolAlias, Thana
 from .normalize import normalize_school_name
 
 
@@ -25,18 +25,18 @@ def region_for_district(district):
     return district.region if district.region_id and not district.region.is_deleted else None
 
 
-def upazila_in_district(upazila_id, district_id):
-    return Upazila.objects.filter(pk=upazila_id, district_id=district_id).first()
+def thana_in_district(thana_id, district_id):
+    return Thana.objects.filter(pk=thana_id, district_id=district_id).first()
 
 
-def sort_areas(upazilas):
-    """A district's areas in list order: city-corporation thanas (by corporation), cantonments,
-    upazilas, then "Other area". Templates group them with {% regroup … by group_label %}."""
-    return sorted(upazilas, key=lambda u: u.sort_key)
+def sort_areas(thanas):
+    """A district's thanas in list order: grouped thanas (if any), cantonments, thanas, then
+    "Other thana". Templates group them with {% regroup … by group_label %}."""
+    return sorted(thanas, key=lambda u: u.sort_key)
 
 
 def areas_of(district_id):
-    return sort_areas(Upazila.objects.filter(district_id=district_id or 0))
+    return sort_areas(Thana.objects.filter(district_id=district_id or 0))
 
 
 @transaction.atomic
@@ -56,13 +56,13 @@ def _alive_schools():
     return School.objects.filter(merged_into__isnull=True).exclude(verification_status=School.Status.MERGED)
 
 
-def school_scope(upazila=None, district_id=None, prefix=""):
+def school_scope(thana=None, district_id=None, prefix=""):
     """Where a school at this location may already be listed (a Q on School, or on `prefix`school__...):
     the area itself plus its district's schools whose area isn't known yet; with no area, the whole
     district. A school without an area belongs to its whole district, so it is matched from every area."""
-    if upazila is not None:
-        return (Q(**{f"{prefix}upazila": upazila})
-                | Q(**{f"{prefix}upazila__isnull": True, f"{prefix}district_id": upazila.district_id}))
+    if thana is not None:
+        return (Q(**{f"{prefix}thana": thana})
+                | Q(**{f"{prefix}thana__isnull": True, f"{prefix}district_id": thana.district_id}))
     return Q(**{f"{prefix}district_id": district_id})
 
 
@@ -71,24 +71,24 @@ def school_scope(upazila=None, district_id=None, prefix=""):
 SAME_AREA_BONUS = 0.15
 
 
-def search_schools(upazila_id=None, query="", limit=8, verified_only=False, *, district_id=None,
-                   prefer_upazila_id=None):
+def search_schools(thana_id=None, query="", limit=8, verified_only=False, *, district_id=None,
+                   prefer_thana_id=None):
     """Typeahead: fuzzy match on canonical names and aliases. Scoped to the district (the public form:
-    a student may attend a school in another upazila / thana of their district; schools in
-    `prefer_upazila_id` rank first) or, without `district_id`, to one upazila plus its district's
+    a student may attend a school in another thana / thana of their district; schools in
+    `prefer_thana_id` rank first) or, without `district_id`, to one thana plus its district's
     schools whose area isn't known (dashboard lists).
     The public form passes verified_only=True so students are only offered approved schools;
-    the dashboard editor also sees pending ones. Each school comes with its `upazila` (area)."""
-    qs = _alive_schools().select_related("upazila")
+    the dashboard editor also sees pending ones. Each school comes with its `thana` (area)."""
+    qs = _alive_schools().select_related("thana")
     if district_id:
         qs = qs.filter(district_id=district_id)
     else:
-        upazila_district = Upazila.objects.filter(pk=upazila_id or 0).values("district_id")[:1]
-        qs = qs.filter(Q(upazila_id=upazila_id) | Q(upazila__isnull=True, district_id=Subquery(upazila_district)))
+        thana_district = Thana.objects.filter(pk=thana_id or 0).values("district_id")[:1]
+        qs = qs.filter(Q(thana_id=thana_id) | Q(thana__isnull=True, district_id=Subquery(thana_district)))
     if verified_only:
         qs = qs.filter(verification_status=School.Status.VERIFIED)
-    prefer = prefer_upazila_id or 0
-    same_area = Case(When(upazila_id=prefer, then=Value(1)), default=Value(0), output_field=IntegerField())
+    prefer = prefer_thana_id or 0
+    same_area = Case(When(thana_id=prefer, then=Value(1)), default=Value(0), output_field=IntegerField())
     qn = normalize_school_name(query)
     if not qn:  # 'verified' > 'pending'
         return list(qs.annotate(same=same_area).order_by("-same", "-verification_status", "name")[:limit])
@@ -103,24 +103,24 @@ def search_schools(upazila_id=None, query="", limit=8, verified_only=False, *, d
             s_alias=Coalesce(Subquery(alias_score, output_field=FloatField()), Value(0.0)),
         )
         .annotate(score=Greatest("s_name", "s_alias"),
-                  rank=Greatest("s_name", "s_alias") + Case(When(upazila_id=prefer, then=Value(SAME_AREA_BONUS)),
+                  rank=Greatest("s_name", "s_alias") + Case(When(thana_id=prefer, then=Value(SAME_AREA_BONUS)),
                                                             default=Value(0.0), output_field=FloatField()))
         .filter(Q(score__gte=0.3) | Q(name_normalized__contains=qn))
         .order_by("-rank", "name")[:limit]
     )
 
 
-def resolve_school(*, upazila, typed_text, school_id=None):
+def resolve_school(*, thana, typed_text, school_id=None):
     """
     Returns (school, how). how ∈ {'selected', 'exact', 'alias', 'auto', 'created'}.
     Never returns a merged school: references are redirected to the canonical one.
     """
     # A school picked from the suggestions may be anywhere in the student's district (they can attend
-    # a school outside their own upazila / thana). A typed name is only matched within the chosen
+    # a school outside their own thana / thana). A typed name is only matched within the chosen
     # area (or among the district's schools whose area isn't known): common names ("Government Girls
-    # High School") exist in many upazilas.
+    # High School") exist in many thanas.
     if school_id:
-        school = School.objects.filter(pk=school_id, district_id=upazila.district_id).first()
+        school = School.objects.filter(pk=school_id, district_id=thana.district_id).first()
         if school:
             return school.canonical(), "selected"
 
@@ -128,13 +128,13 @@ def resolve_school(*, upazila, typed_text, school_id=None):
     if not qn:
         raise ValueError("School name is empty")
 
-    scope = school_scope(upazila)
+    scope = school_scope(thana)
     exact = (_alive_schools().filter(scope, name_normalized=qn)
-             .order_by(F("upazila_id").asc(nulls_last=True)).first())  # the student's own area first
+             .order_by(F("thana_id").asc(nulls_last=True)).first())  # the student's own area first
     if exact:
         return exact, "exact"
     alias = (SchoolAlias.objects.select_related("school")
-             .filter(school_scope(upazila, prefix="school__"), school__is_deleted=False, alias_normalized=qn).first())
+             .filter(school_scope(thana, prefix="school__"), school__is_deleted=False, alias_normalized=qn).first())
     if alias:
         return alias.school.canonical(), "alias"
 
@@ -146,25 +146,25 @@ def resolve_school(*, upazila, typed_text, school_id=None):
         return best, "auto"
 
     school = School.objects.create(
-        name=typed_text.strip(), upazila=upazila, district_id=upazila.district_id,
+        name=typed_text.strip(), thana=thana, district_id=thana.district_id,
         verification_status=School.Status.PENDING, source=School.Source.REGISTRATION,
     )
     return school, "created"
 
 
 # ---- Adding & removing schools (dashboard) ------------------------------- #
-def same_name_school(upazila, name, *, district_id=None, exclude=None):
+def same_name_school(thana, name, *, district_id=None, exclude=None):
     """A live school whose name or an alias is `name` once normalised, else None. Looked for in the
-    upazila plus its district's schools without an area or, with `upazila=None`, in the whole district
+    thana plus its district's schools without an area or, with `thana=None`, in the whole district
     `district_id` (see school_scope). `exclude`: a school to leave out (the one being moved or restored)."""
     qn = normalize_school_name(name)
     other = ~Q(pk=exclude.pk) if exclude else Q()
-    school = (_alive_schools().select_related("upazila", "district")  # messages show its location
-              .filter(school_scope(upazila, district_id), other, name_normalized=qn).first())
+    school = (_alive_schools().select_related("thana", "district")  # messages show its location
+              .filter(school_scope(thana, district_id), other, name_normalized=qn).first())
     if school:
         return school
     alias = (SchoolAlias.objects.select_related("school")
-             .filter(school_scope(upazila, district_id, prefix="school__"), school__is_deleted=False,
+             .filter(school_scope(thana, district_id, prefix="school__"), school__is_deleted=False,
                      alias_normalized=qn))
     if exclude:
         alias = alias.exclude(school=exclude)
@@ -172,14 +172,14 @@ def same_name_school(upazila, name, *, district_id=None, exclude=None):
     return alias.school.canonical() if alias else None
 
 
-def similar_schools(upazila, name, limit=8, *, district_id=None):
+def similar_schools(thana, name, limit=8, *, district_id=None):
     """Live schools (looked for as in same_name_school) whose name or an alias is as close to `name`
     as the duplicate review would flag (SCHOOL_DUPLICATE_THRESHOLD), closest first."""
     qn = normalize_school_name(name)
     alias_score = (SchoolAlias.objects.filter(school=OuterRef("pk"))
                    .annotate(s=TrigramSimilarity("alias_normalized", Value(qn))).order_by("-s").values("s")[:1])
     return list(
-        _alive_schools().select_related("upazila", "district").filter(school_scope(upazila, district_id))
+        _alive_schools().select_related("thana", "district").filter(school_scope(thana, district_id))
         .annotate(score=Greatest(TrigramSimilarity("name_normalized", Value(qn)),
                                  Coalesce(Subquery(alias_score, output_field=FloatField()), Value(0.0))))
         .filter(score__gte=settings.WIKISCHOLAR["SCHOOL_DUPLICATE_THRESHOLD"])
@@ -188,9 +188,9 @@ def similar_schools(upazila, name, limit=8, *, district_id=None):
 
 
 @transaction.atomic
-def add_school(*, upazila, name, request):
+def add_school(*, thana, name, request):
     school = School.objects.create(
-        name=name, upazila=upazila, district_id=upazila.district_id, verification_status=School.Status.VERIFIED,
+        name=name, thana=thana, district_id=thana.district_id, verification_status=School.Status.VERIFIED,
         source=School.Source.ADMIN, verified_by=request.user, verified_at=timezone.now())
     audit.record("school.created", request=request, entity=school, after=audit.snapshot(school))
     return school
@@ -217,7 +217,7 @@ def remove_school(school, *, request, reason=""):
 
 @transaction.atomic
 def restore_school(school, *, request):
-    clash = same_name_school(school.upazila, school.name, district_id=school.district_id, exclude=school)
+    clash = same_name_school(school.thana, school.name, district_id=school.district_id, exclude=school)
     if clash:
         raise ValueError(f"“{clash.name}” is already listed in {clash.location_label}, so this can't be restored.")
     school.restore()
@@ -231,7 +231,7 @@ def find_duplicate_pairs(district_id=None, threshold=None, limit=200):
         SELECT a.id, b.id, similarity(a.name_normalized, b.name_normalized) AS sim
         FROM schools a
         JOIN schools b ON a.district_id = b.district_id AND a.id < b.id
-             AND (a.upazila_id = b.upazila_id OR a.upazila_id IS NULL OR b.upazila_id IS NULL)
+             AND (a.thana_id = b.thana_id OR a.thana_id IS NULL OR b.thana_id IS NULL)
         WHERE a.is_deleted = FALSE AND b.is_deleted = FALSE
           AND a.merged_into_id IS NULL AND b.merged_into_id IS NULL
           AND a.name_normalized %% b.name_normalized
@@ -246,7 +246,7 @@ def find_duplicate_pairs(district_id=None, threshold=None, limit=200):
         cur.execute(sql, params)
         rows = cur.fetchall()
     ids = {i for r in rows for i in r[:2]}
-    schools = School.objects.select_related("upazila", "district").in_bulk(ids)
+    schools = School.objects.select_related("thana", "district").in_bulk(ids)
     return [(schools[a], schools[b], round(sim, 2)) for a, b, sim in rows if a in schools and b in schools]
 
 
@@ -265,8 +265,8 @@ def merge_schools(*, keep, duplicate, request):
         raise ValueError("Cannot merge a school into itself.")
     # Same area; or same district when either one's area isn't known yet.
     if keep.district_id != duplicate.district_id or (
-            keep.upazila_id and duplicate.upazila_id and keep.upazila_id != duplicate.upazila_id):
-        raise ValueError("Schools can only be merged within the same upazila "
+            keep.thana_id and duplicate.thana_id and keep.thana_id != duplicate.thana_id):
+        raise ValueError("Schools can only be merged within the same thana "
                          "(or the same district, when one of them has no area yet).")
     if duplicate.merged_into_id or keep.merged_into_id:
         raise ValueError("One of these schools has already been merged.")
@@ -284,10 +284,10 @@ def merge_schools(*, keep, duplicate, request):
             school=keep, alias_normalized=duplicate.name_normalized).exists():
         SchoolAlias.objects.create(school=keep, alias_text=duplicate.name, source=SchoolAlias.Source.MERGE,
                                    created_by=request.user)
-    if not keep.upazila_id and duplicate.upazila_id:  # the duplicate tells us the area
+    if not keep.thana_id and duplicate.thana_id:  # the duplicate tells us the area
         keep_before = audit.snapshot(keep)
-        keep.upazila_id = duplicate.upazila_id
-        keep.save(update_fields=["upazila", "updated_at"])
+        keep.thana_id = duplicate.thana_id
+        keep.save(update_fields=["thana", "updated_at"])
         audit.record("school.area_set", request=request, entity=keep, before=keep_before,
                      after=audit.snapshot(keep), meta={"from_merge_of": duplicate.pk})
     duplicate.merged_into = keep
@@ -310,19 +310,19 @@ def set_school_status(school, status, *, request):
 
 
 @transaction.atomic
-def set_school_area(school, upazila, *, request):
-    """Set (or change) a school's upazila / area within its district. Refused when that area, or the
+def set_school_area(school, thana, *, request):
+    """Set (or change) a school's thana within its district. Refused when that area, or the
     district's schools without an area, already list the same name (merge them instead)."""
-    if upazila.district_id != school.district_id:
-        raise ValueError("Choose an upazila or area in the school's own district.")
-    if school.upazila_id == upazila.pk:
+    if thana.district_id != school.district_id:
+        raise ValueError("Choose a thana in the school's own district.")
+    if school.thana_id == thana.pk:
         return False
-    clash = same_name_school(upazila, school.name, exclude=school)
+    clash = same_name_school(thana, school.name, exclude=school)
     if clash:
         raise ValueError(f"“{clash.name}” is already listed in {clash.location_label}. "
                          "Merge the two schools from Review duplicates instead.")
     before = audit.snapshot(school)
-    school.upazila = upazila
+    school.thana = thana
     school.save()
     audit.record("school.area_set", request=request, entity=school, before=before, after=audit.snapshot(school))
     return True

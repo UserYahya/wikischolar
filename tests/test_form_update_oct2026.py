@@ -77,7 +77,7 @@ class FormFieldTests(WSTestCase):
 class BanglaTests(WSTestCase):
     def test_labels_have_bangla(self):
         page = self.client.get("/").content.decode()
-        for bn in ["শিক্ষার্থীর পুরো নাম", "অভিভাবকের নাম (আপনার নাম)", "জেলা", "উপজেলা", "বিদ্যালয়ের নাম",
+        for bn in ["শিক্ষার্থীর পুরো নাম", "অভিভাবকের নাম (আপনার নাম)", "জেলা", "থানা", "বিদ্যালয়ের নাম",
                    "রোল নম্বর", "শাখা (যদি থাকে)", "মোবাইল নম্বর", "যাচাই কোড পাঠান", "পরের ধাপ", "যুব সুরক্ষা নীতি",
                    "ষষ্ঠ শ্রেণি", "ছেলে", "মেয়ে", "উইকিস্কলারের কথা আপনি কোথা থেকে জানলেন?"]:
             self.assertIn(bn, page)
@@ -97,7 +97,7 @@ class BanglaTests(WSTestCase):
                 msgs |= {m for m in f.error_messages.values() if "%(" not in m}
         msgs |= {"Enter a valid Bangladeshi mobile number (for example 01712345678).",
                  "Write the class roll in numbers only (for example 12).", "Write the email address in English letters.",
-                 "Write the student's relation to the guardian.", "Choose an upazila or area in the selected district."}
+                 "Write the student's relation to the guardian.", "Choose a thana in the selected district."}
         msgs -= {"spam", "Enter a valid UUID."}  # honeypot / not something a person can cause
         missing = sorted(m for m in msgs if m not in bangla.MESSAGES)
         self.assertEqual(missing, [])

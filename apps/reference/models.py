@@ -1,5 +1,5 @@
 """
-Reference Data module: regions, districts, upazilas, canonical schools, aliases.
+Reference Data module: regions, districts, thanas, canonical schools, aliases.
 
 District -> Region is a nullable, editable foreign key. Nothing in code knows
 which district belongs to which region; the mapping is seeded from
@@ -42,31 +42,31 @@ class District(SoftDeleteModel):
         return self.name
 
 
-class Upazila(SoftDeleteModel):
-    """An area inside a district: the form's "Upazila / Area". Most rows are upazilas (blank `group`).
-    City corporations have no upazila, so their thanas are rows too, grouped by city corporation
-    (`group` = "Dhaka North City Corporation", …), and so are cantonments (`group` = "Cantonment")
-    and one "Other area" per district (`group` = "Other") for anyone who can't find their area.
-    Students and schools point at any of them the same way."""
+class Thana(SoftDeleteModel):
+    """A thana inside a district: the form's "Thana". The list is the government's (BANBEIS
+    e-survey 2024) plus newer upazilas; most rows have a blank `group`. Cantonments are rows too
+    (`group` = "Cantonment"), and so is one "Other thana (not listed)" per district (`group` =
+    "Other") for anyone who can't find theirs. Any other `group` is shown as a heading the thana is
+    listed under (none in the current list). Students and schools point at any of them the same way."""
     CANTONMENT = "Cantonment"
     OTHER = "Other"
-    # Headings for groups that aren't a city corporation: (English, Bangla)
-    GROUP_LABELS = {"": ("Upazilas", "উপজেলা"), CANTONMENT: ("Cantonments", "সেনানিবাস"),
+    # Headings for the groups: (English, Bangla)
+    GROUP_LABELS = {"": ("Thanas", "থানা"), CANTONMENT: ("Cantonments", "সেনানিবাস"),
                     OTHER: ("Not in the list", "তালিকায় নেই")}
 
-    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="upazilas")
+    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="thanas")
     name = models.CharField(max_length=80)
     name_bn = models.CharField(max_length=80, blank=True)
-    group = models.CharField(max_length=60, blank=True)     # blank = an upazila
+    group = models.CharField(max_length=60, blank=True)     # blank = a thana
     group_bn = models.CharField(max_length=60, blank=True)  # Bangla of `group`
 
     class Meta:
-        db_table = "upazilas"
+        db_table = "thanas"
         ordering = ["name"]
         constraints = [
-            models.UniqueConstraint(fields=["district", "name"], name="upazila_district_name_uniq"),
-            # Target for the composite FK students(upazila_id, district_id)
-            models.UniqueConstraint(fields=["id", "district"], name="upazila_id_district_uniq"),
+            models.UniqueConstraint(fields=["district", "name"], name="thana_district_name_uniq"),
+            # Target for the composite FK students(thana_id, district_id)
+            models.UniqueConstraint(fields=["id", "district"], name="thana_id_district_uniq"),
         ]
 
     def __str__(self):
@@ -82,14 +82,15 @@ class Upazila(SoftDeleteModel):
 
     @property
     def display_name(self):
-        """The name with its city corporation, e.g. "Mohammadpur (Dhaka North City Corporation)"."""
+        """The name with its group heading, e.g. "Mohammadpur (Dhaka North City Corporation)"; cantonments
+        and "Other" are shown by name alone."""
         if self.group and self.group not in (self.CANTONMENT, self.OTHER):
             return f"{self.name} ({self.group})"
         return self.name
 
     @property
     def sort_key(self):
-        """Order in lists: city-corporation thanas, cantonments, upazilas, then "Other area"."""
+        """Order in lists: grouped thanas (if any), cantonments, thanas, then "Other thana"."""
         rank = {"": 2, self.CANTONMENT: 1, self.OTHER: 3}.get(self.group, 0)
         return (rank, self.group.casefold(), self.name.casefold())
 
@@ -108,9 +109,9 @@ class School(SoftDeleteModel):
     name = models.CharField(max_length=255)
     name_normalized = models.CharField(max_length=255, editable=False)
     district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="schools")
-    # Blank = area not known yet (e.g. imported from a list with districts only). Such a school belongs
-    # to the whole district: it is suggested and duplicate-checked across all its areas.
-    upazila = models.ForeignKey(Upazila, null=True, blank=True, on_delete=models.PROTECT, related_name="schools")
+    # Blank = thana not known yet (e.g. imported from a list with districts only). Such a school belongs
+    # to the whole district: it is suggested and duplicate-checked across all its thanas.
+    thana = models.ForeignKey(Thana, null=True, blank=True, on_delete=models.PROTECT, related_name="schools")
     verification_status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True)
     source = models.CharField(max_length=14, choices=Source.choices, default=Source.REGISTRATION)
     merged_into = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="merged_from")
@@ -121,7 +122,7 @@ class School(SoftDeleteModel):
         db_table = "schools"
         ordering = ["name"]
         indexes = [
-            models.Index(fields=["upazila", "verification_status"], name="school_upz_status_idx"),
+            models.Index(fields=["thana", "verification_status"], name="school_thana_status_idx"),
             GinIndex(fields=["name_normalized"], name="school_name_trgm", opclasses=["gin_trgm_ops"]),  # pg_trgm
         ]
         constraints = [
@@ -135,19 +136,19 @@ class School(SoftDeleteModel):
     def save(self, *args, **kwargs):
         self.name = " ".join((self.name or "").split())
         self.name_normalized = normalize_school_name(self.name)
-        if self.upazila_id and not self.district_id:
-            self.district_id = self.upazila.district_id
+        if self.thana_id and not self.district_id:
+            self.district_id = self.thana.district_id
         super().save(*args, **kwargs)
 
     @property
     def area_name(self):
-        """The upazila / area name, or "" when it isn't known yet."""
-        return self.upazila.name if self.upazila_id else ""
+        """The thana name, or "" when it isn't known yet."""
+        return self.thana.name if self.thana_id else ""
 
     @property
     def location_label(self):
-        """Where the school is, for messages: its area, or its district when the area isn't known."""
-        return self.area_name or f"{self.district.name} (area not known)"
+        """Where the school is, for messages: its thana, or its district when the thana isn't known."""
+        return self.area_name or f"{self.district.name} (thana not known)"
 
     def canonical(self):
         school, hops = self, 0

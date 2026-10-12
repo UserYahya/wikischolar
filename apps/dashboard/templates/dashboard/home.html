@@ -14,7 +14,7 @@
   <div><p class="fig"><a href="{% url 'dashboard:schools' %}?status=pending">{{ pending_schools }}</a></p><p>schools awaiting review</p></div>
 </section>
 {% if other_area %}
-<p class="notice">{{ other_area }} student{{ other_area|pluralize }} chose “Other area (not listed)” as {{ other_area|pluralize:"their,their" }} upazila / area. <a href="{% url 'dashboard:students' %}?area_kind=other">Review and set the right area</a>; add the area on the district's page if it's missing.</p>
+<p class="notice">{{ other_area }} student{{ other_area|pluralize }} chose “Other thana (not listed)” as {{ other_area|pluralize:"their,their" }} thana. <a href="{% url 'dashboard:students' %}?area_kind=other">Review and set the right area</a>; add the area on the district's page if it's missing.</p>
 {% endif %}
 {% if unassigned_districts %}
 <p class="notice">{{ unassigned_districts }} district{{ unassigned_districts|pluralize }} {{ unassigned_districts|pluralize:"has,have" }} no region. Registrants from {{ unassigned_districts|pluralize:"it,them" }} will see “no region assigned”. <a href="{% url 'dashboard:locations' %}">Assign regions</a></p>

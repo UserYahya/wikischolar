@@ -54,10 +54,10 @@ class RegistrationFlowTests(WSTestCase):
             r = self.post_json("/api/registration/submit/", self.payload(vid, phone=bad))
             self.assertIn("phone", r.json().get("errors", {}), bad)
 
-    def test_upazila_must_belong_to_district(self):
+    def test_thana_must_belong_to_district(self):
         vid = self.verify_email()
-        r = self.post_json("/api/registration/submit/", self.payload(vid, upazila=self.sharsha.pk, school_id=None))
-        self.assertIn("upazila", r.json()["errors"])
+        r = self.post_json("/api/registration/submit/", self.payload(vid, thana=self.sharsha.pk, school_id=None))
+        self.assertIn("thana", r.json()["errors"])
 
     def test_submit_requires_verified_email_in_this_session(self):
         vid = self.verify_email()
@@ -218,17 +218,17 @@ class SchoolResolutionTests(WSTestCase):
         self.assertEqual(student.school, self.school)
         self.assertEqual(student.school_name_as_entered, "Tongi Govt. High School")
 
-    def test_school_id_from_other_upazila_is_ignored(self):
-        other = School.objects.create(name="Sharsha School", district=self.jessore, upazila=self.sharsha)
+    def test_school_id_from_other_thana_is_ignored(self):
+        other = School.objects.create(name="Sharsha School", district=self.jessore, thana=self.sharsha)
         self.register(school_id=other.pk, school_name="Tongi Government High School")
         self.assertEqual(Student.objects.get().school, self.school)
 
-    def test_typeahead_api_scoped_to_upazila(self):
-        School.objects.create(name="Kaliakair Girls School", district=self.gazipur, upazila=self.kaliakair)
-        r = self.client.get("/api/reference/schools/", {"upazila": self.tongi.pk, "q": "tongi high"})
+    def test_typeahead_api_scoped_to_thana(self):
+        School.objects.create(name="Kaliakair Girls School", district=self.gazipur, thana=self.kaliakair)
+        r = self.client.get("/api/reference/schools/", {"thana": self.tongi.pk, "q": "tongi high"})
         names = [s["name"] for s in r.json()["schools"]]
         self.assertEqual(names, ["Tongi Government High School"])
-        r = self.client.get("/api/reference/schools/", {"upazila": self.tongi.pk, "q": "kaliakair"})
+        r = self.client.get("/api/reference/schools/", {"thana": self.tongi.pk, "q": "kaliakair"})
         self.assertEqual(r.json()["schools"], [])
 
 
@@ -246,13 +246,13 @@ class DatabaseIntegrityTests(WSTestCase):
             with transaction.atomic(), connection.cursor() as c:
                 c.execute("UPDATE audit_logs SET action = 'tampered'")
 
-    def test_upazila_district_composite_fk(self):
+    def test_thana_district_composite_fk(self):
         self.register()
         with self.assertRaises(IntegrityError):
             with transaction.atomic(), connection.cursor() as c:
                 # The FK is DEFERRABLE INITIALLY DEFERRED; force the check now.
-                c.execute("SET CONSTRAINTS students_upazila_in_district IMMEDIATE")
-                c.execute("UPDATE students SET upazila_id = %s", [self.sharsha.pk])
+                c.execute("SET CONSTRAINTS students_thana_in_district IMMEDIATE")
+                c.execute("UPDATE students SET thana_id = %s", [self.sharsha.pk])
 
     def test_phone_check_constraint(self):
         self.register()

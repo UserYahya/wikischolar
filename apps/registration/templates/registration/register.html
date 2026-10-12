@@ -91,17 +91,17 @@
           <output id="region" class="derived" aria-live="polite">Shown after you choose a district</output>
         </div>
         <div class="field span2">
-          <label for="upazila">Upazila / Area <span class="bn" lang="bn">উপজেলা / এলাকা</span></label>
-          <select id="upazila" name="upazila" required disabled aria-describedby="areaHelp"><option value="">Choose a district first</option></select>
-          <p class="hint" id="areaHelp">In a city, choose your thana under its city corporation. Not listed? Choose “Other area (not listed)” at the end.
-            <span class="bn" lang="bn">শহরে থাকলে সিটি কর্পোরেশনের নিচে আপনার থানা বেছে নিন। তালিকায় না থাকলে শেষের “Other area (not listed)” বেছে নিন।</span></p>
-          <p class="err" data-err="upazila"></p>
+          <label for="thana">Thana <span class="bn" lang="bn">থানা</span></label>
+          <select id="thana" name="thana" required disabled aria-describedby="areaHelp"><option value="">Choose a district first</option></select>
+          <p class="hint" id="areaHelp">Not listed? Choose “Other thana (not listed)” at the end.
+            <span class="bn" lang="bn">তালিকায় না থাকলে শেষের “Other thana (not listed)” বেছে নিন।</span></p>
+          <p class="err" data-err="thana"></p>
         </div>
         <div class="field span2 combo">
           <label for="school_name">School name <span class="bn" lang="bn">বিদ্যালয়ের নাম</span></label>
           <input id="school_name" name="school_name" required maxlength="255" disabled data-english
                  role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="schoolList"
-                 aria-describedby="schoolHelp" placeholder="Choose the area first" autocomplete="off">
+                 aria-describedby="schoolHelp" placeholder="Choose the thana first" autocomplete="off">
           <input type="hidden" name="school_id" id="school_id">
           <ul id="schoolList" role="listbox" hidden></ul>
           <p class="hint" id="schoolHint"></p>

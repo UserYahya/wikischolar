@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.test import TestCase
 
 from apps.core.models import Admin, Role
-from apps.reference.models import District, Region, School, Upazila
+from apps.reference.models import District, Region, School, Thana
 
 
 class WSTestCase(TestCase):
@@ -16,11 +16,11 @@ class WSTestCase(TestCase):
         cls.khulna = Region.objects.create(code="khulna", name="Khulna", name_bn="খুলনা", sort_order=2)
         cls.gazipur = District.objects.create(code="gazipur", name="Gazipur", name_bn="গাজীপুর", region=cls.dhaka)
         cls.jessore = District.objects.create(code="jessore", name="Jessore", name_bn="যশোর", region=cls.khulna)
-        cls.tongi = Upazila.objects.create(district=cls.gazipur, name="Tongi", name_bn="টঙ্গী")
-        cls.kaliakair = Upazila.objects.create(district=cls.gazipur, name="Kaliakair", name_bn="কালিয়াকৈর")
-        cls.sharsha = Upazila.objects.create(district=cls.jessore, name="Sharsha", name_bn="শার্শা")
+        cls.tongi = Thana.objects.create(district=cls.gazipur, name="Tongi", name_bn="টঙ্গী")
+        cls.kaliakair = Thana.objects.create(district=cls.gazipur, name="Kaliakair", name_bn="কালিয়াকৈর")
+        cls.sharsha = Thana.objects.create(district=cls.jessore, name="Sharsha", name_bn="শার্শা")
         cls.school = School.objects.create(name="Tongi Government High School", district=cls.gazipur,
-                                           upazila=cls.tongi, verification_status="verified", source="admin")
+                                           thana=cls.tongi, verification_status="verified", source="admin")
         cls.super = Admin.objects.create_user(email="super@ws.test", password="x-Strong-pass-123",
                                               full_name="Super", role=Role.SUPER_ADMIN)
         cls.admin = Admin.objects.create_user(email="admin@ws.test", password="x-Strong-pass-123",
@@ -51,7 +51,7 @@ class WSTestCase(TestCase):
         data = {
             "student_name": "Rahim Uddin", "gender": "male",
             "guardian_name": "Karim Uddin", "guardian_relation": "father",
-            "district": self.gazipur.pk, "upazila": self.tongi.pk,
+            "district": self.gazipur.pk, "thana": self.tongi.pk,
             "school_id": self.school.pk, "school_name": self.school.name,
             "current_class": "8", "class_roll": "12", "student_id_sid": "", "section": "", "heard_from": "school",
             "phone": "01712345678", "email": "rahim@gmail.com", "updates_opt_in": True,

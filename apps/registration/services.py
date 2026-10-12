@@ -89,7 +89,7 @@ def register_student(data, *, request):
     if ev is None:
         raise ValueError("email_not_verified")
 
-    school, how = reference.resolve_school(upazila=data["upazila"], typed_text=data["school_name"],
+    school, how = reference.resolve_school(thana=data["thana"], typed_text=data["school_name"],
                                            school_id=data.get("school_id"))
     now = timezone.now()
     student = Student.objects.create(
@@ -97,7 +97,7 @@ def register_student(data, *, request):
         student_name=data["student_name"], gender=data["gender"],
         guardian_name=data["guardian_name"], guardian_relation=data["guardian_relation"],
         guardian_relation_other=data["guardian_relation_other"],
-        district=data["district"], upazila=data["upazila"], school=school,
+        district=data["district"], thana=data["thana"], school=school,
         school_name_as_entered=data["school_name"], school_resolution=how,
         current_class=data["current_class"], class_roll=data["class_roll"], student_id_sid=data["student_id_sid"],
         section=data["section"], heard_from=data["heard_from"],
@@ -126,7 +126,7 @@ def summary(student):
         "guardian": f"{student.guardian_name} ({student.guardian_relation_label})",
         "district": student.district.name,
         "region": region.name if region else "",
-        "upazila": student.upazila.display_name,  # thanas carry their city corporation
+        "thana": student.thana.display_name,  # with its group heading, if it has a custom one
         "school": student.school.name,
         "school_pending": student.school.verification_status == "pending",
         "current_class": student.get_current_class_display(),
@@ -168,7 +168,7 @@ def send_confirmation_sms(student):
 
 # ---- Admin edits (every change → edit_history + audit_logs) ------------------ #
 EDITABLE_FIELDS = ["student_name", "gender", "guardian_name", "guardian_relation",
-                   "guardian_relation_other", "district", "upazila", "school", "current_class", "class_roll",
+                   "guardian_relation_other", "district", "thana", "school", "current_class", "class_roll",
                    "student_id_sid", "section", "phone", "email", "updates_opt_in"]
 
 

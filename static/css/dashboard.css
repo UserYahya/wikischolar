@@ -206,7 +206,7 @@ details > summary { cursor: pointer; color: var(--green); font-weight: 500; }
 .filters .datefield-btn svg { width: 16px; height: 16px; }
 .wsid { white-space: nowrap; }
 
-/* Add school: typeahead of schools already listed in the upazila */
+/* Add school: typeahead of schools already listed in the thana */
 .combo { position: relative; }
 .combo-list { position: absolute; z-index: 5; top: 100%; left: 0; right: 0; margin: .25rem 0 0; padding: .3rem; list-style: none;
   background: var(--white); border: 1px solid var(--green); border-radius: 4px; max-height: 18rem; overflow: auto;

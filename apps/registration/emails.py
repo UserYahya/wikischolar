@@ -11,13 +11,13 @@ CONFIRMATION = "registration.confirmation"
 _STUDENT_PLACEHOLDERS = {
     "student_name": "student's full name",
     "wikischolar_id": "the new WikiScholar ID, e.g. WS-2027-000001",
-    "details": "all registration details, one per line (name, guardian, district, upazila, school, class, "
+    "details": "all registration details, one per line (name, guardian, district, thana, school, class, "
                "section, roll / student ID, phone, who filled in the form); a table in the HTML email",
     "gender": "gender",
     "guardian": "guardian's name and relation, e.g. Karim Uddin (Father)",
     "district": "district",
     "region": "region (may be empty)",
-    "upazila": "upazila or area (a thana shows its city corporation)",
+    "thana": "thana",
     "school": "school name",
     "current_class": "class, e.g. Class 8",
     "class_roll": "class roll (may be empty)",
@@ -32,7 +32,7 @@ _STUDENT_PLACEHOLDERS = {
 _SAMPLE_SUMMARY = {
     "wikischolar_id": "WS-2027-000123", "student_name": "Rahim Uddin",
     "gender": "Male", "guardian": "Karim Uddin (Father)", "district": "Gazipur", "region": "Dhaka",
-    "upazila": "Tongi", "school": "Tongi Government High School", "current_class": "Class 8",
+    "thana": "Tongi", "school": "Tongi Government High School", "current_class": "Class 8",
     "class_roll": "12", "student_id_sid": "", "section": "B", "phone": "01712345678", "email": "rahim@gmail.com",
     "filled_by": "The student's guardian",
 }
@@ -42,7 +42,7 @@ def details_rows(s):
     """The registration summary as (label, value) pairs (s = registration.services.summary())."""
     district = s["district"] + (f" ({s['region']} region)" if s.get("region") else "")
     rows = [("Name", s["student_name"]), ("Guardian", s["guardian"]), ("District", district),
-            ("Upazila / Area", s["upazila"]), ("School", s["school"]), ("Class", s["current_class"])]
+            ("Thana", s["thana"]), ("School", s["school"]), ("Class", s["current_class"])]
     for label, key in (("Section", "section"), ("Class roll", "class_roll"), ("Student ID", "student_id_sid")):
         if s.get(key):
             rows.append((label, s[key]))
@@ -59,6 +59,7 @@ def confirmation_values(s):
     keys = set(_STUDENT_PLACEHOLDERS) - {"details", "contact_email"}
     values = {k: s.get(k, "") for k in keys}
     values.update(details=details_block(s), contact_email=settings.WIKISCHOLAR["CONTACT_EMAIL"])
+    values["upazila"] = values["thana"]  # wording saved before Oct 2026 may still say {upazila}
     values["_rows"] = details_rows(s)  # for the HTML table; not a placeholder
     return values
 

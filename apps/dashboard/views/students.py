@@ -10,7 +10,7 @@ from apps.core.models import AuditLog
 from apps.core.permissions import require_perm
 from apps.notifications import services as notify
 from apps.reference import services as ref
-from apps.reference.models import District, Region, School, Upazila
+from apps.reference.models import District, Region, School, Thana
 from apps.registration import services
 from apps.registration.choices import CLASS_CHOICES, FilledBy, Gender
 from apps.registration.models import Student
@@ -27,10 +27,10 @@ def _filter_context(p):
            "msg_batches": notify.recent_batches(), "msg_batch_modes": filters.MSG_BATCH_MODES,
            "filled_by_choices": FilledBy.choices, "area_kinds": filters.AREA_KINDS}
     if len(p["district"]) == 1:
-        ctx["upazilas"] = ref.areas_of(p["district"][0])
-    if p["upazila"]:  # the area's schools plus the district's schools without an area
-        ctx["schools"] = School.objects.filter(ref.school_scope(Upazila.objects.filter(pk=p["upazila"]).first()),
-                                               merged_into__isnull=True) if str(p["upazila"]).isdigit() else []
+        ctx["thanas"] = ref.areas_of(p["district"][0])
+    if p["thana"]:  # the area's schools plus the district's schools without an area
+        ctx["schools"] = School.objects.filter(ref.school_scope(Thana.objects.filter(pk=p["thana"]).first()),
+                                               merged_into__isnull=True) if str(p["thana"]).isdigit() else []
     return ctx
 
 
@@ -71,8 +71,8 @@ EXPORT_COLUMNS = [
     ("filled_by", lambda s: s.filled_by),
     ("guardian_declared_at", lambda s: s.guardian_declared_at.isoformat() if s.guardian_declared_at else ""),
     ("region", lambda s: s.district.region.name if s.district.region_id else ""),
-    ("district", lambda s: s.district.name), ("upazila", lambda s: s.upazila.name),
-    ("area_group", lambda s: s.upazila.group),
+    ("district", lambda s: s.district.name), ("thana", lambda s: s.thana.name),
+    ("area_group", lambda s: s.thana.group),
     ("school_id", lambda s: s.school_id), ("school", lambda s: s.school.name),
     ("school_name_as_entered", lambda s: s.school_name_as_entered), ("current_class", lambda s: s.current_class),
     ("class_roll", lambda s: s.class_roll), ("student_id_sid", lambda s: s.student_id_sid),
@@ -105,7 +105,7 @@ def student_export(request):
 
 @require_perm("students.view")
 def student_detail(request, wsid):
-    student = get_object_or_404(Student.all_objects.select_related("district__region", "upazila", "school"),
+    student = get_object_or_404(Student.all_objects.select_related("district__region", "thana", "school"),
                                 wikischolar_id=wsid)
     audit.record("student.viewed", request=request, entity=student)
     history = student.edit_history.select_related("changed_by")[:200]
@@ -131,22 +131,22 @@ def student_edit(request, wsid):
         messages.success(request, f"Saved {changed} change(s)." if changed else "Nothing changed.")
         return redirect("dashboard:student", wsid=wsid)
     district_id = form.data.get("district") if form.is_bound else student.district_id
-    upazila_id = form.data.get("upazila") if form.is_bound else student.upazila_id
+    thana_id = form.data.get("thana") if form.is_bound else student.thana_id
     return render(request, "dashboard/student_edit.html", {
         "s": student, "form": form,
         "districts": District.objects.all(),
-        "upazilas": ref.areas_of(district_id),
-        "schools": _school_choices(upazila_id, student.school),
+        "thanas": ref.areas_of(district_id),
+        "schools": _school_choices(thana_id, student.school),
     })
 
 
-def _school_choices(upazila_id, current):
-    """The editor's school list: schools of the selected upazila / area and the district's schools
+def _school_choices(thana_id, current):
+    """The editor's school list: schools of the selected thana and the district's schools
     without an area, plus the student's current school when it is elsewhere (so saving other changes
     never switches the school)."""
-    upazila = Upazila.objects.filter(pk=upazila_id or 0).first()
-    schools = list(School.objects.filter(ref.school_scope(upazila), merged_into__isnull=True)
-                   .select_related("upazila")) if upazila else []
+    thana = Thana.objects.filter(pk=thana_id or 0).first()
+    schools = list(School.objects.filter(ref.school_scope(thana), merged_into__isnull=True)
+                   .select_related("thana")) if thana else []
     if current and all(s.pk != current.pk for s in schools):
         schools.insert(0, current)
     return schools

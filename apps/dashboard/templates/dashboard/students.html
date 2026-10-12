@@ -34,12 +34,12 @@
       {% endif %}
     </fieldset>
 
-    {% if upazilas %}
-    <label for="upazila">Upazila / Area</label>
-    <select id="upazila" name="upazila"><option value="">All upazilas and areas</option>
-      {% include "dashboard/_area_options.html" with areas=upazilas selected=p.upazila %}
+    {% if thanas %}
+    <label for="thana">Thana</label>
+    <select id="thana" name="thana"><option value="">All thanas</option>
+      {% include "dashboard/_area_options.html" with areas=thanas selected=p.thana %}
     </select>
-    {% else %}<p class="hint">Pick exactly one district to filter by upazila or area.</p>{% endif %}
+    {% else %}<p class="hint">Pick exactly one district to filter by thana.</p>{% endif %}
     {% if schools %}
     <label for="school">School</label>
     <select id="school" name="school"><option value="">All schools</option>
@@ -60,7 +60,7 @@
       <div class="row2"><input type="text" name="from" value="{{ p.from }}" aria-label="From" placeholder="dd/mm/yyyy" data-datefield data-max="today"><input type="text" name="to" value="{{ p.to }}" aria-label="To" placeholder="dd/mm/yyyy" data-datefield data-max="today"></div>
     </fieldset>
     <label class="inline"><input type="checkbox" name="opt_in" value="1" {% if p.opt_in == "1" %}checked{% endif %}> Opted in to email updates</label>
-    <label for="area_kind">Area type</label>
+    <label for="area_kind">Thana type</label>
     <select id="area_kind" name="area_kind"><option value="">Any</option>
       {% for v, l in area_kinds.items %}<option value="{{ v }}" {% if v == p.area_kind %}selected{% endif %}>{{ l }}</option>{% endfor %}
     </select>
@@ -124,7 +124,7 @@
           <td>{{ s.student_name }}</td>
           <td class="num">{{ s.current_class }}</td>
           <td>{{ s.school.name }}{% if s.school.verification_status == "pending" %} <span class="tag">pending</span>{% endif %}</td>
-          <td>{{ s.district.name }}<br><small class="muted">{{ s.upazila.name }}</small></td>
+          <td>{{ s.district.name }}<br><small class="muted">{{ s.thana.name }}</small></td>
           <td>{{ s.district.region.name|default:"—" }}</td>
           <td><time datetime="{{ s.created_at|date:'c' }}">{{ s.created_at|date:"j M Y" }}</time></td>
         </tr>

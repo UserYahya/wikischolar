@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.reference.models import District, Upazila
+from apps.reference.models import District, Thana
 
 from .choices import CLASS_CHOICES, Gender, GuardianRelation, HeardFrom
 from .validators import english_text, normalize_phone, roll_number, validate_phone
@@ -17,7 +17,7 @@ class StudentCoreFields(forms.Form):
     guardian_relation = forms.ChoiceField(choices=GuardianRelation.choices, error_messages=REQUIRED)
     guardian_relation_other = forms.CharField(max_length=60, required=False)
     district = forms.ModelChoiceField(queryset=District.objects.all(), error_messages=REQUIRED)
-    upazila = forms.ModelChoiceField(queryset=Upazila.objects.all(), error_messages=REQUIRED)
+    thana = forms.ModelChoiceField(queryset=Thana.objects.all(), error_messages=REQUIRED)
     current_class = forms.ChoiceField(choices=CLASS_CHOICES, error_messages=REQUIRED)
     class_roll = forms.CharField(max_length=20, required=False)
     student_id_sid = forms.CharField(max_length=40, required=False)
@@ -68,9 +68,9 @@ class StudentCoreFields(forms.Form):
         if not roll and not sid and "class_roll" not in self.errors and "student_id_sid" not in self.errors:
             self.add_error("class_roll", ROLL_OR_SID_ERROR)
             self.add_error("student_id_sid", ROLL_OR_SID_ERROR)
-        district, upazila = data.get("district"), data.get("upazila")
-        if district and upazila and upazila.district_id != district.pk:
-            self.add_error("upazila", "Choose an upazila or area in the selected district.")
+        district, thana = data.get("district"), data.get("thana")
+        if district and thana and thana.district_id != district.pk:
+            self.add_error("thana", "Choose a thana in the selected district.")
         return data
 
 
