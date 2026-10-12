@@ -152,7 +152,7 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-262 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+265 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
 roll-or-SID, phone, thana-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new
@@ -189,7 +189,7 @@ across all its thanas) until an admin sets its thana on the school page.
 **Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, thana, school,
 class, gender, date-range, opt-in and text search; **advanced search** on Students and Schools
 (conditions in ALL/ANY groups, including the schools' government data) with **shared saved
-searches**; CSV export; per-student edit history;
+searches** and CSV export of the results; CSV export; per-student edit history;
 archive/restore (no hard deletes); bulk email/SMS to the current filter with batch IDs
 (`EB-2026-0001`, `SB-2026-0001`), per-recipient delivery status, and resend-failed; school
 review and duplicate merge; locations; audit log (including record views and exports);
