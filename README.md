@@ -139,6 +139,7 @@ record which student batch they were sent to.
 |---|---|
 | `seed_reference [--file PATH] [--reset-region-assignments]` | Load/refresh regions, districts and thanas (the government's BANBEIS list, newer upazilas, cantonments, "Other thana"). Idempotent. |
 | `import_schools CSV [--status verified\|pending]` | Import a school list (`district,thana,name`; thana optional). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
+| `import_banbeis_schools XLSX [--dry-run]` | Load the government's school list (BANBEIS .xlsx) with EIIN and government data; matches existing schools by EIIN, then by name; safe to re-run. |
 | `undo_school_import [ID] [--list] [--dry-run] [--yes]` | Undo one school import: its schools are removed (restorable from Schools → Removed); ones with students are kept. Run `--list`, then `ID --dry-run`. |
 | `create_super_admin --email --name [--password]` | Bootstrap the first Super Admin; everyone else is created from the dashboard. |
 | `check_host` | Pre-flight on a new server: Python, PostgreSQL 13+, `pg_trgm`, settings, migrations, cache. |
@@ -151,7 +152,7 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-222 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+255 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
 roll-or-SID, phone, thana-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new
@@ -186,7 +187,9 @@ column left out): such a school belongs to its whole district (suggested and dup
 across all its thanas) until an admin sets its thana on the school page.
 
 **Dashboard** — Super Admin / Admin / Viewer; multi-select district, region, thana, school,
-class, gender, date-range, opt-in and text search; CSV export; per-student edit history;
+class, gender, date-range, opt-in and text search; **advanced search** on Students and Schools
+(conditions in ALL/ANY groups, including the schools' government data) with **shared saved
+searches**; CSV export; per-student edit history;
 archive/restore (no hard deletes); bulk email/SMS to the current filter with batch IDs
 (`EB-2026-0001`, `SB-2026-0001`), per-recipient delivery status, and resend-failed; school
 review and duplicate merge; locations; audit log (including record views and exports);

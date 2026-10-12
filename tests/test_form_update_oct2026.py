@@ -177,8 +177,11 @@ class DashboardTests(WSTestCase):
 
     def test_single_tool_group_is_a_plain_link(self):
         viewer_groups = nav_groups_for(self.viewer)
+        overview = next(g for g in viewer_groups if "dashboard:home" in g.url_names)
+        self.assertEqual(overview.label, "")
         students = next(g for g in viewer_groups if "dashboard:students" in g.url_names)
-        self.assertEqual(students.label, "")  # a viewer can't open archived records
+        # a viewer can't open archived records, but has saved searches
+        self.assertEqual([i.label for i in students.items], ["All students", "Saved searches"])
 
     def test_sidebar_renders_groups_open_on_current_page(self):
         self.client.force_login(self.super)

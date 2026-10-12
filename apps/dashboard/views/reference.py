@@ -16,6 +16,7 @@ from apps.reference.models import District, Region, School, Thana
 
 from ..forms import GOVERNMENT_FIELDS, RegionForm, SchoolDetailsForm
 from .. import advanced
+from . import searches
 from ._util import advanced_context, paginate
 
 
@@ -48,7 +49,8 @@ def school_list(request):
     q = request.GET.get("q", "").strip()
     if q:
         qs = qs.filter(Q(name__icontains=q) | Q(aliases__alias_text__icontains=q) | Q(eiin=q)).distinct()
-    adv = advanced.normalize("schools", request.GET.get("adv", ""))
+    saved = searches.for_request(request, "schools")
+    adv = advanced.normalize("schools", request.GET.get("adv", "") or (saved.query if saved else ""))
     if adv:
         qs = qs.filter(advanced.parse("schools", adv)[0])
     try:

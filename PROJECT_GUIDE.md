@@ -100,6 +100,21 @@ Analytics) will plug into the same app.
   70-character Unicode SMS); a test checks this. Text in `registration/services.py`
   (`confirmation_sms_text`); sent through the active SMS settings (MiM SMS) after commit,
   independently of the email, and logged on the student page. A failed SMS never blocks registration.
+* **Government school list (BANBEIS).** `manage.py import_banbeis_schools FILE.xlsx [--dry-run]`
+  loads the government's institution list (e-survey 2024: 19,718 schools). Each school gets its
+  **EIIN** (6 digits, unique) and government data: division, institute type, education level,
+  management (government / non-government / …), MPO, institute for (co-education / girls / boys),
+  geographical position, area status (rural / city corporation / paurashava…), post office and email.
+  Thanas resolve through `data/thana_mapping.csv`. A row matches an existing school by EIIN, then
+  by name in the same thana (a school without an EIIN keeps its id and students), else it is added
+  as a verified "BANBEIS list" school. Removed schools are not brought back, and running it again
+  changes nothing. The school page shows the government data, and *Edit government data* changes it
+  (`schools.edit`, audited `school.details_updated`). The Schools list shows the EIIN, and its search
+  and the typeahead (public form too) find a school by its 6-digit EIIN.
+* **School names are in CAPITALS** everywhere: `School.save()` and `SchoolAlias.save()` uppercase
+  them, whether a school comes from the public form, *Add school*, a rename, an import or a merge
+  (migration `reference.0010` converted the existing ones). Matching ignores case. A student's
+  `school_name_as_entered` stays exactly as typed.
 * **Approving schools** makes them suggestible: Dashboard → Schools → a pending school → *Mark
   verified* (or bulk-load a verified list with `import_schools CSV --status verified`).
 * **Adding and removing schools** (Dashboard → Schools, needs `schools.edit`): *Add school* picks
@@ -151,6 +166,29 @@ Analytics) will plug into the same app.
 * **Students**: filters (region, district, thana, **thana type** (thana, cantonment, "Other
   thana"), school, class, gender, date range, opt-in, text search, sort), **split into batches** of N students (view / CSV / message each batch),
   CSV export (Excel-friendly), student detail with full edit history, edit, archive/restore.
+* **Advanced search** (Students and Schools lists, above the results): a query builder.
+  * **Conditions:** field → operator → value. Text fields take is / contains / starts with / is
+    empty; lists take is any of / is none of; numbers and dates take = / < / > / between; yes/no
+    fields take yes or no.
+  * **Groups:** each group matches ALL or ANY of its conditions, and the groups are combined with
+    ALL or ANY.
+  * **Student fields:** student, guardian and contact details, place, registration date, the school
+    and the school's government data (EIIN, management, MPO, …).
+  * **School fields:** name and alias, status, source, number of students, date added, place,
+    division, the government data, post office and email.
+  * **It combines with everything else:** the other filters still apply. On Students the query is
+    the `adv` filter param, so Export CSV, batches, *Message this group* and a batch's saved filter
+    follow it.
+  * **Safe to run:** `apps/dashboard/advanced.py` allows registered fields and operators only, and
+    no SQL is built from text. Limits: 10 groups, 20 conditions, 200-character text. An invalid
+    condition is left out and shown as a notice, never run. A search stops after 5 s
+    (`statement_timeout`). Each search is described in plain English above the results.
+* **Saved searches** (shared): *Save as new search* (name + optional note) stores the current
+  conditions (`saved_searches`). Every admin who can see that list sees them in the *Saved searches*
+  dropdown and on **Students → Saved searches**, and opening one (`?saved=<id>`) runs its latest
+  version. Only the admin who saved it, or a Super Admin, can *Update* it with the current conditions
+  or *Delete* it (archived). Audited as `search.saved`, `search.updated` and `search.deleted`. A
+  condition whose field no longer exists is left out with a notice.
 * **Messages**: compose bulk email/SMS to a filtered group or a batch. Every send is a **named
   batch** (name required, English) with `{name}` and `{wikischolar_id}` placeholders.
   * **Messages list**: search by batch name / code / subject, filter by channel or "only batches
@@ -464,6 +502,7 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
 | `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts and 666 thanas (the government's list, newer upazilas, cantonments, "Other thana"; idempotent; keeps dashboard edits). On an existing database, migration `reference.0007` applies the list by itself |
 | `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,thana,name`, English; the thana may be blank or the column left out); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
+| `import_banbeis_schools XLSX [--dry-run]` | load the government's school list (BANBEIS .xlsx): EIIN, name, thana and government data; matches by EIIN, then by name in the thana; safe to re-run (`apps/reference/banbeis.py`) |
 | `undo_school_import [ID] [--list] [--dry-run] [--yes]` | undo one wrong school import: removes (archives) the schools its audit entry lists, keeping ones with students or merges (`importer.undo`) |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
@@ -515,7 +554,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-222 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+255 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
@@ -537,7 +576,15 @@ bad or unverifiable tokens refused, a good token sends the code; dashboard sign-
 changes (own password; Super Admin setting another admin's; permissions; audit without passwords).
 `tests/test_school_district.py` covers district-wide school suggestions (own thana first, thana
 shown, approved only), picks from another thana, typed names matched only in the chosen thana, and
-the dashboard editor keeping a school from another thana. External calls (SMTP,
+the dashboard editor keeping a school from another thana. `tests/test_school_government_data.py`
+covers the BANBEIS import (create, match by name keeping students, update by EIIN with the old name
+as an alias, re-run, dry run, skipped rows, value clean-up), EIIN rules (database and form), EIIN in
+the typeahead and list search, editing government data, and the capitals migration.
+`tests/test_advanced_search.py` covers every operator type, ALL/ANY within and across groups,
+invalid conditions and limits, the plain-English description, the Students list, export and
+message composer following the search, the Schools list by government data and student count, and
+saved searches (save, load, update, delete, shared visibility, owner / Super Admin rights, stale
+fields). External calls (SMTP,
 MiM SMS) are mocked; no real messages are sent.
 
 ---
@@ -555,7 +602,8 @@ apps/reference/                   regions, districts, thanas, schools (+ lookup 
 apps/registration/                students, OTP, public form (templates/registration/), emails.py (system email defaults),
                                   bangla.py (Bangla for every form label/message)
 apps/notifications/               email/SMS providers, batches, logs, settings, html_email.py + templates/notifications/email.html
-apps/dashboard/                   staff UI: views/, templates/dashboard/, filters.py, forms.py
+apps/dashboard/                   staff UI: views/, templates/dashboard/, filters.py, forms.py,
+                                  advanced.py (advanced search), models.py (saved searches)
 static/css, static/js             public.css, dashboard.css, datefield.css, register.js, cascade.js, datefield.js
 static/vendor/air-datepicker/     date picker library (MIT), copied unchanged from npm
 templates/public_base.html        public page shell

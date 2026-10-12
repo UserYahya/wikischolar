@@ -1,0 +1,19 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Saved searches{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Saved searches <span class="count">{{ rows|length }}</span></h1></header>
+<p class="hint">Advanced searches saved by any admin. Open one to run it on the latest data; build new ones under <em>Advanced search</em> on the Students or Schools list.</p>
+{% if rows %}
+<div class="scroll"><table class="data">
+  <thead><tr><th>Name</th><th>List</th><th>Conditions</th><th>Saved by</th><th>Updated</th><th></th></tr></thead>
+  <tbody>{% for r in rows %}<tr>
+    <td><a href="{{ r.url }}">{{ r.s.name }}</a>{% if r.s.description %}<br><small class="muted">{{ r.s.description }}</small>{% endif %}</td>
+    <td>{{ r.s.get_entity_display }}</td>
+    <td><small>{{ r.text }}</small></td>
+    <td>{{ r.s.created_by.full_name }}</td>
+    <td class="nowrap">{{ r.s.updated_at|date:"d/m/Y" }}{% if r.s.updated_by %}<br><small class="muted">{{ r.s.updated_by.full_name }}</small>{% endif %}</td>
+    <td class="nowrap">{% if r.can_change %}<form method="post" action="{% url 'dashboard:search_delete' r.s.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboard:searches' %}"><button class="btn small danger-btn">Delete</button></form>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="empty">No saved searches yet.</p>{% endif %}
+{% endblock %}

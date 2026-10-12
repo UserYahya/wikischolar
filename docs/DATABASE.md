@@ -63,6 +63,10 @@ erDiagram
       text verification_status "verified|pending|merged"
       text source
       bigint merged_into_id FK
+      text eiin "6 digits, unique when set"
+      text management "government data (BANBEIS)"
+      text education_level
+      text area_status
     }
     school_aliases {
       bigint id PK
@@ -219,11 +223,12 @@ Redis; its rows are disposable).
 | Reference | `regions` | Editable in the dashboard. |
 | | `districts` | `region_id` nullable and editable — the mapping is data. |
 | | `thanas` | The government's thana list (BANBEIS e-survey 2024) plus newer upazilas, cantonments and one "Other thana" per district. Unique `(district_id, name)`; also unique `(id, district_id)` to support the composite FK. Called `upazilas` until migration `reference.0006` (Oct 2026). |
-| | `schools` | Canonical list + pending registrant entries; merged rows are kept and point to `merged_into_id`. |
+| | `schools` | Canonical list + pending registrant entries; merged rows are kept and point to `merged_into_id`. Names are stored in capitals. Government data from the BANBEIS list (`import_banbeis_schools`): `eiin` (unique when set, 6 digits — `school_eiin_uniq`, `school_eiin_six_digits`), `division`, `institute_type`, `education_level`, `management`, `mpo`, `institute_for`, `geographical_position`, `area_status`, `post_office`, `email`; blank when unknown. |
 | | `school_aliases` | Alternate spellings; unique per school on the normalised text. |
 | Registration | `students` | Region is not stored — derived via `district.region_id`. No date of birth (column dropped in migration `registration.0006`, October 2026). `section` is optional; `heard_from` is the "How did you hear about WikiScholar?" answer (empty for older rows). |
 | | `email_verifications` | OTP attempts; UUID PK so IDs are unguessable. |
 | | `edit_history` | One row per changed field; rows from one save share `change_set`. Append-only. |
+| Dashboard | `saved_searches` | Advanced searches saved by admins and shared with everyone who can see that list: `entity` (students / schools), `name` (unique per entity among live rows), `description`, `query` (JSON, re-checked whenever it runs), `created_by`, `updated_by`. Archived, never deleted. |
 | Notification | `email_batches`, `sms_batches` | One per bulk send, with an admin-chosen `name` (indexed, for search and the Students "Message history" filter); the filter used is stored as JSON. |
 | | `notification_logs` | One row per recipient per attempt (also OTP and confirmation emails, and the confirmation SMS). `status` queued → sent → delivered, or failed / bounced ("not delivered"); `provider_message_id` is what delivery webhooks match (our Message-ID for SMTP, Brevo's `messageId` for the Brevo API). Queued rows are claimed with `SELECT … FOR UPDATE SKIP LOCKED`, so parallel senders never send one twice. |
 | | `email_templates` | Super Admin wording of system emails, one row per registered key. "Reset to default" sets `is_customized=false` (no delete); changes are audited with before/after text. |
@@ -234,7 +239,7 @@ Redis; its rows are disposable).
 These hold even if application code has a bug or someone uses `psql` directly.
 
 **No hard deletes.** A `BEFORE DELETE` trigger calling `ws_forbid_delete()` rejects deletes on
-`students`, `schools`, `school_aliases`, `regions`, `districts`, `thanas`, `admins`,
+`students`, `schools`, `school_aliases`, `regions`, `districts`, `thanas`, `admins`, `saved_searches`,
 `email_verifications`, `email_batches`, `sms_batches` and `notification_logs`. Records are
 archived with `is_deleted / deleted_at / deleted_by`. In Django, `.delete()` on these models
 raises; `soft_delete()` and `restore()` are used instead, and the default manager hides

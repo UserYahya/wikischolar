@@ -100,6 +100,25 @@ default to opted-in students only. Delivery webhooks update per-recipient status
 
 Providers are pluggable classes (`NOTIFY_EMAIL_PROVIDER`, `NOTIFY_SMS_PROVIDER`).
 
+## Advanced search and saved searches
+
+`apps/dashboard/advanced.py` holds a field registry per list (`FIELDS["students"]`,
+`FIELDS["schools"]`): key, label, type (text / choice / fk / number / date / bool), ORM path, and the
+operators that type allows. A query is JSON (`{"match", "groups": [{"match", "conditions": [{"field",
+"op", "value"}]}]}`).
+- `parse()` checks every part against the registry, converts values by type, and builds `Q`
+  objects; no SQL is ever built from the text. It returns `(Q, problems, cleaned query)`: invalid
+  conditions are dropped and reported.
+- `normalize()` gives the compact JSON used in URLs and saved filters, and `describe()` the plain
+  English text.
+- On Students the query is the `adv` filter param (`filters.params_from/apply/snapshot/describe`),
+  so export, batches and the message composer follow it.
+- Lists with an advanced query run under `advanced.time_limit()` (`SET LOCAL statement_timeout`,
+  5 s).
+- Saved searches (`apps/dashboard/models.SavedSearch`, views in `views/searches.py`) store the
+  cleaned query. `?saved=<id>` loads it, and it is parsed again each time, so a field removed later
+  is simply left out.
+
 ## Extending in Phase 2
 
 New module = new app under `apps/`, own migrations, FK to `students` with `PROTECT`, its own

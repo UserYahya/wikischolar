@@ -153,6 +153,17 @@
     if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
   });
   if (form) form.addEventListener("submit", serialize);
+  // Saving copies the conditions currently in the builder (even before "Search" is pressed).
+  document.querySelectorAll("form.adv-save-form").forEach((f) => f.addEventListener("submit", (e) => {
+    serialize();
+    if (!input.value) { e.preventDefault(); alertBox("Add at least one complete condition first."); return; }
+    f.querySelector('input[name="adv"]').value = input.value;
+  }));
+  function alertBox(text) {
+    let p = document.getElementById("advMsg");
+    if (!p) { p = el("p", { id: "advMsg", class: "notice", role: "alert" }); root.before(p); }
+    p.textContent = text;
+  }
   window.WSAdvanced = { serialize, get query() { return query; } };  // saved searches read the current query
   render();
 })();

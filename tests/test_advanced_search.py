@@ -117,3 +117,100 @@ class SchoolListTests(WSTestCase):
         r = self.client.get("/dashboard/schools/?adv=" + quote(adv(("all", [cond("students", "eq", 0)]))))
         self.assertEqual([s.pk for s in r.context["page"]], [other.pk])
         self.assertContains(r, "Number of students = 0")
+
+
+class SavedSearchTests(WSTestCase):
+    def setUp(self):
+        super().setUp()
+        from apps.core.models import Admin, Role
+        self.other = Admin.objects.create_user(email="other@ws.test", password="x-Strong-pass-123",
+                                               full_name="Other Admin", role=Role.ADMIN)
+        self.register(email="a@gmail.com")
+        self.register(email="b@gmail.com", gender="female", student_name="Rina Akter")
+        self.query = adv(("all", [cond("gender", "in", ["female"])]))
+
+    def save(self, **over):
+        data = {"entity": "students", "name": "Girls", "description": "All girls", "adv": self.query, **over}
+        return self.client.post("/dashboard/searches/save/", data)
+
+    def test_save_load_update_and_delete(self):
+        from apps.core.models import AuditLog
+        from apps.dashboard.models import SavedSearch
+        self.client.force_login(self.admin)
+        r = self.save()
+        s = SavedSearch.objects.get()
+        self.assertRedirects(r, f"/dashboard/students/?saved={s.pk}")
+        self.assertEqual((s.name, s.created_by, s.query["groups"][0]["conditions"][0]["field"]), ("Girls", self.admin, "gender"))
+        r = self.client.get(f"/dashboard/students/?saved={s.pk}")
+        self.assertEqual(r.context["count"], 1)
+        self.assertContains(r, "Running saved search <strong>Girls</strong>")
+        # export and the message composer follow the saved search too
+        body = b"".join(self.client.get(f"/dashboard/students/export.csv?saved={s.pk}").streaming_content).decode()
+        self.assertEqual(body.count("WS-"), 1)
+        self.assertEqual(self.save().status_code, 302)  # same name again: refused
+        self.assertEqual(SavedSearch.objects.count(), 1)
+        boys = adv(("all", [cond("gender", "in", ["male"])]))
+        self.client.post("/dashboard/searches/save/", {"entity": "students", "id": s.pk, "adv": boys})
+        s.refresh_from_db()
+        self.assertEqual((s.name, s.query["groups"][0]["conditions"][0]["value"], s.updated_by), ("Girls", ["male"], self.admin))
+        self.client.post(f"/dashboard/searches/{s.pk}/delete/")
+        self.assertFalse(SavedSearch.objects.exists())
+        self.assertTrue(SavedSearch.all_objects.filter(pk=s.pk, is_deleted=True).exists())
+        self.assertEqual(list(AuditLog.objects.filter(action__startswith="search.").order_by("pk")
+                              .values_list("action", flat=True)), ["search.saved", "search.updated", "search.deleted"])
+
+    def test_shared_with_everyone_but_only_the_owner_or_a_super_admin_changes_it(self):
+        from apps.dashboard.models import SavedSearch
+        self.client.force_login(self.admin)
+        self.save()
+        s = SavedSearch.objects.get()
+        for user in (self.other, self.viewer):
+            self.client.force_login(user)
+            r = self.client.get(f"/dashboard/students/?saved={s.pk}")
+            self.assertEqual(r.context["count"], 1)
+            self.assertNotContains(r, "Delete saved search")
+            self.assertContains(self.client.get("/dashboard/searches/"), "Girls")
+            self.assertEqual(self.client.post(f"/dashboard/searches/{s.pk}/delete/").status_code, 403)
+            self.assertEqual(self.client.post("/dashboard/searches/save/", {"entity": "students", "id": s.pk,
+                                                                            "adv": self.query}).status_code, 403)
+        self.client.force_login(self.super)
+        self.assertContains(self.client.get(f"/dashboard/students/?saved={s.pk}"), "Delete saved search")
+        self.client.post(f"/dashboard/searches/{s.pk}/delete/")
+        self.assertFalse(SavedSearch.objects.exists())
+
+    def test_a_viewer_can_save_their_own(self):
+        from apps.dashboard.models import SavedSearch
+        self.client.force_login(self.viewer)
+        self.save(name="Viewer's girls")
+        self.assertEqual(SavedSearch.objects.get().created_by, self.viewer)
+
+    def test_empty_or_bad_queries_and_names_are_refused(self):
+        from apps.dashboard.models import SavedSearch
+        self.client.force_login(self.admin)
+        self.save(adv=adv(("all", [cond("nope", "eq", "x")])))
+        self.save(name="")
+        self.save(name="মেয়েরা")
+        self.assertFalse(SavedSearch.objects.exists())
+        self.assertEqual(self.client.post("/dashboard/searches/save/", {"entity": "admins", "name": "x",
+                                                                        "adv": self.query}).status_code, 403)
+
+    def test_a_stale_field_is_dropped_when_loaded(self):
+        from apps.dashboard.models import SavedSearch
+        s = SavedSearch.objects.create(entity="students", name="Old", created_by=self.admin, query={
+            "match": "all", "groups": [{"match": "all", "conditions": [cond("date_of_birth", "lt", "01/01/2012"),
+                                                                       cond("gender", "in", ["female"])]}]})
+        self.client.force_login(self.admin)
+        r = self.client.get(f"/dashboard/students/?saved={s.pk}")
+        self.assertEqual(r.context["count"], 1)
+        self.assertContains(r, "Gender is any of Female")
+
+    def test_school_searches_are_kept_apart(self):
+        from apps.dashboard.models import SavedSearch
+        self.client.force_login(self.admin)
+        self.client.post("/dashboard/searches/save/", {"entity": "schools", "name": "Busy schools",
+                                                       "adv": adv(("all", [cond("students", "ge", 1)]))})
+        s = SavedSearch.objects.get(entity="schools")
+        r = self.client.get(f"/dashboard/schools/?saved={s.pk}")
+        self.assertEqual([x.pk for x in r.context["page"]], [self.school.pk])
+        r = self.client.get(f"/dashboard/students/?saved={s.pk}")  # not a student search: ignored
+        self.assertEqual(r.context["count"], 2)

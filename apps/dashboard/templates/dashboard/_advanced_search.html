@@ -12,6 +12,40 @@
       <button type="button" class="btn" id="advAddGroup">+ Group</button>
       {% if adv %}<a class="link" href="?{{ adv_clear }}">Clear advanced search</a>{% endif %}
     </div>
+    <div class="adv-saved">
+      {% if saved_list %}
+      <form method="get" class="row" action="">
+        <label for="savedPick" class="hint">Saved searches</label>
+        <select id="savedPick" name="saved" onchange="this.form.submit()">
+          <option value="">Choose a saved search…</option>
+          {% for s in saved_list %}<option value="{{ s.pk }}" {% if saved and saved.pk == s.pk %}selected{% endif %}>{{ s.name }} · {{ s.created_by.full_name }}</option>{% endfor %}
+        </select>
+        <noscript><button class="btn small">Run</button></noscript>
+        <a class="link" href="{% url 'dashboard:searches' %}">All saved searches</a>
+      </form>
+      {% endif %}
+      {% if saved %}
+      <p class="hint">Running saved search <strong>{{ saved.name }}</strong>{% if saved.description %}: {{ saved.description }}{% endif %} · saved by {{ saved.created_by.full_name }}{% if saved.updated_by %}, updated by {{ saved.updated_by.full_name }}{% endif %} {{ saved.updated_at|date:"d/m/Y" }}</p>
+      {% if saved_can_change %}
+      <div class="row">
+        <form method="post" action="{% url 'dashboard:search_save' %}" class="adv-save-form">{% csrf_token %}
+          <input type="hidden" name="entity" value="{{ adv_entity }}"><input type="hidden" name="id" value="{{ saved.pk }}"><input type="hidden" name="adv" value="">
+          <button class="btn small">Update “{{ saved.name }}” with these conditions</button>
+        </form>
+        <form method="post" action="{% url 'dashboard:search_delete' saved.pk %}">{% csrf_token %}
+          <input type="hidden" name="next" value="?{{ adv_clear }}"><button class="btn small danger-btn">Delete saved search</button>
+        </form>
+      </div>
+      {% endif %}{% endif %}
+      <form method="post" action="{% url 'dashboard:search_save' %}" class="adv-save-form row">{% csrf_token %}
+        <input type="hidden" name="entity" value="{{ adv_entity }}"><input type="hidden" name="adv" value="">
+        <input type="hidden" name="next" value="{{ this_url }}">
+        <input name="name" maxlength="120" required placeholder="Name, e.g. Govt girls schools in Dhaka" aria-label="Name for this search">
+        <input name="description" maxlength="300" placeholder="Note (optional)" aria-label="Note">
+        <button class="btn small">Save as new search</button>
+      </form>
+      <p class="hint">Saved searches are shared: every admin who can see this list can run them. Only the admin who saved one, or a Super Admin, can update or delete it.</p>
+    </div>
   </details>
   {% if adv %}<p class="adv-summary"><strong>Advanced search:</strong> {{ adv_text }}</p>{% endif %}
 </section>

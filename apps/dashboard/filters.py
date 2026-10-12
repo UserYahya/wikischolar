@@ -15,7 +15,7 @@ SORTS = {
 }
 MULTI = ("district", "region", "class", "gender")
 SINGLE = ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
-          "msg_batch", "msg_batch_mode", "adv")
+          "msg_batch", "msg_batch_mode", "adv", "saved")
 # Params that narrow the list (sort and batching only reorder or split it).
 NARROWING = MULTI + ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch", "adv")
 # Thana type filter: what kind of thana the student chose. "other" finds students to move.
@@ -48,6 +48,10 @@ def params_from(querydict):
     for old, new in OLD_PARAMS.items():
         p[new] = p[new] or querydict.get(old, "").strip()
     p["area_kind"] = OLD_AREA_KINDS.get(p["area_kind"], p["area_kind"])
+    if not p["adv"] and p["saved"].isdigit():  # a saved search: its latest version
+        from .models import SavedSearch
+        saved = SavedSearch.objects.filter(pk=p["saved"], entity=SavedSearch.Entity.STUDENTS).first()
+        p["adv"] = saved.query if saved else ""
     p["adv"] = advanced.normalize("students", p["adv"])  # only the valid conditions, as compact JSON
     # Show dates as dd/mm/yyyy even when a link carries yyyy-mm-dd.
     p["from"], p["to"] = _date_label(p["from"]), _date_label(p["to"])
