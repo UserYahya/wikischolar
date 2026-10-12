@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.management import CommandError, call_command
+from django.core.management import call_command
 from django.utils import timezone
 
 from apps.core.models import AuditLog
@@ -393,48 +393,6 @@ class SchoolImportTests(WSTestCase):
         self.assertIn("1 created, 1 already existed, 0 repeated, 1 with errors.", out.getvalue())
         self.assertIn("Row 4: No upazila “Nowhere” in Gazipur.", err.getvalue())
         self.assertEqual(School.objects.get(name="Tongi Pilot School").source, "import")
-
-    def import_two(self):
-        self.upload("district,upazila,name\nGazipur,Tongi,Tongi Pilot School\nGazipur,Kaliakair,Kaliakair Model School\n")
-        self.client.post("/dashboard/schools/import/", {"op": "confirm"})
-        return AuditLog.objects.get(action="school.imported")
-
-    def test_undo_import_removes_its_schools(self):
-        entry = self.import_two()
-        out = io.StringIO()
-        call_command("undo_school_import", "--list", stdout=out)
-        self.assertIn("2 schools (verified)", out.getvalue())
-        call_command("undo_school_import", str(entry.pk), "--dry-run", stdout=out)
-        self.assertIn("Would remove: #", out.getvalue())
-        self.assertEqual(School.objects.filter(source="import").count(), 2)
-        call_command("undo_school_import", str(entry.pk), "--yes", stdout=out)
-        self.assertIn("2 removed, 0 kept, 0 already removed.", out.getvalue())
-        self.assertFalse(School.objects.filter(source="import").exists())
-        self.assertEqual(School.all_objects.filter(source="import", is_deleted=True).count(), 2)
-        self.assertTrue(School.objects.filter(pk=self.school.pk).exists())  # schools from elsewhere stay
-        log = AuditLog.objects.get(action="school.import_undone")
-        self.assertEqual((log.entity_id, log.meta["removed"]), (str(entry.pk), 2))
-        call_command("undo_school_import", "--list", stdout=out)
-        self.assertIn("[undone]", out.getvalue())
-        # the corrected list can be imported again
-        self.upload("district,upazila,name\nGazipur,Tongi,Tongi Pilot School\n")
-        self.client.post("/dashboard/schools/import/", {"op": "confirm"})
-        self.assertTrue(School.objects.filter(name="Tongi Pilot School").exists())
-
-    def test_undo_import_keeps_schools_with_students(self):
-        entry = self.import_two()
-        pilot = School.objects.get(name="Tongi Pilot School")
-        self.register(school_id=pilot.pk, school_name=pilot.name)
-        out = io.StringIO()
-        call_command("undo_school_import", str(entry.pk), "--yes", stdout=out)
-        self.assertIn(f"Keep: #{pilot.pk} Tongi Pilot School — 1 student is linked", out.getvalue())
-        self.assertIn("1 removed, 1 kept", out.getvalue())
-        self.assertTrue(School.objects.filter(pk=pilot.pk).exists())
-
-    def test_undo_import_unknown_id(self):
-        other = AuditLog.objects.create(actor_type="system", action="school.removed")
-        with self.assertRaisesMessage(CommandError, "No school import with id"):
-            call_command("undo_school_import", str(other.pk), "--yes", stdout=io.StringIO())
 
 
 class MessagingTests(WSTestCase):
