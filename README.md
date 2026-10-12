@@ -131,6 +131,7 @@ record which student batch they were sent to.
 |---|---|
 | `seed_reference [--file PATH] [--reset-region-assignments]` | Load/refresh regions, districts, upazilas. Idempotent. |
 | `import_schools CSV [--status verified\|pending]` | Import a school list (`district,upazila,name`). Same checks as Dashboard → Schools → *Import CSV*, which also offers a template. |
+| `undo_school_import [ID] [--list] [--dry-run] [--yes]` | Undo one school import: its schools are removed (restorable from Schools → Removed); ones with students are kept. Run `--list`, then `ID --dry-run`. |
 | `create_super_admin --email --name [--password]` | Bootstrap the first Super Admin; everyone else is created from the dashboard. |
 | `check_host` | Pre-flight on a new server: Python, PostgreSQL 13+, `pg_trgm`, settings, migrations, cache. |
 | `find_non_english` | List stored names, school names, rolls or SIDs that aren't English (entered before the English-only rule). |
@@ -142,7 +143,7 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-118 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+142 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
 roll-or-SID, phone, upazila-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new

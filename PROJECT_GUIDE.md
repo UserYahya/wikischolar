@@ -81,6 +81,9 @@ Analytics) will plug into the same app.
   *repeated in the file* or *error* (unknown district/upazila, not English, too long). Nothing is
   saved until *Import N schools*; the rows wait in the session and are checked again then. One
   `school.imported` audit entry records the count and the new school IDs; source is *Bulk import*.
+  A wrong import is undone on the server with `manage.py undo_school_import --list`, then
+  `undo_school_import ID --dry-run`, then without `--dry-run`. Its schools are removed (restorable) except ones
+  students or merges point to.
 
 ### Admin dashboard (`/dashboard/`)
 * **Overview**: totals, daily registrations, students per region/district, warnings (e.g.
@@ -374,6 +377,7 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
 | `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts, upazilas (idempotent; keeps dashboard edits) |
 | `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
+| `undo_school_import [ID] [--list] [--dry-run] [--yes]` | undo one wrong school import: removes (archives) the schools its audit entry lists, keeping ones with students or merges (`importer.undo`) |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
 | `send_queued` | send queued bulk messages (cron/worker, run one at a time) |
@@ -413,7 +417,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-118 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+142 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
