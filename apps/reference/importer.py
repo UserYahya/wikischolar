@@ -5,6 +5,7 @@ column left out) when it isn't known: such a school belongs to its whole distric
 its area. `plan()` checks every row without saving and
 says what would happen to it; `apply()` creates the rows that are new (plus any similar-name rows
 the admin chose to add), re-checking first because the data may have changed in between.
+`undo()` removes (archives) the schools one import created (`manage.py undo_school_import`).
 """
 import csv
 import io
@@ -183,3 +184,32 @@ def apply(rows, *, status=School.Status.VERIFIED, add_similar=(), request=None, 
                      meta={"created": len(created), "status": status, "ids": [s.pk for s in created]})
     return created, planned
 
+
+@transaction.atomic
+def undo(entry, *, dry_run=False):
+    """Remove (archive, like a school page's *Remove school*) the schools created by the import
+    logged as `entry`, a "school.imported" AuditLog row. Schools in use, or no longer imports, are
+    kept. Returns (removed schools, {kept school: reason}, ids already removed). Removed schools are
+    left out of the list, suggestions and duplicate checks, and can be restored from Schools → Removed."""
+    ids = entry.meta.get("ids") or []
+    schools = School.all_objects.select_related("upazila", "district").in_bulk(ids)
+    gone = [i for i in ids if i not in schools or schools[i].is_deleted]
+    removed, kept = [], {}
+    for school in (s for s in schools.values() if not s.is_deleted):
+        if school.source != School.Source.IMPORT:
+            reason = "it is no longer marked as imported"
+        elif school.merged_into_id:
+            reason = f"it was merged into #{school.merged_into_id}"
+        else:
+            reason = services.removal_blocker(school)
+        if reason:
+            kept[school] = reason
+        else:
+            removed.append(school)
+    if removed and not dry_run:
+        pks = [s.pk for s in removed]
+        School.all_objects.filter(pk__in=pks).soft_delete()
+        audit.record("school.import_undone", actor_type="system", entity_type="audit_logs", entity_id=entry.pk,
+                     meta={"removed": len(pks), "ids": pks, "kept": {str(s.pk): r for s, r in kept.items()},
+                           "already_removed": gone})
+    return removed, kept, gone
