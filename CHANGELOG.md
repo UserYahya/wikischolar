@@ -5,6 +5,45 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-12
 
+### Changed
+- **Districts and thanas now follow the government's list** (the BANBEIS institution list, e-survey
+  2024). "Upazila / Area" is now **"Thana" / "থানা"** everywhere: the public form, the dashboard, the
+  CSV import, emails and the code and database.
+  - Districts use the government's spelling: Barishal, Bogura, Chattogram, Cumilla, Jashore,
+    Khagrachhari, Maulvibazar, Netrakona, Norail. Three typos in the sheet are corrected to
+    Brahmanbaria, Cox's Bazar and Chapainawabganj.
+  - The thana list has 666 entries:
+    - the sheet's 560 thanas, with names cleaned up ("Kaptai  Upazila" becomes "Kaptai");
+    - the 11 upazilas created after the survey (Eidgaon, Matamuhuri, Bangra, …);
+    - 31 cantonments;
+    - one "Other thana (not listed)" per district.
+
+    All have Bangla names, carried over from the old list.
+  - City-corporation groups are gone. Cities are listed by their government thanas instead (e.g.
+    Dhaka's Mirpur, Uttara Paschim).
+  - 42 old city-corporation areas the government list doesn't have are retired. Their students and
+    schools move to the sadar thana that covers them, or to "Other thana" where that isn't clear.
+    `data/thana_mapping.csv` lists every old area, the thana that replaces it and why;
+    `scripts/build_thana_seed.py` rebuilds the seed from the sheet.
+- What keeps working from before the rename:
+  - dashboard links with `?upazila=`;
+  - saved batch filters;
+  - CSV files headed `Upazila / Area`, `Upazila` or `Area`;
+  - `{upazila}` in saved email wording.
+- 4 new tests (222 in total).
+
+### Upgrade notes
+- **Back up the database first.** The migrations:
+  - `reference.0006` and `registration.0009` rename the `upazilas` table to `thanas` and the
+    `upazila_id` columns to `thana_id`, in place;
+  - `reference.0007` renames the districts and swaps in the thana list (rows are renamed in place,
+    so linked students and schools keep their links; retired rows are archived, not deleted);
+  - `reference.0008` renames the generated index and constraint names.
+
+  0007 can't be undone except by restoring the backup. It prints what it changed and writes one
+  `reference.thanas_replaced` audit entry. On Azure they run on deploy; on cPanel run `migrate` and
+  `collectstatic --noinput`.
+
 ### Added
 - **`manage.py undo_school_import`** takes back a wrong school import. `--list` shows the 20 most
   recent imports (audit id, date, who, how many schools, verified/pending, and whether it was already

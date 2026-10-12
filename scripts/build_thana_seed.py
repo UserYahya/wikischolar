@@ -4,7 +4,7 @@
     python scripts/build_thana_seed.py seed                                       # writes data/reference_seed.json
 
 OLD_SEED.json is the seed with the previous "Upazila / Area" list, e.g.
-`git show 8c44c22~1:data/reference_seed.json > /tmp/old_seed.json`.
+`git show a1dc1ba:data/reference_seed.json > /tmp/old_seed.json` (main before the thana change).
 `map` reads the sheet (DISTRICT_NAME, THANA_NAME columns) and that old seed, and drafts
 data/thana_mapping.csv: one row per thana with its Bangla name and the old "Upazila / Area" it
 replaces, plus one `retired` row per old area that has no successor (its students and schools move

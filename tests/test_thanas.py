@@ -240,3 +240,56 @@ class BeforeTheRenameTests(AreaTestCase):
         from apps.registration import emails
         values = emails.confirmation_values(emails._SAMPLE_SUMMARY)
         self.assertEqual(notify.fill("Thana: {thana}; old: {upazila}", values), "Thana: Tongi; old: Tongi")
+
+
+class GovernmentListMigrationTests(AreaTestCase):
+    """reference.0007 (apps.reference.thana_migration.apply) on a database with the old list."""
+
+    def run_apply(self, thanas, mapping):
+        from apps.core.models import AuditLog
+        from apps.reference import thana_migration
+        from apps.reference.models import School
+        seed = {"districts": [{"code": "gazipur", "name": "Gazipur Zila", "thanas": thanas}]}
+        rows = [dict(district_code="gazipur", group="", group_bn="", **r) for r in mapping]
+        return thana_migration.apply(District=District, Thana=Thana, School=School, Student=Student,
+                                     AuditLog=AuditLog, seed=seed, mapping=rows, log=lambda *a: None)
+
+    def test_renames_in_place_moves_retired_and_reuses_archived_names(self):
+        from apps.core.models import AuditLog
+        archived = Thana.objects.create(district=self.gazipur, name="Kaliganj", name_bn="")
+        archived.soft_delete()
+        s = self.register(thana=self.tongi_east.pk, school_id=None, school_name="Tongi East Model School")
+        student = Student.objects.get(wikischolar_id=s["wikischolar_id"])
+        counts = self.run_apply(
+            thanas=[{"name": "Tongi Sadar", "name_bn": "টঙ্গী সদর"},            # renames "Tongi"
+                    {"name": "Kaliakair", "name_bn": "কালিয়াকৈর"},             # same name: kept
+                    {"name": "Kaliganj", "name_bn": "কালীগঞ্জ"},               # archived row restored
+                    {"name": "Sreepur", "name_bn": "শ্রীপুর"},                 # new
+                    {"name": "Gazipur Cantonment", "name_bn": "গাজীপুর সেনানিবাস", "group": "Cantonment"},
+                    {"name": "Other thana (not listed)", "name_bn": "অন্য থানা", "group": "Other"}],
+            mapping=[{"thana": "Tongi Sadar", "source": "sheet-alias", "replaces": "Tongi"},
+                     {"thana": "Tongi Sadar", "source": "retired", "replaces": "Tongi East"}])
+        self.gazipur.refresh_from_db()
+        self.assertEqual(self.gazipur.name, "Gazipur Zila")
+        tongi = Thana.objects.get(pk=self.tongi.pk)  # same row, so its students and schools stay linked
+        self.assertEqual((tongi.name, tongi.name_bn), ("Tongi Sadar", "টঙ্গী সদর"))
+        self.assertEqual(self.school.__class__.objects.get(pk=self.school.pk).thana_id, self.tongi.pk)
+        student.refresh_from_db()
+        self.assertEqual(student.thana_id, self.tongi.pk)  # moved off the retired "Tongi East"
+        self.assertTrue(Thana.all_objects.get(pk=self.tongi_east.pk).is_deleted)
+        self.assertFalse(Thana.all_objects.get(pk=archived.pk).is_deleted)
+        self.assertEqual(Thana.objects.get(pk=self.other.pk).name_bn, "অন্য থানা")
+        self.assertEqual(set(Thana.objects.filter(district=self.gazipur).values_list("name", flat=True)),
+                         {"Tongi Sadar", "Kaliakair", "Kaliganj", "Sreepur", "Gazipur Cantonment",
+                          "Other thana (not listed)"})
+        self.assertEqual((counts["thanas_renamed"], counts["thanas_created"], counts["thanas_restored"],
+                          counts["thanas_retired"], counts["students_moved"]), (1, 1, 1, 1, 1))
+        self.assertEqual(AuditLog.objects.get(action="reference.thanas_replaced").meta["thanas_retired"], 1)
+
+    def test_rows_the_mapping_doesnt_name_go_to_other_thana(self):
+        s = self.register(thana=self.tongi_east.pk, school_id=None, school_name="Tongi East Model School")
+        self.run_apply(thanas=[{"name": "Tongi"}, {"name": "Kaliakair"}, {"name": "Gazipur Cantonment",
+                                                                         "group": "Cantonment"},
+                               {"name": "Other thana (not listed)", "group": "Other"}], mapping=[])
+        self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).thana_id, self.other.pk)
+        self.assertEqual(Student.objects.get(wikischolar_id=s["wikischolar_id"]).school.thana_id, self.other.pk)

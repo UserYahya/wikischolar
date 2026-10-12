@@ -38,10 +38,10 @@ later consume the same JSON endpoints.
 
 1. The page loads districts (with their current region) from `/api/reference/districts/`.
    Picking a district shows its region — read from the DB at that moment.
-2. Upazilas and the other areas (city-corporation thanas, cantonments, "Other area": `upazilas` rows
-   with a `group`) load per district, grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?district=&upazila=&q=` (from 3 characters; a shorter `q` returns no schools)
-   (trigram similarity over normalised names and aliases across the district; the chosen area's
-   schools get a +0.15 ranking bonus, `SAME_AREA_BONUS`; each result carries its area). The public form
+2. Thanas (with cantonments and "Other thana": `thanas` rows with a `group`) load per district,
+   grouped and in order (`reference.services.areas_of`); school typeahead queries `/api/reference/schools/?district=&thana=&q=` (from 3 characters; a shorter `q` returns no schools)
+   (trigram similarity over normalised names and aliases across the district; the chosen thana's
+   schools get a +0.15 ranking bonus, `SAME_AREA_BONUS`; each result carries its thana). The public form
    is offered **verified schools only**; signed-in staff (`?all=1`) also see pending ones. Pending
    schools are still matched on submit (step 5), so two students typing the same new school share
    one pending row.
@@ -58,9 +58,9 @@ later consume the same JSON endpoints.
 ### School resolution order
 `selected` (ID picked from typeahead, must be in the same district) → `exact` (normalised name)
 → `alias` → `auto` (trigram similarity ≥ `WS_SCHOOL_AUTO_RESOLVE`, default 0.8) → `created`
-(`exact`, `alias` and `auto` look only in the chosen upazila / area plus the district's schools
-whose area isn't known yet (`reference.services.school_scope`), and `created` files the new school
-in the chosen area: common names such as "Government Girls High School" repeat across upazilas)
+(`exact`, `alias` and `auto` look only in the chosen thana plus the district's schools
+whose thana isn't known yet (`reference.services.school_scope`), and `created` files the new school
+in the chosen thana: common names such as "Government Girls High School" repeat across thanas)
 (new `pending` school). Normalisation lower-cases, strips punctuation and expands common
 abbreviations (`govt` → `government`, `h/s` → `high school`, …). Merged schools always
 redirect to their canonical row.

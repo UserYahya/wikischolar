@@ -35,29 +35,28 @@ Analytics) will plug into the same app.
 | Step | Collects | Rules |
 |---|---|---|
 | 1. Student & guardian | **required guardian declaration** (Youth Safety Policy: the guardian fills in the form: "I am the guardian of the student named below and I am filling in this form on their behalf"), name, gender, guardian name, relation (Father / Mother / Other + typed relation). **Date of birth is not collected** (removed in October 2026, column dropped) | "Other" requires the typed relation; the declaration is stored as `filled_by = guardian` + `guardian_declared_at` |
-| 2. School details | district → region (automatic) → **upazila / area**, school (typeahead), class + **section** (labelled "(if any)": "only if the class has sections"), class roll and/or student ID (labelled "(if any)": many students have none) | the area must be in the district; class 6–10 only; roll **or** SID required; **class roll is numbers only** (Bangla digits become 0–9, other characters are dropped as you type and refused by the server); section is English text; while typing (from the **3rd letter**; with 1–2 letters a hint asks for more), **only approved (verified) schools** are suggested, from **the whole district** (a student may attend a school in another upazila / thana), each with its area, the student's own area first; a school picked from the list may be in any area of the district, but a typed name is matched only within the chosen area (common names repeat across upazilas); a school not in the list is added as *pending* for staff to approve |
+| 2. School details | district → region (automatic) → **thana**, school (typeahead), class + **section** (labelled "(if any)": "only if the class has sections"), class roll and/or student ID (labelled "(if any)": many students have none) | the thana must be in the district; class 6–10 only; roll **or** SID required; **class roll is numbers only** (Bangla digits become 0–9, other characters are dropped as you type and refused by the server); section is English text; while typing (from the **3rd letter**; with 1–2 letters a hint asks for more), **only approved (verified) schools** are suggested, from **the whole district** (a student may attend a school in another thana), each with its thana, the student's own thana first; a school picked from the list may be in any thana of the district, but a typed name is matched only within the chosen thana (common names repeat across thanas); a school not in the list is added as *pending* for staff to approve |
 | 3. Contact & email | BD mobile number, email + 6-digit OTP | phone `^01[3-9]\d{8}$` (accepts `+880`, spaces, dashes, Bangla digits); instant email typo hint ("Did you mean …@gmail.com?", also for `gmailcom`, `gmail,com`); the code is sent **by email only** and the form tells students to check Spam/Junk; **one action at a time**: "Send verification code", then "Verify code", is the solid button, and "Next step" only appears once the email is verified (until then the bar says "Verify your email to continue.", and Enter sends the code); **one email per student**: an address already used by an active student is refused on "Send verification code" ("already registered… use a different email address") and again on submit |
 | 4. Consent & submit | **"How did you hear about WikiScholar?"** dropdown (Social media · Google or YouTube ad · Notice on Wikipedia · Teacher or school announcement · Banner / leaflet etc. · Wikipedia volunteers came to our school · Somewhere else), Youth Safety Policy consent (links to `WS_POLICY_URL`, default `https://wikischolar.bd/youth-policy`), optional email updates opt-in | survey answer and consent required; the answers are counted on the dashboard Overview |
 
-* **Upazila / Area: no area of Bangladesh is left out.** City corporations have no upazila, so the
-  list after choosing a district holds, as grouped options (`<optgroup>`), in this order: the
-  **thanas of the district's city corporation(s)** (metropolitan police thanas, headed e.g. "Dhaka
-  North City Corporation · ঢাকা উত্তর সিটি কর্পোরেশন"; Dhaka's thanas are split between North and
-  South by which corporation covers most of each thana; Mymensingh, Narayanganj and Cumilla have no
-  metropolitan police, so the city corporation itself is one option; so is **Bogura**, the 13th city
-  corporation, gazetted May 2026; 105 thanas in all; a thana sharing its name with an upazila of the
-  district is left out because the upazila covers it), **cantonments** (31), the
-  **upazilas** (all 503, including the eight created in June–July 2026), and last **"Other area (not listed)"** (one per district) so nobody is
-  blocked; staff then move those students (dashboard Overview warns, *Area type* filter finds them).
-  All are rows of the `upazilas` table told apart by `group` (blank = upazila), so students,
-  schools, the composite district key, school search and the CSV import work unchanged. A hint under
-  the field explains it in English and Bangla.
+* **Thana: the government's list.** Districts and thanas come from the BANBEIS institution list
+  (e-survey 2024; `data/reference_seed.json`, built by `scripts/build_thana_seed.py`): the 64 districts
+  in the government's spelling (Barishal, Bogura, Chattogram, Cumilla, Jashore…; three typos in the
+  sheet fixed: Brahmanbaria, Cox's Bazar, Chapainawabganj) and their **560 thanas**, which include the
+  metropolitan thanas of the cities. On top: the **11 upazilas created after that survey** (Eidgaon,
+  Matamuhuri, Bangra…), the **cantonments** (31) and last **"Other thana (not listed)"** (one per
+  district) so nobody is blocked; staff then move those students (dashboard Overview warns, *Thana
+  type* filter finds them). All are rows of the `thanas` table told apart by `group` (blank = thana,
+  `Cantonment`, `Other`), grouped in the dropdown (`<optgroup>`). This replaced the "Upazila / Area"
+  list in October 2026 (migration `reference.0007`, from the reviewed `data/thana_mapping.csv`: each
+  old row was renamed in place or retired, moving its students and schools to the thana that covers
+  it). A hint under the field explains "Other thana" in English and Bangla.
 * **English only.** Every free-text value must be English letters, digits and basic punctuation.
   Bangla digits are converted to 0–9 automatically; other scripts are refused, in the browser
   and on the server.
 * **Bangla beside the English.** Every label, hint, button, option and message on the public form
   has a smaller Bangla line (`.bn`, own line) or note (`.bn-inline`, buttons and chips) in natural
-  Bangla; dropdown options read "English · বাংলা" (districts and upazilas use their `name_bn`).
+  Bangla; dropdown options read "English · বাংলা" (districts and thanas use their `name_bn`).
   Labels in `register.html` carry their Bangla in the template. Messages from Python (form and API
   errors) and those built in `register.js` are looked up by their exact English text in
   `apps/registration/bangla.py`, which the page embeds as `#bnMessages`. **Adding a message?** Add
@@ -104,41 +103,41 @@ Analytics) will plug into the same app.
 * **Approving schools** makes them suggestible: Dashboard → Schools → a pending school → *Mark
   verified* (or bulk-load a verified list with `import_schools CSV --status verified`).
 * **Adding and removing schools** (Dashboard → Schools, needs `schools.edit`): *Add school* picks
-  district → upazila → name; as the name is typed, schools already in that upazila (verified and
+  district → thana → name; as the name is typed, schools already in that thana (verified and
   pending) are listed, and picking one opens it. On submit the same name or an alias in the
-  upazila (after normalising, so "Govt" = "Government") is refused, and a name as similar as
+  thana (after normalising, so "Govt" = "Government") is refused, and a name as similar as
   *Review duplicates* would flag (`WS_SCHOOL_DUPLICATE`) needs "It's a different school". A school
   page's *Remove school* archives it (soft delete, reason in the audit log); it is refused while
   active students or merged schools point to it. *Removed* in the status filter lists them with
   *Restore* (refused if the same name was added since).
 * **Importing schools from CSV** (Dashboard → Schools → *Import CSV*, needs `schools.edit`):
-  *Download template* gives the headings `District,Upazila / Area,School name` (older templates'
-  `Upazila`, or `Area`, and a lower-case `name` column also work); fill in one school per row; rows
-  without a school name are ignored. **Upazila / Area is optional**: leave it blank when it isn't
-  known, or leave the column out (District and School name are required); see *Schools without an
-  area* below. *District & upazila / area list* (all districts or one) lists
-  every upazila, thana, cantonment and "Other area" with its district and group in English and
+  *Download template* gives the headings `District,Thana,School name` (older templates'
+  `Upazila / Area`, `Upazila` or `Area`, and a lower-case `name` column also work); fill in one school
+  per row; rows without a school name are ignored. **Thana is optional**: leave it blank when it isn't
+  known, or leave the column out (District and School name are required); see *Schools without a
+  thana* below. *District & thana list* (all districts or one) lists
+  every thana, cantonment and "Other thana" with its district and group in English and
   Bangla, spelled as the import expects. Upload (≤ 1 MB, ≤ 2000 schools, UTF-8 or Excel CSV,
-  district/upazila matched in English or Bangla ignoring case) and choose *Verified* or *Pending*.
+  district/thana matched in English or Bangla ignoring case) and choose *Verified* or *Pending*.
   A preview shows each row as *will be added*, *similar* (added only if ticked), *already listed*,
-  *repeated in the file* or *error* (unknown district, misspelt upazila, not English, too long). Nothing is
+  *repeated in the file* or *error* (unknown district, misspelt thana, not English, too long). Nothing is
   saved until *Import N schools*; the rows wait in the session and are checked again then. One
   `school.imported` audit entry records the count and the new school IDs; source is *Bulk import*.
   A wrong import is undone on the server with `manage.py undo_school_import --list`, then
   `undo_school_import ID --dry-run`, then without `--dry-run`. Its schools are removed (restorable) except ones
   students or merges point to.
-* **Schools without an area** (`schools.upazila_id` blank, e.g. imported from a list with districts
-  only) belong to their **whole district** until an admin sets the area:
-  * Suggestions: offered to students from every area of the district, shown without an area label.
-  * Typed names: a name typed on the form in any area of the district matches them, so no pending
+* **Schools without a thana** (`schools.thana_id` blank, e.g. imported from a list with districts
+  only) belong to their **whole district** until an admin sets the thana:
+  * Suggestions: offered to students from every thana of the district, shown without a thana label.
+  * Typed names: a name typed on the form in any thana of the district matches them, so no pending
     duplicate is created.
   * Duplicate checks: the import, *Add school* and *Review duplicates* compare them with every school
-    in the district. A row without an area repeats any same-name row of that district.
-  * Merging: allowed within the district. A kept school without an area takes the area of the
+    in the district. A row without a thana repeats any same-name row of that district.
+  * Merging: allowed within the district. A kept school without a thana takes the thana of the
     duplicate merged into it.
-  * Dashboard: *Upazila / Area* shows "Not known", and the area filter has an *Area not known*
-    option. The school page has *Set area* (audited as `school.area_set`); it is refused when that
-    area already lists the name, in which case merge the two schools instead.
+  * Dashboard: *Thana* shows "Not known", and the thana filter has a *Thana not known*
+    option. The school page has *Set thana* (audited as `school.area_set`); it is refused when that
+    thana already lists the name, in which case merge the two schools instead.
 
 ### Admin dashboard (`/dashboard/`)
 * **Sidebar**: the WikiScholar logo, then the tools in **collapsible groups** (*Overview*;
@@ -149,8 +148,8 @@ Analytics) will plug into the same app.
   `register_nav(..., group="…")` (`apps/core/registry.py`).
 * **Overview**: totals, daily registrations, students per region/district, **how students heard
   about WikiScholar** (survey answers), warnings (e.g. "Emails are not being delivered").
-* **Students**: filters (region, district, upazila / area, **area type** (upazila, city-corporation
-  thana, cantonment, "Other area"), school, class, gender, date range, opt-in, text search, sort), **split into batches** of N students (view / CSV / message each batch),
+* **Students**: filters (region, district, thana, **thana type** (thana, cantonment, "Other
+  thana"), school, class, gender, date range, opt-in, text search, sort), **split into batches** of N students (view / CSV / message each batch),
   CSV export (Excel-friendly), student detail with full edit history, edit, archive/restore.
 * **Messages**: compose bulk email/SMS to a filtered group or a batch. Every send is a **named
   batch** (name required, English) with `{name}` and `{wikischolar_id}` placeholders.
@@ -170,8 +169,8 @@ Analytics) will plug into the same app.
   finder and merge.
 * **Regions & districts**: the district → region mapping is data, editable here; a student's
   region is always derived from their district, so a reassignment moves everyone instantly. A
-  district's page lists its upazilas and areas with their group; *Add* takes an optional group
-  (an existing city corporation, Cantonment or Other).
+  district's page lists its thanas with their group; *Add* takes an optional group
+  (Cantonment, Other, or a custom group already in use).
 * **Audit log**: every view of a student record, edit, export, message, login and setting change.
 * **Admins** (Super Admin): create admins, change roles, deactivate, and **set a new password**
   for an admin who forgot theirs (signs them out everywhere; audited as `admin.password_reset`,
@@ -237,7 +236,7 @@ functions, not by writing to another module's tables.
 | Module | Folder | Owns (tables) | Responsibility |
 |---|---|---|---|
 | Core | `apps/core` | `admins`, `audit_logs`, `id_sequences` | admin accounts, roles & permissions (`permissions.py`), audit (`audit.py`), ID generator (`ids.py`), soft-delete base model, DB trigger helpers (`sql.py`), shared utils (`utils.py`: English-only rule, digit conversion), encryption (`crypto.py`), nav registry (`registry.py`) |
-| Reference data | `apps/reference` | `regions`, `districts`, `upazilas`, `schools`, `school_aliases` | locations, school matching (trigram), merge, public lookup API |
+| Reference data | `apps/reference` | `regions`, `districts`, `thanas`, `schools`, `school_aliases` | locations, school matching (trigram), merge, public lookup API |
 | Registration | `apps/registration` | `students`, `email_verifications`, `edit_history` | public form, OTP, registering and editing students |
 | Notifications | `apps/notifications` | `email_batches`, `sms_batches`, `notification_logs`, `email_settings`, `sms_settings`, `email_templates` | providers (email/SMS), transactional + bulk sending, delivery webhooks, credentials, **system email registry** (editable wording) |
 | Dashboard | `apps/dashboard` | *(none)* | staff UI only, built on the other modules' services |
@@ -282,9 +281,9 @@ These are enforced in code **and** in the database; changes must keep them true.
 * **Survey answer** `heard_from` is one of the `HeardFrom` choices, or empty for students who
   registered before the question existed (DB check `student_heard_from_valid`).
 * **Phone** matches `^01[3-9][0-9]{8}$` (DB check); stored without country code.
-* **Upazila (area) belongs to the district** (composite foreign key). Areas are `upazilas` rows;
-  `group` is blank for an upazila, a city corporation's name for its thanas, `Cantonment`, or `Other`
-  ("Other area (not listed)", one per district). Names are unique per district.
+* **Thana belongs to the district** (composite foreign key `students_thana_in_district`). `group` is
+  blank for a thana, `Cantonment`, or `Other` ("Other thana (not listed)", one per district). Names are
+  unique per district.
 * **English-only text**: `apps.core.utils.english_text()`; `manage.py find_non_english` lists
   older non-English values.
 * **Region is never stored on a student**; it is derived from `district.region` at read time.
@@ -296,8 +295,8 @@ These are enforced in code **and** in the database; changes must keep them true.
 * **Secrets** (SMTP password, SMS API key) are stored encrypted with `WS_CREDENTIALS_KEY`
   (or a key derived from `DJANGO_SECRET_KEY`) and never written to the audit log.
 * **School resolution** on submit: picked ID (any school in the student's district) → exact
-  normalised name → alias → trigram match ≥ 0.8 (these three within the chosen upazila / area)
-  → new *pending* school in the chosen area. So a student's area and their school's area may
+  normalised name → alias → trigram match ≥ 0.8 (these three within the chosen thana)
+  → new *pending* school in the chosen thana. So a student's thana and their school's thana may
   differ (both in the same district); the dashboard editor only requires the same district.
 
 ---
@@ -309,7 +308,7 @@ These are enforced in code **and** in the database; changes must keep them true.
 | `/` | public registration form |
 | `/api/registration/email/check/?email=` | instant typo hint (GET, stores nothing) |
 | `/api/registration/email/send-otp/`, `/verify-otp/`, `/api/registration/submit/` | form JSON API (POST, CSRF) |
-| `/api/reference/districts/`, `/districts/<id>/upazilas/`, `/schools/?district=&upazila=&q=` (whole district, that area first; `?upazila=` alone: one area) | lookup API |
+| `/api/reference/districts/`, `/districts/<id>/thanas/`, `/schools/?district=&thana=&q=` (whole district, that thana first; `?thana=` alone: one thana) | lookup API |
 | `/notifications/webhook/<email|sms>/?token=` | provider delivery reports (generic JSON or Brevo transactional events) |
 | `/dashboard/…` | staff dashboard (login required) |
 | `/dashboard/messages/?q=&channel=&problems=1` | Messages list and its filters |
@@ -463,8 +462,8 @@ Templates: `.env.example` (Docker), `docs/cpanel.env.example` (cPanel).
 | `check_host` | pre-flight: Python, PostgreSQL version (13+), `pg_trgm`, production settings, migrations, cache |
 | `migrate` | create/update tables (run after every code update) |
 | `createcachetable` | needed once when `DJANGO_CACHE=db` |
-| `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts, 503 upazilas and the other areas (city-corporation thanas, cantonments, "Other area"; idempotent; keeps dashboard edits). On an existing database, migration `reference.0004` adds new areas from the seed by itself |
-| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,upazila,name`, English; the upazila may be blank or the column left out); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
+| `seed_reference [--reset-region-assignments]` | load 6 regions, 64 districts and 666 thanas (the government's list, newer upazilas, cantonments, "Other thana"; idempotent; keeps dashboard edits). On an existing database, migration `reference.0007` applies the list by itself |
+| `import_schools CSV [--status verified\|pending]` | bulk-load schools (`district,thana,name`, English; the thana may be blank or the column left out); same checks as the dashboard import (`apps/reference/importer.py`), similar names are added |
 | `undo_school_import [ID] [--list] [--dry-run] [--yes]` | undo one wrong school import: removes (archives) the schools its audit entry lists, keeping ones with students or merges (`importer.undo`) |
 | `create_super_admin --email --name` | first Super Admin (prompts for password) |
 | `changepassword EMAIL` | reset an admin's password |
@@ -516,7 +515,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-218 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+222 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
@@ -527,16 +526,18 @@ webhook, not-delivered filters, recipients CSV and the Message history filter. `
 check, dashboard, export) and editable system emails (permissions, validation, use in real emails,
 reset, test send). `tests/test_form_update_oct2026.py` covers the October 2026 form update: Bangla on
 the form (and that every message has a translation), section, numbers-only roll, the survey, no
-date of birth, HTML emails, grouped navigation and the favicon. `tests/test_areas.py` covers
-"Upazila / Area" (grouped API order, registering with a thana, dashboard grouping, the Area type
-filter, adding a grouped area, the import) and checks that `data/reference_seed.json` has 503
-upazilas, all 13 city corporations, the cantonments and an "Other area" in every district.
+date of birth, HTML emails, grouped navigation and the favicon. `tests/test_thanas.py` covers
+"Thana" (grouped API order, registering with a thana, dashboard grouping, the Thana type filter,
+adding a grouped thana, the import), checks that `data/reference_seed.json` has the government's 64
+districts and 571 thanas, the cantonments and an "Other thana" in every district, cleaning the sheet's
+thana names, the `reference.0007` swap (rename in place, retire and move, restore archived names)
+and what keeps working from before the rename (`?upazila=` links, old CSV headings, `{upazila}`).
 `tests/test_security_accounts.py` covers Turnstile (off without keys; on: widget shown, missing,
 bad or unverifiable tokens refused, a good token sends the code; dashboard sign-in) and password
 changes (own password; Super Admin setting another admin's; permissions; audit without passwords).
-`tests/test_school_district.py` covers district-wide school suggestions (own area first, area
-shown, approved only), picks from another area, typed names matched only in the chosen area, and
-the dashboard editor keeping a school from another area. External calls (SMTP,
+`tests/test_school_district.py` covers district-wide school suggestions (own thana first, thana
+shown, approved only), picks from another thana, typed names matched only in the chosen thana, and
+the dashboard editor keeping a school from another thana. External calls (SMTP,
 MiM SMS) are mocked; no real messages are sent.
 
 ---
@@ -550,7 +551,7 @@ PROJECT_GUIDE.md, CHANGELOG.md    this guide, dated changes
 WikiScholar … Roadmap.md          original spec + status + what was added later
 config/settings.py, urls.py       settings (all from env / .env), root URLs
 apps/core/                        admins, roles, audit, IDs, shared utils, crypto, nav registry
-apps/reference/                   regions, districts, upazilas, schools (+ lookup API)
+apps/reference/                   regions, districts, thanas, schools (+ lookup API)
 apps/registration/                students, OTP, public form (templates/registration/), emails.py (system email defaults),
                                   bangla.py (Bangla for every form label/message)
 apps/notifications/               email/SMS providers, batches, logs, settings, html_email.py + templates/notifications/email.html
@@ -561,7 +562,9 @@ templates/public_base.html        public page shell
 templates/_favicons.html          site icon links (public pages and dashboard)
 static/img/                       logos (English, Bangla) and site icons; full-size originals in docs/brand/
 templates/_datefield_assets.html  CSS/JS for dd/mm/yyyy date fields (include in {% block head %})
-data/reference_seed.json          regions/districts/upazilas/areas seed (sources and rules in its _comment)
+data/reference_seed.json          regions/districts/thanas seed (sources and rules in its _comment)
+data/thana_mapping.csv            old "Upazila / Area" row → thana (reviewed; used by migration reference.0007)
+scripts/build_thana_seed.py       builds both from the BANBEIS list
 tests/                            test suite (base.py has fixtures and helpers)
 docs/                             architecture, database, cPanel deployment, env template
 ```
@@ -576,8 +579,10 @@ docs/                             architecture, database, cPanel deployment, env
   calling `MimSmsProvider.delivery_status()` (MiM `/V2/DlrApi`, ~5 min after sending) would fix it.
 * **Duplicate-student detection** (same name + guardian + school, now that date of birth is not
   collected) and a review screen.
-* **Paurashavas (municipalities)** could become their own area group the same way (a `group` value
-  plus seed rows), with no code change; they are inside upazilas today, so nobody is left out.
+* **Paurashavas (municipalities)** could become their own thana group the same way (a `group` value
+  plus seed rows), with no code change; they are inside thanas today, so nobody is left out.
+* **Schools from the BANBEIS list**: the same sheet lists 19,718 schools with their EIIN; loading
+  them (with an EIIN field to prevent duplicates) is the next step.
 * **Two-factor login** for admins.
 * **Saved queries / query builder** beyond the filter panel.
 * **Field-level encryption** of phone, email and guardian name at rest.
