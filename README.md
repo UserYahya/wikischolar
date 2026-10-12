@@ -152,7 +152,7 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-255 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+262 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
 roll-or-SID, phone, thana-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new

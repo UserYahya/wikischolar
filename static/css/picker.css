@@ -1,0 +1,49 @@
+/* Searchable picker (static/js/picker.js): public form and dashboard. Uses each site's colour tokens. */
+.picker-native { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important;
+  margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; border: 0 !important;
+  white-space: nowrap !important; min-height: 0 !important; }
+
+/* The field: looks like the select it replaces */
+.picker-trigger { display: flex; align-items: center; gap: .5rem; width: 100%; max-width: 100%; text-align: left;
+  font: inherit; color: var(--ink); background: var(--white); border: 1px solid #B9C3BD; border-radius: 4px;
+  padding: .4rem .55rem; min-height: 2.1rem; cursor: pointer; }
+.reg .picker-trigger { border-width: 1.5px; border-radius: var(--radius-field, 6px); padding: .6rem .75rem; min-height: 2.9rem; }
+.picker-trigger:hover { border-color: var(--muted); }
+.picker-trigger:focus-visible, .picker-trigger[aria-expanded="true"] { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--tint); }
+.picker-trigger:disabled { background: #EEF1EE; color: var(--muted); cursor: not-allowed; }
+.picker-trigger[aria-invalid="true"] { border-color: var(--error) !important; }
+.picker-trigger.placeholder .picker-value { color: var(--muted); }
+/* English left, Bangla right; when both don't fit, the Bangla goes to a second line (never cut off) */
+.picker-value { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline;
+  column-gap: .75rem; row-gap: 0; overflow-wrap: anywhere; }
+.picker-caret { flex: none; width: .55rem; height: .55rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px); opacity: .6; }
+.picker-bn { color: var(--muted); font-size: .9em; }
+
+/* The panel (wider screens): under the field */
+.picker-dialog { position: fixed; z-index: 50; display: flex; flex-direction: column; max-height: min(24rem, 70vh);
+  background: var(--white); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 30px rgba(28, 37, 33, .18); }
+.picker-dialog[hidden] { display: none; }
+.picker-head { display: none; }
+.picker-search { margin: .5rem; width: auto !important; }
+.picker-list { list-style: none; margin: 0; padding: 0 .35rem .4rem; overflow-y: auto; overscroll-behavior: contain; }
+.picker-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; min-height: 2.75rem;
+  padding: .45rem .65rem; border-radius: 5px; cursor: pointer; }
+.picker-row:hover, .picker-row.active { background: var(--tint); }
+.picker-row[aria-selected="true"] .picker-en { font-weight: 600; color: var(--deep); }
+.picker-group { position: sticky; top: 0; z-index: 1; background: var(--white); padding: .6rem .65rem .3rem; font-size: .78rem;
+  font-weight: 600; letter-spacing: .02em; color: var(--muted); text-transform: uppercase; }
+.picker-empty { margin: .25rem 1rem 1rem; color: var(--muted); }
+
+/* Phones: a full-screen sheet with the search box on top */
+.picker-dialog.sheet { inset: 0; width: auto !important; max-height: none; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+.picker-dialog.sheet .picker-head { display: flex; align-items: center; gap: .5rem; padding: .75rem .75rem 0 1rem; }
+.picker-title { flex: 1; margin: 0; font-weight: 700; font-size: 1.05rem; }
+.picker-close { flex: none; width: 2.75rem; height: 2.75rem; border: 0; background: none; font-size: 1.25rem; color: var(--ink); cursor: pointer; border-radius: 50%; }
+.picker-close:hover, .picker-close:focus-visible { background: var(--tint); outline: none; }
+.picker-dialog:not(.sheet) .picker-close { display: none; }
+.picker-dialog.sheet .picker-search { margin: .6rem 1rem .4rem; min-height: 3rem; font-size: 1rem; }
+.picker-dialog.sheet .picker-list { flex: 1; padding: 0 .5rem 1rem; }
+.picker-dialog.sheet .picker-row { min-height: 3.1rem; border-bottom: 1px solid var(--line-soft, #E8ECE9); border-radius: 0; }
+html.picker-locked, html.picker-locked body { overflow: hidden; }
+.toolbar .picker-trigger, .row .picker-trigger { width: auto; min-width: 12rem; }

@@ -36,7 +36,7 @@
 
     {% if thanas %}
     <label for="thana">Thana</label>
-    <select id="thana" name="thana"><option value="">All thanas</option>
+    <select id="thana" name="thana" data-picker><option value="">All thanas</option>
       {% include "dashboard/_area_options.html" with areas=thanas selected=p.thana %}
     </select>
     {% else %}<p class="hint">Pick exactly one district to filter by thana.</p>{% endif %}

@@ -54,6 +54,12 @@ Analytics) will plug into the same app.
 * **English only.** Every free-text value must be English letters, digits and basic punctuation.
   Bangla digits are converted to 0–9 automatically; other scripts are refused, in the browser
   and on the server.
+* **District and thana are searchable pickers** (`static/js/picker.js`, `<select data-picker>`).
+  * On phones, a full-screen list with a search box on top; on wider screens, a panel under the
+    field.
+  * Search matches English or Bangla.
+  * The `<select>` stays the real field: its value is sent, and choosing fires `change`.
+  * The dashboard uses the same picker for district, thana and school fields.
 * **Bangla beside the English.** Every label, hint, button, option and message on the public form
   has a smaller Bangla line (`.bn`, own line) or note (`.bn-inline`, buttons and chips) in natural
   Bangla; dropdown options read "English · বাংলা" (districts and thanas use their `name_bn`).
@@ -554,7 +560,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-255 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+262 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a

@@ -594,9 +594,11 @@
     if (f.guardian_relation === "other") setField("guardian_relation_other", f.guardian_relation_other);
     if (f.district && state.districts.has(String(f.district))) {
       districtSel.value = f.district;
+      window.WSPicker?.sync(districtSel);
       await loadThanas();
       if (f.thana) {
         thanaSel.value = f.thana;
+        window.WSPicker?.sync(thanaSel);
         if (thanaSel.value) {
           resetSchool(false);
           schoolIn.value = f.school_name || "";

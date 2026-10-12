@@ -216,3 +216,29 @@ class DashboardTests(WSTestCase):
         r = self.client.get("/dashboard/settings/system-emails/")
         self.assertContains(r, 'class="email-preview"')
         self.assertContains(r, "srcdoc=")
+
+
+class SearchablePickerTests(WSTestCase):
+    """District and thana use the searchable picker (static/js/picker.js) on the form and dashboard."""
+
+    def test_public_form_district_and_thana(self):
+        page = self.client.get("/").content.decode()
+        self.assertIn("js/picker.js", page)
+        self.assertIn("css/picker.css", page)
+        for field, title in (("district", "Choose district · জেলা বেছে নিন"), ("thana", "Choose thana · থানা বেছে নিন")):
+            tag = re.search(rf'<select id="{field}"[^>]*>', page).group(0)
+            self.assertIn("data-picker", tag)
+            self.assertIn(f'data-picker-title="{title}"', tag)
+            self.assertIn("data-picker-search=\"Type to search · খুঁজতে লিখুন\"", tag)
+
+    def test_dashboard_place_fields(self):
+        self.client.force_login(self.admin)
+        s = self.register()
+        for url, names in ((f"/dashboard/students/{s['wikischolar_id']}/edit/", ("district", "thana", "school")),
+                           ("/dashboard/schools/add/", ("district", "thana")),
+                           (f"/dashboard/schools/?district={self.gazipur.pk}", ("district", "thana"))):
+            page = self.client.get(url).content.decode()
+            self.assertIn("js/picker.js", page, url)
+            for name in names:
+                tag = re.search(rf'<select name="{name}"[^>]*>', page).group(0)
+                self.assertIn("data-picker", tag, (url, name))

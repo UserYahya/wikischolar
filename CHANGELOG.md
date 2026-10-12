@@ -3,6 +3,28 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-13
+
+### Changed
+- **District and thana are searchable pickers** instead of long dropdowns, on the registration form
+  and in the dashboard.
+  - **On a phone**, tapping the field opens a full-screen list with a search box on top. Typing a
+    few letters in English or Bangla ("dha", "ঢাকা") narrows it.
+  - **On a computer**, the same list opens as a panel under the field.
+  - Rows are large, and the Bangla name shows on the right. The headings stay (Cantonments, "Not
+    in the list"). When nothing matches, the form points to "Other thana (not listed)".
+  - **Where:** dashboard student editor (district, thana, school), Add school, Set thana, and the
+    Schools / Students / duplicates / import filters.
+  - **How it works:** `static/js/picker.js` and `picker.css` upgrade any `<select data-picker>`.
+    The select stays the real field, so nothing else changed and the form still works without
+    JavaScript.
+
+### Fixed
+- **Bangla names of 12 thanas** that kept the Bangla of their old name. For example "Mirpur" showed
+  "মিরপুর মডেল", "Uttara" showed "উত্তরা পূর্ব", and "Chittagong Port" showed only "বন্দর".
+  Migration `reference.0011` corrects existing databases, and the seed is fixed too.
+- 7 new tests (262 in total).
+
 ## 2026-10-12
 
 ### Added

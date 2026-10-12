@@ -55,7 +55,7 @@
     <h3>District &amp; thana list</h3>
     <p class="hint">District and thana (including cantonments) must be spelled as in this list (English or Bangla; capitals don't matter). Copy them from here into the template.</p>
     <form method="get" action="{% url 'dashboard:school_import_locations' %}" class="toolbar">
-      <select name="district" aria-label="District">
+      <select name="district" aria-label="District" data-picker>
         <option value="">All districts</option>
         {% for d in districts %}<option value="{{ d.pk }}">{{ d.name }}</option>{% endfor %}
       </select>

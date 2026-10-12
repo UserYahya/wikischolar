@@ -18,11 +18,11 @@
     <div id="relationOtherRow"><label for="id_guardian_relation_other">Relation (if "other")</label>{{ form.guardian_relation_other }}{{ form.guardian_relation_other.errors }}</div>
     <div><label for="id_current_class">Class</label>{{ form.current_class }}{{ form.current_class.errors }}</div>
     <div><label for="id_district">District</label>
-      <select name="district" id="id_district" data-cascade="district">{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == form.district.value|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>{{ form.district.errors }}</div>
+      <select name="district" id="id_district" data-cascade="district" data-picker>{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == form.district.value|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>{{ form.district.errors }}</div>
     <div><label for="id_thana">Thana</label>
-      <select name="thana" id="id_thana" data-cascade="thana">{% include "dashboard/_area_options.html" with areas=thanas selected=form.thana.value %}</select>{{ form.thana.errors }}</div>
+      <select name="thana" id="id_thana" data-cascade="thana" data-picker>{% include "dashboard/_area_options.html" with areas=thanas selected=form.thana.value %}</select>{{ form.thana.errors }}</div>
     <div class="span2"><label for="id_school">School</label>
-      <select name="school" id="id_school" data-cascade="school">{% for sc in schools %}<option value="{{ sc.pk }}" {% if sc.pk|stringformat:"s" == form.school.value|stringformat:"s" %}selected{% endif %}>{{ sc.name }}{% if sc.thana_id|stringformat:"s" != form.thana.value|stringformat:"s" %} ({% if sc.thana_id %}{{ sc.thana.name }}{% else %}thana not known{% endif %}){% endif %}{% if sc.verification_status == "pending" %} (pending){% endif %}</option>{% endfor %}</select>{{ form.school.errors }}
+      <select name="school" id="id_school" data-cascade="school" data-picker>{% for sc in schools %}<option value="{{ sc.pk }}" {% if sc.pk|stringformat:"s" == form.school.value|stringformat:"s" %}selected{% endif %}>{{ sc.name }}{% if sc.thana_id|stringformat:"s" != form.thana.value|stringformat:"s" %} ({% if sc.thana_id %}{{ sc.thana.name }}{% else %}thana not known{% endif %}){% endif %}{% if sc.verification_status == "pending" %} (pending){% endif %}</option>{% endfor %}</select>{{ form.school.errors }}
       <p class="hint">Schools in the selected thana are listed, plus the current school (its area in brackets if it is elsewhere in the district). Add a missing school from the Schools page.</p></div>
     <div><label for="id_class_roll">Class roll</label>{{ form.class_roll }}<p class="hint">Numbers only.</p>{{ form.class_roll.errors }}</div>
     <div><label for="id_student_id_sid">Student ID (SID)</label>{{ form.student_id_sid }}{{ form.student_id_sid.errors }}</div>

@@ -199,7 +199,7 @@
     },
     {
      "name": "Barisal Sadar (Kotwali)",
-     "name_bn": "বরিশাল সদর"
+     "name_bn": "বরিশাল সদর (কোতোয়ালি)"
     },
     {
      "name": "Gaurnadi",
@@ -515,7 +515,7 @@
     },
     {
      "name": "Chittagong Port",
-     "name_bn": "বন্দর"
+     "name_bn": "চট্টগ্রাম বন্দর"
     },
     {
      "name": "Double Mooring",
@@ -671,11 +671,11 @@
     },
     {
      "name": "Comilla Adarsha Sadar",
-     "name_bn": "কুমিল্লা সদর"
+     "name_bn": "কুমিল্লা আদর্শ সদর"
     },
     {
      "name": "Comilla Sadar Dakshin",
-     "name_bn": "সদর দক্ষিণ"
+     "name_bn": "কুমিল্লা সদর দক্ষিণ"
     },
     {
      "name": "Daudkandi",
@@ -915,7 +915,7 @@
     },
     {
      "name": "Mirpur",
-     "name_bn": "মিরপুর মডেল"
+     "name_bn": "মিরপুর"
     },
     {
      "name": "Mohammadpur",
@@ -927,7 +927,7 @@
     },
     {
      "name": "Mugda Para",
-     "name_bn": "মুগদা"
+     "name_bn": "মুগদাপাড়া"
     },
     {
      "name": "Nawabganj",
@@ -939,11 +939,11 @@
     },
     {
      "name": "Paltan",
-     "name_bn": "পল্টন মডেল"
+     "name_bn": "পল্টন"
     },
     {
      "name": "Ramna",
-     "name_bn": "রমনা মডেল"
+     "name_bn": "রমনা"
     },
     {
      "name": "Rampura",
@@ -1003,7 +1003,7 @@
     },
     {
      "name": "Uttara",
-     "name_bn": "উত্তরা পূর্ব"
+     "name_bn": "উত্তরা"
     },
     {
      "name": "Uttara Paschim",
@@ -2725,7 +2725,7 @@
     },
     {
      "name": "Indurkani",
-     "name_bn": "জিয়ানগর"
+     "name_bn": "ইন্দুরকানী"
     },
     {
      "name": "Kawkhali",
@@ -2741,7 +2741,7 @@
     },
     {
      "name": "Nesarabad (Swarupkati)",
-     "name_bn": "নেছারাবাদ"
+     "name_bn": "নেছারাবাদ (স্বরূপকাঠি)"
     },
     {
      "name": "Pirojpur Sadar",
@@ -2889,7 +2889,7 @@
     },
     {
      "name": "Kawkhali (Betbunia)",
-     "name_bn": "কাউখালী"
+     "name_bn": "কাউখালী (বেতবুনিয়া)"
     },
     {
      "name": "Langadu",

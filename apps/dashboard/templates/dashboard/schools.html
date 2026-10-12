@@ -17,8 +17,8 @@
     <option value="merged" {% if f.status == "merged" %}selected{% endif %}>Merged</option>
     <option value="removed" {% if f.status == "removed" %}selected{% endif %}>Removed</option>
   </select>
-  <select name="district" aria-label="District" onchange="this.form.thana && (this.form.thana.value='')"><option value="">All districts</option>{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == f.district %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
-  {% if thanas %}<select name="thana" aria-label="Thana"><option value="">All thanas</option><option value="none" {% if f.thana == "none" %}selected{% endif %}>Thana not known</option>{% include "dashboard/_area_options.html" with areas=thanas selected=f.thana %}</select>{% endif %}
+  <select name="district" aria-label="District" data-picker onchange="this.form.thana && (this.form.thana.value='')"><option value="">All districts</option>{% for d in districts %}<option value="{{ d.pk }}" {% if d.pk|stringformat:"s" == f.district %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
+  {% if thanas %}<select name="thana" aria-label="Thana" data-picker><option value="">All thanas</option><option value="none" {% if f.thana == "none" %}selected{% endif %}>Thana not known</option>{% include "dashboard/_area_options.html" with areas=thanas selected=f.thana %}</select>{% endif %}
   <button class="btn">Filter</button>
 </form>
 {% include "dashboard/_advanced_search.html" with form_id="schoolFilters" %}

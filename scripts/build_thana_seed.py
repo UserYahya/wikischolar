@@ -84,6 +84,18 @@ RETIRE_TO = {
 }
 # Bangla for sheet thanas with no predecessor in the old list.
 NEW_BANGLA = {("dhaka", "Cantonment"): "ক্যান্টনমেন্ট"}
+# Bangla carried over from an old name that no longer fits the government's name (migration
+# reference.0011 applies the same fixes to existing databases).
+BANGLA_FIXES = {
+    ("dhaka", "Mirpur"): "মিরপুর", ("dhaka", "Paltan"): "পল্টন", ("dhaka", "Ramna"): "রমনা",
+    ("dhaka", "Uttara"): "উত্তরা", ("dhaka", "Mugda Para"): "মুগদাপাড়া",
+    ("chittagong", "Chittagong Port"): "চট্টগ্রাম বন্দর", ("pirojpur", "Indurkani"): "ইন্দুরকানী",
+    ("barisal", "Barisal Sadar (Kotwali)"): "বরিশাল সদর (কোতোয়ালি)",
+    ("comilla", "Comilla Adarsha Sadar"): "কুমিল্লা আদর্শ সদর",
+    ("comilla", "Comilla Sadar Dakshin"): "কুমিল্লা সদর দক্ষিণ",
+    ("pirojpur", "Nesarabad (Swarupkati)"): "নেছারাবাদ (স্বরূপকাঠি)",
+    ("rangamati", "Kawkhali (Betbunia)"): "কাউখালী (বেতবুনিয়া)",
+}
 # Upazilas created after the 2024 survey: kept from the current seed although the sheet lacks them.
 NEWER_UPAZILAS = {
     "bogra": ["Mokamtola"], "chittagong": ["Fatikchhari North"], "coxs-bazar": ["Eidgaon", "Matamuhuri"],
@@ -165,7 +177,8 @@ def draft_mapping(xlsx, old_seed):
                 used.add(row[3]["name"])
         for raw, n, thana, old, source in pending:
             rows.append({"district_code": code, "district": name, "thana": thana,
-                         "thana_bn": (old or {}).get("name_bn", "") or NEW_BANGLA.get((code, thana), ""), "group": "", "group_bn": "", "source": source,
+                         "thana_bn": BANGLA_FIXES.get((code, thana)) or (old or {}).get("name_bn", "")
+                         or NEW_BANGLA.get((code, thana), ""), "group": "", "group_bn": "", "source": source,
                          "replaces": (old or {}).get("name", ""), "sheet_name": raw, "sheet_schools": n,
                          "note": "check: spelling variant" if source == "sheet-variant" else
                                  ("no Bangla yet" if not old else "")})
