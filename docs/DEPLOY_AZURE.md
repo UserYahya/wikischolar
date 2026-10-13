@@ -124,7 +124,7 @@ and use `ssh wikischolar` (and `scp file wikischolar:/path`).
     aws configure                 # the backup user's key, region ap-south-1
     sudo mkdir -p /opt/backup && sudo chown $USER: /opt/backup
     cp /opt/wikischolar/deploy/pg_backup.sh /opt/backup/ && chmod 700 /opt/backup/pg_backup.sh
-    nano /opt/backup/pg_backup.sh # set S3_URI, and HC_URL (step 19)
+    nano /opt/backup/pg_backup.sh # set S3_URI, and HC_URL (step 19); COMPRESS is the dump's compression
     /opt/backup/pg_backup.sh      # must print "backup OK"; check the file appears in S3
     sudo touch /var/log/pg_backup.log && sudo chown $USER: /var/log/pg_backup.log
     (crontab -l 2>/dev/null; echo '0 3 * * * /opt/backup/pg_backup.sh >> /var/log/pg_backup.log 2>&1') | crontab -

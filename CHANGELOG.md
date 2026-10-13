@@ -5,6 +5,11 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-13
 
+### Changed
+- **Database backups are compressed with zstd** (`deploy/pg_backup.sh`, setting `COMPRESS`, default
+  `zstd:9`): about 12% smaller than pg_dump's default gzip at the same speed. `zstd:19` is about 21%
+  smaller but about 10x slower. Restoring is unchanged (`pg_restore` detects it; needs PostgreSQL 16+).
+
 ### Added
 - **School & college institutions from the second BANBEIS sheet.**
   - `import_banbeis_schools` takes `--type "SCHOOL & COLLEGE"` to import only rows of that
