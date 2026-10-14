@@ -8,6 +8,11 @@ from apps.notifications import services as notify
 OTP = "registration.otp"
 CONFIRMATION = "registration.confirmation"
 
+# Exam announcements are sent by email, so the confirmation asks students to keep checking it.
+# (Migration 0010 adds the same line to a customised confirmation saved before it existed.)
+EXAM_EMAIL_LINE = ("Please check this email address regularly: exam announcements and other WikiScholar updates "
+                   "will be sent here.")
+
 _STUDENT_PLACEHOLDERS = {
     "student_name": "student's full name",
     "wikischolar_id": "the new WikiScholar ID, e.g. WS-2027-000001",
@@ -97,6 +102,7 @@ def register():
               "WikiScholar ID: {wikischolar_id}\n\n"
               "{details}\n\n"
               "Please use this ID in all future communication with WikiScholar.\n"
+              f"{EXAM_EMAIL_LINE}\n"
               "Questions? Contact us: {contact_email}\n"),
         placeholders=_STUDENT_PLACEHOLDERS,
         required=("wikischolar_id",),
