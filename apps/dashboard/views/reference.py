@@ -84,7 +84,7 @@ SCHOOL_EXPORT_COLUMNS = [
     ("institute_for", lambda s: s.get_institute_for_display()),
     ("geographical_position", lambda s: s.get_geographical_position_display()),
     ("area_status", lambda s: s.get_area_status_display()), ("email", lambda s: s.email),
-    ("students", lambda s: s.n), ("added_on", lambda s: s.created_at.date().isoformat()),
+    ("students", lambda s: s.n), ("added_on", lambda s: timezone.localdate(s.created_at).isoformat()),
 ]
 
 
