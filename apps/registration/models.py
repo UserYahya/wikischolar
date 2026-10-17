@@ -57,6 +57,10 @@ class Student(SoftDeleteModel):
     policy_consent_at = models.DateTimeField()
     policy_version = models.CharField(max_length=20)
     updates_opt_in = models.BooleanField(default=False)
+    # Youth Safety Policy 4.5: the guardian allows photos of the child at offline events (optional
+    # checkbox). `photo_consent_at` is when it was given (registration or a dashboard edit); blank when not.
+    photo_consent = models.BooleanField(default=False)
+    photo_consent_at = models.DateTimeField(null=True, blank=True)
 
     # Survey: how the family heard about WikiScholar (blank for students registered before it was asked)
     heard_from = models.CharField(max_length=20, choices=HeardFrom.choices, blank=True)
@@ -84,6 +88,10 @@ class Student(SoftDeleteModel):
                 | (Q(filled_by=FilledBy.STUDENT) & Q(guardian_declared_at__isnull=True)),
                 name="student_guardian_declaration"),
             models.CheckConstraint(condition=Q(heard_from__in=["", *HeardFrom.values]), name="student_heard_from_valid"),
+            models.CheckConstraint(
+                condition=(Q(photo_consent=True) & Q(photo_consent_at__isnull=False))
+                | (Q(photo_consent=False) & Q(photo_consent_at__isnull=True)),
+                name="student_photo_consent"),
         ]
 
     def __str__(self):

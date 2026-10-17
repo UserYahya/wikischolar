@@ -103,6 +103,7 @@ def register_student(data, *, request):
         section=data["section"], heard_from=data["heard_from"],
         phone=data["phone"], email=data["email"], email_verified_at=ev.verified_at,
         policy_consent_at=now, policy_version=CFG["POLICY_VERSION"], updates_opt_in=data["updates_opt_in"],
+        photo_consent=bool(data.get("photo_consent")), photo_consent_at=now if data.get("photo_consent") else None,
         filled_by=FilledBy.GUARDIAN if data.get("guardian_declaration") else FilledBy.STUDENT,
         guardian_declared_at=now if data.get("guardian_declaration") else None,
         source_ip=client_ip(request),
@@ -169,7 +170,7 @@ def send_confirmation_sms(student):
 # ---- Admin edits (every change → edit_history + audit_logs) ------------------ #
 EDITABLE_FIELDS = ["student_name", "gender", "guardian_name", "guardian_relation",
                    "guardian_relation_other", "district", "thana", "school", "current_class", "class_roll",
-                   "student_id_sid", "section", "phone", "email", "updates_opt_in"]
+                   "student_id_sid", "section", "phone", "email", "updates_opt_in", "photo_consent"]
 
 
 def _value(student, field):
@@ -194,6 +195,8 @@ def update_student(student, changes, *, request, reason=""):
         setattr(student, field, new)
         if field == "school":
             student.school_resolution = Student.SchoolResolution.ADMIN
+        if field == "photo_consent":  # e.g. a guardian gives or withdraws photo permission later
+            student.photo_consent_at = timezone.now() if new else None
     if not rows:
         return 0
     student.save()
