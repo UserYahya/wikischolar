@@ -105,6 +105,7 @@ FIELDS = {
         Field("phone", "Phone", "text", "phone", group="Guardian & contact"),
         Field("email", "Email", "text", "email", group="Guardian & contact"),
         Field("updates_opt_in", "Opted in to email updates", "bool", "updates_opt_in", group="Guardian & contact"),
+        Field("photo_consent", "Photos allowed at offline events", "bool", "photo_consent", group="Guardian & contact"),
         Field("heard_from", "Heard about WikiScholar from", "choice", "heard_from", HeardFrom.choices,
               "Guardian & contact"),
         Field("created_at", "Registered on", "date", "created_at", group="Guardian & contact"),

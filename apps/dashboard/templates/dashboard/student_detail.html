@@ -25,6 +25,7 @@
       <dt>Phone</dt><dd>{{ s.phone }}</dd>
       <dt>Email</dt><dd>{{ s.email }} <span class="tag ok">verified {{ s.email_verified_at|date:"j M" }}</span></dd>
       <dt>Email updates</dt><dd>{{ s.updates_opt_in|yesno:"Opted in,Not opted in" }}</dd>
+      <dt>Photos at offline events</dt><dd>{% if s.photo_consent %}<span class="tag ok">Permitted</span> {{ s.photo_consent_at|date:"j M Y H:i" }}{% else %}Not permitted{% endif %} <span class="muted">(Youth Safety Policy 4.5)</span></dd>
       <dt>Policy consent</dt><dd>{{ s.policy_consent_at|date:"j M Y H:i" }} (version {{ s.policy_version }})</dd>
       <dt>Heard about WikiScholar from</dt><dd>{{ s.get_heard_from_display|default:"—" }}</dd>
     </dl>

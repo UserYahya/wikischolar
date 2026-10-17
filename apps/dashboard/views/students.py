@@ -94,6 +94,8 @@ EXPORT_COLUMNS = [
     ("class_roll", lambda s: s.class_roll), ("student_id_sid", lambda s: s.student_id_sid),
     ("section", lambda s: s.section),
     ("phone", lambda s: s.phone), ("email", lambda s: s.email), ("updates_opt_in", lambda s: s.updates_opt_in),
+    ("photo_consent", lambda s: s.photo_consent),
+    ("photo_consent_at", lambda s: s.photo_consent_at.isoformat() if s.photo_consent_at else ""),
     ("heard_from", lambda s: s.heard_from),
     ("registered_at", lambda s: s.created_at.isoformat()),
 ]

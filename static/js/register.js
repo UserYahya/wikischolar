@@ -54,7 +54,8 @@
   };
   const DRAFT_FIELDS = ["guardian_declaration", "student_name", "gender", "guardian_name",
     "guardian_relation", "guardian_relation_other", "district", "thana", "current_class", "school_name", "school_id",
-    "class_roll", "student_id_sid", "section", "phone", "email", "heard_from", "policy_consent", "updates_opt_in"];
+    "class_roll", "student_id_sid", "section", "phone", "email", "heard_from", "policy_consent", "photo_consent",
+    "updates_opt_in"];
   const DRAFT_KEY = "ws_registration_draft_v2";
   const state = { step: 1, verificationId: null, verifiedEmail: null, districts: new Map(), typoConfirmed: false,
                   done: false, restoring: false };
@@ -531,7 +532,7 @@
       heard_from: val("heard_from"),
       phone: normPhone(val("phone")), email: val("email").toLowerCase(),
       verification_id: state.verificationId, policy_consent: val("policy_consent"),
-      updates_opt_in: val("updates_opt_in"), website: val("website"),
+      photo_consent: val("photo_consent"), updates_opt_in: val("updates_opt_in"), website: val("website"),
     };
     try {
       const { ok, data } = await api("/api/registration/submit/", payload);
@@ -589,7 +590,7 @@
     const f = draft.fields || {};
     ["guardian_declaration", "student_name", "gender", "guardian_name", "guardian_relation",
      "guardian_relation_other", "current_class", "class_roll", "student_id_sid", "section", "phone", "email",
-     "heard_from", "policy_consent", "updates_opt_in"].forEach((n) => setField(n, f[n]));
+     "heard_from", "policy_consent", "photo_consent", "updates_opt_in"].forEach((n) => setField(n, f[n]));
     syncRelation();
     if (f.guardian_relation === "other") setField("guardian_relation_other", f.guardian_relation_other);
     if (f.district && state.districts.has(String(f.district))) {
