@@ -78,6 +78,10 @@ Analytics) will plug into the same app.
   page's `{% block head %}`; `static/js/datefield.js` does the rest. On the server,
   `apps.core.utils.parse_date` / `BritishDateField` read dd/mm/yyyy (and still yyyy-mm-dd, so old
   links keep working). CSV exports keep ISO dates (yyyy-mm-dd) for spreadsheets.
+  **A date is a day in Dhaka.** Datetimes are stored in UTC (`USE_TZ = True`, `TIME_ZONE =
+  "Asia/Dhaka"`), and from 00:00 to 06:00 in Dhaka it is still the day before in UTC. Filter with
+  `created_at__date` (Django converts to Dhaka time first). To get a datetime's date or format it,
+  use `timezone.localdate(dt)` or `timezone.localtime(dt)`, never `dt.date()` or `dt.strftime(...)`.
 * **No data loss on Back.** Answers are kept as a draft in the browser tab (sessionStorage);
   the browser/phone Back button moves between steps; finished steps can be clicked to reopen.
   The draft is cleared after a successful registration.
@@ -572,6 +576,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
+278 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 277 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,

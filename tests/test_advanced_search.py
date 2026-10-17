@@ -1,6 +1,9 @@
 """Advanced (conditional) search on the Students and Schools lists (apps/dashboard/advanced.py)."""
 import json
+from datetime import datetime
 from urllib.parse import quote
+
+from django.utils import timezone
 
 from apps.dashboard import advanced
 from apps.reference.models import School
@@ -39,9 +42,20 @@ class EngineTests(WSTestCase):
         self.assertEqual(self.ids(adv(("all", [cond("updates_opt_in", "no")])))[0], {self.b.pk})
         self.assertEqual(self.ids(adv(("all", [cond("district", "in", [self.gazipur.pk])])))[0], {self.a.pk, self.b.pk})
         self.assertEqual(self.ids(adv(("all", [cond("region", "not_in", [self.dhaka.pk])])))[0], set())
-        today = self.a.created_at.strftime("%d/%m/%Y")
+        today = timezone.localtime(self.a.created_at).strftime("%d/%m/%Y")
         self.assertEqual(self.ids(adv(("all", [cond("created_at", "between", [today, today])])))[0], {self.a.pk, self.b.pk})
         self.assertEqual(self.ids(adv(("all", [cond("created_at", "lt", today)])))[0], set())
+
+    def test_dates_are_local_dhaka_days(self):
+        # 00:30 on 10 March in Dhaka is still 9 March in UTC; it must count as 10/03/2026.
+        dhaka = timezone.get_default_timezone()
+        Student.objects.filter(pk=self.a.pk).update(created_at=datetime(2026, 3, 10, 0, 30, tzinfo=dhaka))
+        Student.objects.filter(pk=self.b.pk).update(created_at=datetime(2026, 3, 9, 23, 30, tzinfo=dhaka))
+        self.assertEqual(self.ids(adv(("all", [cond("created_at", "eq", "10/03/2026")])))[0], {self.a.pk})
+        self.assertEqual(self.ids(adv(("all", [cond("created_at", "eq", "09/03/2026")])))[0], {self.b.pk})
+        self.assertEqual(self.ids(adv(("all", [cond("created_at", "lt", "10/03/2026")])))[0], {self.b.pk})
+        self.assertEqual(self.ids(adv(("all", [cond("created_at", "between", ["10/03/2026", "10/03/2026"])])))[0],
+                         {self.a.pk})
 
     def test_all_and_any_inside_and_across_groups(self):
         rina, class8 = cond("student_name", "contains", "rina"), cond("current_class", "in", ["8"])
@@ -260,6 +274,14 @@ class SchoolExportTests(WSTestCase):
         s = SavedSearch.objects.create(entity="schools", name="Non-govt", created_by=self.admin, query={
             "match": "all", "groups": [{"match": "all", "conditions": [cond("management", "in", ["non_government"])]}]})
         self.assertEqual([r[1] for r in self.export(f"?saved={s.pk}")[1]], ["100015"])
+
+    def test_added_on_is_the_dhaka_date(self):
+        # Added at 00:30 on 10 March in Dhaka (still 9 March in UTC), so the CSV and the "Added on" filter agree.
+        School.objects.filter(pk=self.other.pk).update(
+            created_at=datetime(2026, 3, 10, 0, 30, tzinfo=timezone.get_default_timezone()))
+        self.client.force_login(self.admin)
+        header, rows = self.export("?adv=" + quote(adv(("all", [cond("created_at", "eq", "10/03/2026")]))))
+        self.assertEqual([(r[1], dict(zip(header, r))["added_on"]) for r in rows], [("100015", "2026-03-10")])
 
     def test_student_export_has_the_school_government_data(self):
         self.client.force_login(self.admin)

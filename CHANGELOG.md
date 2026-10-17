@@ -5,6 +5,17 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-10-15
 
+### Fixed
+- **The advanced-search date test failed from 00:00 to 06:00 Dhaka time.**
+  `test_text_choice_bool_and_number_operators` built "today" from the UTC datetime, which is still
+  yesterday then. It now uses the Dhaka date (`timezone.localtime`). The search itself was already
+  right: "Registered on" / "Added on" compare Dhaka days.
+- **Schools → Export CSV: `added_on` is the Dhaka date.** A school added between 00:00 and 06:00
+  Dhaka time showed the day before, so it disagreed with the "Added on" filter.
+- New test: a student registered at 00:30 Dhaka time on 10 March is found by "Registered on
+  10/03/2026", not 09/03/2026. Another pins the export's `added_on`. 3 new tests (278 in total).
+- `PROJECT_GUIDE.md` §2 now says how to turn a datetime into a date (`timezone.localdate`, never
+  `.date()`).
 ### Added
 - **"Check your email regularly" reminder** (exam announcements are sent by email):
   - **Success page:** a highlighted note under the email/SMS line: "Check your email regularly. Exam
