@@ -3,6 +3,27 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-15
+
+### Added
+- **"Check your email regularly" reminder** (exam announcements are sent by email):
+  - **Success page:** a highlighted note under the email/SMS line: "Check your email regularly. Exam
+    announcements and other WikiScholar updates will be sent to this address. Also check your Spam/Junk folder
+    from time to time." (with Bangla; printed too).
+  - **Confirmation email:** "Please check this email address regularly: exam announcements and other WikiScholar
+    updates will be sent here." (before "Questions?").
+  - **Confirmation SMS:** "WikiScholar registration successful. Your ID: WS-2027-000001. Check your email
+    regularly for exam announcements. Questions? Email info@wikischolar.bd" (149 of 160 characters; a too-long
+    contact address is dropped, never the ID or the reminder).
+  - 2 new tests (277 in total).
+
+### Upgrade notes
+- New data migration `registration.0010_exam_reminder_in_saved_email`: if the confirmation email was customised
+  on Dashboard → System emails, the same line is added to the saved text (before the "Questions?" / contact line,
+  or at the end; skipped if it already mentions exam announcements). Azure runs it on deploy; on cPanel run
+  `migrate` and `collectstatic --noinput`.
+- Only new registrations get the new texts.
+
 ## 2026-10-13
 
 ### Changed

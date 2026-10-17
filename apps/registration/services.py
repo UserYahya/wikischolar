@@ -152,13 +152,13 @@ SMS_LIMIT = 160
 
 
 def confirmation_sms_text(student):
-    """The registration SMS: success, the WikiScholar ID and where to send questions (no name: names
-    vary in length and may need Unicode)."""
+    """The registration SMS: success, the WikiScholar ID, a reminder that exam announcements come by
+    email, and where to send questions (no name: names vary in length and may need Unicode)."""
     text = (f"WikiScholar registration successful. Your ID: {student.wikischolar_id}. "
-            f"Questions? Email {CFG['CONTACT_EMAIL']}")
-    if len(text) > SMS_LIMIT:  # only with an unusually long WS_CONTACT_EMAIL
-        text = f"WikiScholar registration successful. Your ID: {student.wikischolar_id}."
-    return text
+            "Check your email regularly for exam announcements.")
+    with_contact = f"{text} Questions? Email {CFG['CONTACT_EMAIL']}"
+    # An unusually long WS_CONTACT_EMAIL loses the contact part, never the ID or the reminder.
+    return with_contact if len(with_contact) <= SMS_LIMIT else text
 
 
 def send_confirmation_sms(student):

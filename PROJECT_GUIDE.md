@@ -94,18 +94,26 @@ Analytics) will plug into the same app.
   Bangladesh programme" (with Bangla) and a **"← Back to wikischolar.bd"** pill button
   (`WS_SITE_URL`; shortened to "← wikischolar.bd" on phones); the success screen has the same link.
 * **Success screen**: a check mark and "Registration complete", the WikiScholar ID in a quiet panel
-  ("Keep this ID safe"), the note that a confirmation email and an SMS were sent, every detail (with "Registered on") and two
+  ("Keep this ID safe"), the note that a confirmation email and an SMS were sent, a highlighted
+  **"Check your email regularly"** reminder (exam announcements are sent by email; check Spam/Junk
+  too; English + Bangla, printed too), every detail (with "Registered on") and two
   buttons: **Print / Save as PDF** (`window.print()`; a print stylesheet in `public.css` prints only
   the logo and this card, and the page title `WikiScholar registration WS-…` becomes the PDF's file
   name; phones offer "Save as PDF" in their print dialog) and "← Back to wikischolar.bd". No PDF
   library or server work is involved.
 * **Confirmation SMS**: besides the confirmation email, the student's mobile number gets one SMS
   (verification stays email-only): "WikiScholar registration successful. Your ID: WS-2027-000001.
-  Questions? Email info@wikischolar.bd" (98 characters; the address is `WS_CONTACT_EMAIL`). It must
+  Check your email regularly for exam announcements. Questions? Email info@wikischolar.bd"
+  (149 characters; the address is `WS_CONTACT_EMAIL`; an unusually long one is left out rather than
+  the ID or the reminder). It must
   stay one 160-character SMS in plain English letters (a Bangla or curly character turns it into a
   70-character Unicode SMS); a test checks this. Text in `registration/services.py`
   (`confirmation_sms_text`); sent through the active SMS settings (MiM SMS) after commit,
   independently of the email, and logged on the student page. A failed SMS never blocks registration.
+* **Confirmation email** also asks students to check that address regularly, because exam
+  announcements are sent by email (`registration/emails.py`, `EXAM_EMAIL_LINE`, before "Questions?").
+  Migration `registration.0010` added the same line to a confirmation customised on System emails
+  before this change.
 * **Government school list (BANBEIS).** `manage.py import_banbeis_schools FILE.xlsx [--dry-run]`
   loads the government's institution list (e-survey 2024: 19,718 schools). Each school gets its
   **EIIN** (6 digits, unique) and government data: division, institute type, education level,
@@ -564,7 +572,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-275 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+277 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a

@@ -387,6 +387,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | Email step says the code is sent **by email only** and to **check Spam/Junk** | codes were missed in spam folders |
 | **One email per student**: "Send verification code" warns that the address is already registered and asks for another; re-checked on submit | avoid duplicate student records sharing one inbox |
 | **Confirmation SMS** after registering (besides the email): "registration successful", the WikiScholar ID and the contact address, within one 160-character SMS; verification stays email-only | the student gets the ID on their phone too |
+| **"Check your email regularly"** on the success page, in the confirmation email and in the SMS | exam announcements are sent by email |
 | School typeahead suggests **approved (verified) schools only**; pending ones are still matched on submit | students should pick from the approved list; staff approve new schools |
 | **Required guardian declaration** at the start ("I am the guardian of the student named below and I am filling in this form on their behalf"), stored with a timestamp, shown in the summary, confirmation, dashboard (filter + export) | Youth Safety Policy: the guardian fills in the form |
 | **Answers never lost**: draft kept in the browser tab, browser Back/Forward move between steps, finished steps clickable | users lost data with the browser's Back button |
