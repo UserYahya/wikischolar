@@ -327,7 +327,8 @@ class ConfirmationSmsTests(WSTestCase):
         def capture(provider, destination, body, subject=""):
             sent.append((destination, body))
             return real_send(provider, destination, body, subject)
-        with mock.patch.object(ConsoleSmsProvider, "send", capture),                 self.captureOnCommitCallbacks(execute=True):  # the email and SMS go out after commit
+        with mock.patch.object(ConsoleSmsProvider, "send", capture), \
+                self.captureOnCommitCallbacks(execute=True):  # the email and SMS go out after commit
             s = self.register(**over)
         return s, sent
 
@@ -339,6 +340,7 @@ class ConfirmationSmsTests(WSTestCase):
         self.assertIn("registration successful", body)
         self.assertIn(s["wikischolar_id"], body)
         self.assertIn("info@wikischolar.bd", body)
+        self.assertIn("Check your email regularly for exam announcements.", body)
         self.assertLessEqual(len(body), 160)
         self.assertTrue(set(body) <= GSM_7, set(body) - GSM_7)  # plain letters: one 160-character SMS
         log = Student.objects.get(wikischolar_id=s["wikischolar_id"]).notifications.get(channel="sms")
@@ -357,12 +359,15 @@ class ConfirmationSmsTests(WSTestCase):
             text = services.confirmation_sms_text(student)
         self.assertLessEqual(len(text), services.SMS_LIMIT)  # a too-long contact address is left out, not cut
         self.assertIn("WS-2027-999999999", text)
+        self.assertIn("exam announcements", text)  # the reminder stays
+        self.assertNotIn("example.org", text)
 
     def test_sms_problem_never_breaks_registration_or_email(self):
         from unittest import mock
 
         from apps.notifications.providers.sms import ConsoleSmsProvider
-        with mock.patch.object(ConsoleSmsProvider, "send", side_effect=RuntimeError("gateway down")),                 self.captureOnCommitCallbacks(execute=True):
+        with mock.patch.object(ConsoleSmsProvider, "send", side_effect=RuntimeError("gateway down")), \
+                self.captureOnCommitCallbacks(execute=True):
             s = self.register(email="sms-fails@gmail.com")
         self.assertTrue(s["wikischolar_id"].startswith("WS-"))
         self.assertEqual(mail.outbox[-1].to, ["sms-fails@gmail.com"])
@@ -370,3 +375,46 @@ class ConfirmationSmsTests(WSTestCase):
         self.assertEqual(log.status, "failed")
         self.assertIn("gateway down", log.error)
 
+
+class EmailReminderTests(WSTestCase):
+    """Exam announcements are sent by email: the success page, the confirmation email and the SMS
+    (ConfirmationSmsTests) ask students to check their email regularly."""
+
+    def test_success_page_and_confirmation_email(self):
+        page = self.client.get("/").content.decode()
+        self.assertIn("Check your email regularly.", page)
+        self.assertIn("Exam announcements and other", page)
+        self.assertIn("স্প্যাম/জাঙ্ক ফোল্ডারও চেক করুন", page)
+        with self.captureOnCommitCallbacks(execute=True):
+            self.register()
+        email = mail.outbox[-1]
+        line = "Please check this email address regularly: exam announcements"
+        self.assertIn(line, email.body)
+        self.assertLess(email.body.index(line), email.body.index("Questions?"))
+        self.assertIn(line, email.alternatives[0][0])  # the HTML part too
+
+    def test_customised_confirmation_gets_the_line_once(self):
+        from importlib import import_module
+
+        from django.apps import apps
+
+        from apps.notifications.models import EmailTemplate
+        migration = import_module("apps.registration.migrations.0010_exam_reminder_in_saved_email")
+        custom = EmailTemplate.objects.create(
+            key="registration.confirmation", subject="Done: {wikischolar_id}", is_customized=True,
+            body="Hello {student_name},\nID: {wikischolar_id}\nQuestions? Write to {contact_email}\n")
+        migration.forwards(apps, None)
+        custom.refresh_from_db()
+        self.assertEqual(custom.body, "Hello {student_name},\nID: {wikischolar_id}\n" + migration.LINE
+                         + "\nQuestions? Write to {contact_email}\n")
+        migration.forwards(apps, None)  # running again changes nothing
+        custom.refresh_from_db()
+        self.assertEqual(custom.body.count(migration.LINE), 1)
+        # no contact line: added at the end
+        self.assertEqual(migration.add_line("Hi\nID: {wikischolar_id}\n"),
+                         "Hi\nID: {wikischolar_id}\n\n" + migration.LINE + "\n")
+        # the saved wording is what gets sent
+        with self.captureOnCommitCallbacks(execute=True):
+            self.register()
+        self.assertIn(migration.LINE, mail.outbox[-1].body)
+        self.assertTrue(mail.outbox[-1].body.startswith("Hello Rahim Uddin,"))
