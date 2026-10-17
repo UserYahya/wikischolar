@@ -3,6 +3,27 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-10-17
+
+### Added
+- **Photo permission checkbox** on the last step (Youth Safety Policy 4.5): "Under section 4.5 of the policy, I give
+  permission for my child to be photographed at offline events." / "নীতিমালা ৪.৫ অনুচ্ছেদ অনুযায়ী অফলাইন ইভেন্টে
+  আমার সন্তানের ছবি তোলার অনুমতি দিচ্ছি।" Optional (unticked by default), without saying so on the form.
+  - **Storage:** `students.photo_consent` and `photo_consent_at` (when it was given). A DB check keeps the two
+    together. Existing students: not given.
+  - **Dashboard:**
+    - Student page: "Photos at offline events: Permitted (date) / Not permitted".
+    - Students filter: "Photos allowed at offline events"; also in advanced search.
+    - CSV export: `photo_consent` and `photo_consent_at` columns.
+    - Student editor: a checkbox to record a guardian giving or withdrawing permission later. The change is in
+      the edit history, and the date is set or cleared.
+  - 5 new tests (285 in total).
+
+### Upgrade notes
+- New migration `registration.0011_photo_consent` (adds the two columns and the check). It depends on
+  `registration.0010` from the "check your email regularly" change, so that one must be merged first.
+  Azure runs both on deploy; on cPanel run `migrate` and `collectstatic --noinput`.
+
 ## 2026-10-15
 
 ### Fixed

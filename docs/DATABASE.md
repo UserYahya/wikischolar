@@ -100,6 +100,8 @@ erDiagram
       timestamptz policy_consent_at
       text policy_version
       bool updates_opt_in
+      bool photo_consent "Youth Safety Policy 4.5: photos at offline events"
+      timestamptz photo_consent_at "set exactly when photo_consent (CHECK)"
       text heard_from "survey; CHECK choice or empty"
       bool is_deleted
     }

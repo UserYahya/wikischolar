@@ -30,6 +30,8 @@
     <div><label for="id_phone">Phone</label>{{ form.phone }}{{ form.phone.errors }}</div>
     <div><label for="id_email">Email</label>{{ form.email }}{{ form.email.errors }}</div>
     <div class="span2"><label class="inline">{{ form.updates_opt_in }} Opted in to email updates</label></div>
+    <div class="span2"><label class="inline">{{ form.photo_consent }} Guardian allows photos at offline events (Youth Safety Policy 4.5)</label>
+      <p class="hint">Untick if the guardian withdraws permission; the change and its date are recorded.</p></div>
     <div class="span2"><label for="id_reason">Reason for change</label>{{ form.reason }}<p class="hint">Stored with each changed field in the edit history.</p></div>
   </div>
   <div class="row"><button class="btn primary">Save changes</button><a class="link" href="{% url 'dashboard:student' s.wikischolar_id %}">Cancel</a></div>

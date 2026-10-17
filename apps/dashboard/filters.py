@@ -14,10 +14,11 @@ SORTS = {
     "district": "district__name", "school": "school__name", "class": "current_class",
 }
 MULTI = ("district", "region", "class", "gender")
-SINGLE = ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "sort", "batch_size", "batch",
+SINGLE = ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "photo", "filled_by", "sort", "batch_size", "batch",
           "msg_batch", "msg_batch_mode", "adv", "saved")
 # Params that narrow the list (sort and batching only reorder or split it).
-NARROWING = MULTI + ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "filled_by", "msg_batch", "adv")
+NARROWING = MULTI + ("thana", "area_kind", "school", "from", "to", "q", "opt_in", "photo", "filled_by", "msg_batch",
+                      "adv")
 # Thana type filter: what kind of thana the student chose. "other" finds students to move.
 AREA_KINDS = {"thana": "Thana", "cantonment": "Cantonment", "other": "Other thana (not listed)"}
 # Before thanas replaced "Upazila / Area" (Oct 2026): old links and saved batch filters use these.
@@ -98,6 +99,8 @@ def apply(p, qs=None):
         qs = qs.filter(created_at__date__lte=parse_date(p["to"]))
     if p["opt_in"] == "1":
         qs = qs.filter(updates_opt_in=True)
+    if p["photo"] == "1":  # Youth Safety Policy 4.5
+        qs = qs.filter(photo_consent=True)
     if p["filled_by"] in FilledBy.values:
         qs = qs.filter(filled_by=p["filled_by"])
     if p["area_kind"] == "thana":
@@ -173,6 +176,8 @@ def describe(snap):
         out.append(("Filled in by", FilledBy(snap["filled_by"]).label))
     if snap.get("opt_in") == "1":
         out.append(("Email updates", "opted in"))
+    if snap.get("photo") == "1":
+        out.append(("Photos at offline events", "allowed"))
     if snap.get("q"):
         out.append(("Search", f"“{snap['q']}”"))
     if snap.get("adv"):

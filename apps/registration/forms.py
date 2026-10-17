@@ -25,6 +25,7 @@ class StudentCoreFields(forms.Form):
     phone = forms.CharField(max_length=20, error_messages=REQUIRED)
     email = forms.EmailField(error_messages={**REQUIRED, "invalid": "Enter a valid email address."})
     updates_opt_in = forms.BooleanField(required=False)
+    photo_consent = forms.BooleanField(required=False)  # Youth Safety Policy 4.5: photos at offline events
 
     def clean_student_name(self):
         return english_text(self.cleaned_data["student_name"])
