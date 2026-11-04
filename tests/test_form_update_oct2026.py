@@ -97,7 +97,7 @@ class BanglaTests(WSTestCase):
                 msgs |= {m for m in f.error_messages.values() if "%(" not in m}
         msgs |= {"Enter a valid Bangladeshi mobile number (for example 01712345678).",
                  "Write the class roll in numbers only (for example 12).", "Write the email address in English letters.",
-                 "Write the student's relation to the guardian.", "Choose a thana in the selected district."}
+                 "Write the student's relation to the guardian.", "Choose a thana / upazila in the selected district."}
         msgs -= {"spam", "Enter a valid UUID."}  # honeypot / not something a person can cause
         missing = sorted(m for m in msgs if m not in bangla.MESSAGES)
         self.assertEqual(missing, [])
@@ -225,7 +225,7 @@ class SearchablePickerTests(WSTestCase):
         page = self.client.get("/").content.decode()
         self.assertIn("js/picker.js", page)
         self.assertIn("css/picker.css", page)
-        for field, title in (("district", "Choose district · জেলা বেছে নিন"), ("thana", "Choose thana · থানা বেছে নিন")):
+        for field, title in (("district", "Choose district · জেলা বেছে নিন"), ("thana", "Choose thana / upazila · থানা / উপজেলা বেছে নিন")):
             tag = re.search(rf'<select id="{field}"[^>]*>', page).group(0)
             self.assertIn("data-picker", tag)
             self.assertIn(f'data-picker-title="{title}"', tag)

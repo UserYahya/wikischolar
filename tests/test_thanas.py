@@ -34,14 +34,15 @@ class PublicFormTests(AreaTestCase):
         rows = r.json()["thanas"]
         self.assertEqual([(u["name"], u["group"]) for u in rows], [
             ("Tongi East", GCC), ("Gazipur Cantonment", "Cantonments"),
-            ("Kaliakair", "Thanas"), ("Tongi", "Thanas"), ("Other thana (not listed)", "Not in the list")])
+            ("Kaliakair", "Thanas & upazilas"), ("Tongi", "Thanas & upazilas"),
+            ("Other thana (not listed)", "Not in the list")])
         self.assertEqual(rows[0]["group_bn"], "গাজীপুর সিটি কর্পোরেশন")
-        self.assertEqual(rows[2]["group_bn"], "থানা")
+        self.assertEqual(rows[2]["group_bn"], "থানা ও উপজেলা")
 
     def test_form_label_and_hint(self):
         page = self.client.get("/").content.decode()
-        self.assertIn("Thana", page)
-        self.assertIn("থানা", page)
+        self.assertIn("Thana / Upazila", page)  # metropolitan thanas in the cities, upazilas elsewhere
+        self.assertIn("থানা / উপজেলা", page)
         self.assertIn("Not listed? Choose “Other thana (not listed)” at the end.", page)
 
     def test_register_with_a_thana(self):
@@ -55,7 +56,7 @@ class PublicFormTests(AreaTestCase):
         vid = self.verify_email()
         r = self.post_json("/api/registration/submit/", self.payload(vid, district=self.jessore.pk,
                                                                      thana=self.tongi_east.pk))
-        self.assertEqual(r.json()["errors"]["thana"], ["Choose a thana in the selected district."])
+        self.assertEqual(r.json()["errors"]["thana"], ["Choose a thana / upazila in the selected district."])
 
     def test_display_name(self):
         self.assertEqual(self.tongi_east.display_name, f"Tongi East ({GCC})")
@@ -80,7 +81,7 @@ class DashboardTests(AreaTestCase):
         page = self.client.get(f"/dashboard/students/{s['wikischolar_id']}/edit/").content.decode()
         self.assertIn(f'<optgroup label="{GCC}">', page)
         self.assertIn('<optgroup label="Not in the list">', page)
-        self.assertLess(page.index(GCC), page.index('label="Thanas"'))
+        self.assertLess(page.index(GCC), page.index('label="Thanas &amp; upazilas"'))
         detail = self.client.get(f"/dashboard/students/{s['wikischolar_id']}/").content.decode()
         self.assertIn("Thana", detail)
 
@@ -305,3 +306,19 @@ class SeedBanglaTests(SeedCoverageTests):
                     self.assertIn("Model", t["name"], (d["code"], t["name"]))
         dhaka = {t["name"]: t["name_bn"] for t in next(d for d in self.seed["districts"] if d["code"] == "dhaka")["thanas"]}
         self.assertEqual((dhaka["Mirpur"], dhaka["Uttara"], dhaka["Uttara Paschim"]), ("মিরপুর", "উত্তরা", "উত্তরা পশ্চিম"))
+
+
+class NoMachineTranslationTests(WSTestCase):
+    """A browser's "Translate page" must not turn place names into other words (a guardian chose
+    Jatrabari and saw a different name): the fields and lists showing names say translate="no"."""
+
+    def test_place_names_are_not_translated(self):
+        import re
+        page = self.client.get("/").content.decode()
+        for pattern in (r'<select id="district"[^>]*>', r'<select id="thana"[^>]*>', r'<output id="region"[^>]*>',
+                        r'<ul id="schoolList"[^>]*>', r'<p class="wsid" id="wsid"[^>]*>', r'<dl id="summary"[^>]*>'):
+            self.assertIn('translate="no"', re.search(pattern, page).group(0), pattern)
+        from django.contrib.staticfiles import finders
+        picker = open(finders.find("js/picker.js"), encoding="utf-8").read()
+        self.assertIn('class: "picker-value", translate: "no"', picker)  # the chosen name
+        self.assertIn('translate: "no" });', picker)                      # the list

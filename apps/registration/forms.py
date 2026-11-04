@@ -71,7 +71,7 @@ class StudentCoreFields(forms.Form):
             self.add_error("student_id_sid", ROLL_OR_SID_ERROR)
         district, thana = data.get("district"), data.get("thana")
         if district and thana and thana.district_id != district.pk:
-            self.add_error("thana", "Choose a thana in the selected district.")
+            self.add_error("thana", "Choose a thana / upazila in the selected district.")
         return data
 
 

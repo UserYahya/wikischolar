@@ -326,10 +326,10 @@ class SchoolImportTests(WSTestCase):
         r = self.client.get("/dashboard/schools/import/locations.csv")
         self.assertEqual(r.content.decode("utf-8-sig").splitlines(), [
             "District,Thana,Group,District (Bangla),Thana (Bangla)",
-            "Gazipur,Kaliakair,Thanas,গাজীপুর,কালিয়াকৈর", "Gazipur,Tongi,Thanas,গাজীপুর,টঙ্গী",
-            "Jessore,Sharsha,Thanas,যশোর,শার্শা"])
+            "Gazipur,Kaliakair,Thanas & upazilas,গাজীপুর,কালিয়াকৈর", "Gazipur,Tongi,Thanas & upazilas,গাজীপুর,টঙ্গী",
+            "Jessore,Sharsha,Thanas & upazilas,যশোর,শার্শা"])
         r = self.client.get(f"/dashboard/schools/import/locations.csv?district={self.jessore.pk}")
-        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,Thanas,যশোর,শার্শা"])
+        self.assertEqual(r.content.decode("utf-8-sig").splitlines()[1:], ["Jessore,Sharsha,Thanas & upazilas,যশোর,শার্শা"])
         self.assertIn("districts-and-thanas-jessore.csv", r["Content-Disposition"])
 
     def test_preview_then_confirm(self):
