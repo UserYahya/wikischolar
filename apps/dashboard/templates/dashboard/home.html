@@ -2,7 +2,7 @@
 {% block title %}Overview{% endblock %}
 {% block content %}
 <header class="page-head"><h1>Overview</h1></header>
-{% if not email.delivers %}
+{% if not email.delivers and can_students %}
 <p class="error-box" role="status"><strong>Emails are not being delivered.</strong> OTP codes and confirmations are only printed
   in the server console ({{ email.via }}), so students receive nothing.
   {% if can_set_email %}<a href="{% url 'dashboard:email_settings' %}">Set up Brevo or Google Mail</a>{% else %}Ask a Super Admin to set up email.{% endif %}</p>
@@ -11,12 +11,12 @@
   <div><p class="fig">{{ total }}</p><p>registered students</p></div>
   <div><p class="fig">{{ today }}</p><p>registered today</p></div>
   <div><p class="fig">{{ week }}</p><p>in the last 7 days</p></div>
-  <div><p class="fig"><a href="{% url 'dashboard:schools' %}?status=pending">{{ pending_schools }}</a></p><p>schools awaiting review</p></div>
+  <div><p class="fig">{% if can_schools %}<a href="{% url 'dashboard:schools' %}?status=pending">{{ pending_schools }}</a>{% else %}{{ pending_schools }}{% endif %}</p><p>schools awaiting review</p></div>
 </section>
-{% if other_area %}
+{% if other_area and can_students %}
 <p class="notice">{{ other_area }} student{{ other_area|pluralize }} chose “Other thana (not listed)” as {{ other_area|pluralize:"their,their" }} thana. <a href="{% url 'dashboard:students' %}?area_kind=other">Review and set the right area</a>; add the area on the district's page if it's missing.</p>
 {% endif %}
-{% if unassigned_districts %}
+{% if unassigned_districts and can_places %}
 <p class="notice">{{ unassigned_districts }} district{{ unassigned_districts|pluralize }} {{ unassigned_districts|pluralize:"has,have" }} no region. Registrants from {{ unassigned_districts|pluralize:"it,them" }} will see “no region assigned”. <a href="{% url 'dashboard:locations' %}">Assign regions</a></p>
 {% endif %}
 <div class="cols">
@@ -29,7 +29,7 @@
   <section>
     <h2>By region</h2>
     <table class="bars">
-      {% for r, pct in by_region %}<tr><th><a href="{% url 'dashboard:students' %}?region={{ r.pk }}">{{ r.name }}</a></th><td><span style="--w: {{ pct }}%"></span></td><td class="num">{{ r.n }}</td></tr>{% endfor %}
+      {% for r, pct in by_region %}<tr><th>{% if can_students %}<a href="{% url 'dashboard:students' %}?region={{ r.pk }}">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}</th><td><span style="--w: {{ pct }}%"></span></td><td class="num">{{ r.n }}</td></tr>{% endfor %}
       {% if unassigned %}<tr><th>No region</th><td><span style="--w: {{ unassigned_pct }}%"></span></td><td class="num">{{ unassigned }}</td></tr>{% endif %}
     </table>
   </section>
@@ -48,7 +48,7 @@
   {% if top_districts %}
   <table class="data">
     <thead><tr><th>District</th><th>Region</th><th class="num">Students</th></tr></thead>
-    <tbody>{% for d in top_districts %}<tr><td><a href="{% url 'dashboard:students' %}?district={{ d.pk }}">{{ d.name }}</a> <span class="muted">{{ d.name_bn }}</span></td><td>{{ d.region.name|default:"—" }}</td><td class="num">{{ d.n }}</td></tr>{% endfor %}</tbody>
+    <tbody>{% for d in top_districts %}<tr><td>{% if can_students %}<a href="{% url 'dashboard:students' %}?district={{ d.pk }}">{{ d.name }}</a>{% else %}{{ d.name }}{% endif %} <span class="muted">{{ d.name_bn }}</span></td><td>{{ d.region.name|default:"—" }}</td><td class="num">{{ d.n }}</td></tr>{% endfor %}</tbody>
   </table>
   {% else %}<p class="empty">No registrations yet. Share the registration link: <a href="/">{{ request.scheme }}://{{ request.get_host }}/</a></p>{% endif %}
 </section>

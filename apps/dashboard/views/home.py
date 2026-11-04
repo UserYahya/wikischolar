@@ -12,8 +12,11 @@ from apps.registration.choices import HeardFrom
 from apps.registration.models import Student
 
 
-@require_perm("students.view")
+@require_perm("stats.view")
 def home(request):
+    """Counts and charts only, so an Organiser (statistics only) can use it too. Links into the student,
+    school and place lists, and the to-do notices, are shown only to roles that can open them."""
+    can = request.user.has_perm_code
     students = Student.objects.all()
     today = timezone.localdate()
     start = today - timedelta(days=13)
@@ -43,5 +46,7 @@ def home(request):
         "heard_from": [(label, n, round(100 * n / heard_peak)) for label, n in heard_rows],
         "heard_answered": sum(heard.values()),
         "email": notify.email_delivery(),
-        "can_set_email": request.user.has_perm_code("settings.manage"),
+        "can_set_email": can("settings.manage"),
+        "can_students": can("students.view"), "can_schools": can("schools.view"),
+        "can_places": can("reference.view"),
     })
