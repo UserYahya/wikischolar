@@ -407,6 +407,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 ### 10.2 Admin dashboard
 | Change | Why |
 |---|---|
+| **Organiser** role (statistics only): sees the Overview's counts and charts, nothing personal | event organisers need numbers, not registrants' data |
 | **Student batches**: split the filtered list into batches of N (oldest first by default, so batches stay stable), each viewable / exportable / messageable; message batches record which student batch they went to | run activities in fixed-size groups |
 | Warning banners when email or SMS is **not really being delivered** (console backend) | a registration "sent" email that reached nobody |
 | **Named message batches**; Messages list search / channel / "undelivered" filter with per-status counts | track what was sent to whom |

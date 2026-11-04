@@ -5,6 +5,17 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 
 ## 2026-11-05
 
+### Added
+- **Organiser role (statistics only).** A Super Admin can create an admin with the role "Organiser (statistics
+  only)" on Dashboard → Admins.
+  - **What an Organiser sees:** only the Overview: totals, registrations per day, by region, top districts and
+    "how they heard".
+  - **What stays hidden:** no student records, names, contact details, school lists, messages or settings.
+    The Overview hides its links and to-do notices for them, and every other dashboard page answers 403.
+  - **Other roles:** unchanged; they keep the Overview through the new `stats.view` permission.
+  - **Migration:** `core.0003_organiser_role` only records the new choice; it is a no-op in the database.
+  - 5 new tests (291 in total).
+
 ### Changed
 - **"Thana / Upazila"** (থানা / উপজেলা) instead of "Thana" on the registration form, the success summary and the
   confirmation email, since outside the city corporations the list's areas are upazilas. The picker title, the
@@ -22,8 +33,9 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
 - 1 new test (286 in total).
 
 ### Upgrade notes
-- No migrations, no settings. Template, script and wording changes only; Azure picks them up on deploy
-  (collectstatic runs automatically).
+- The thana wording and translation fix need no migration and no settings (templates, scripts, wording).
+- The Organiser role adds `core.0003_organiser_role`, which changes nothing in the database; Azure runs it on
+  deploy. On cPanel: `migrate`, `collectstatic --noinput`, Restart.
 
 ## 2026-10-17
 
