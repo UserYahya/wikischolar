@@ -78,6 +78,7 @@ class Role(models.TextChoices):
     SUPER_ADMIN = "super_admin", "Super Admin"
     ADMIN = "admin", "Admin"
     VIEWER = "viewer", "Read-only Viewer"
+    ORGANISER = "organiser", "Organiser (statistics only)"
 
 
 class AdminManager(BaseUserManager):
