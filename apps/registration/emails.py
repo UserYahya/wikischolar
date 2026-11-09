@@ -16,13 +16,13 @@ EXAM_EMAIL_LINE = ("Please check this email address regularly: exam announcement
 _STUDENT_PLACEHOLDERS = {
     "student_name": "student's full name",
     "wikischolar_id": "the new WikiScholar ID, e.g. WS-2027-000001",
-    "details": "all registration details, one per line (name, guardian, district, thana, school, class, "
+    "details": "all registration details, one per line (name, guardian, district, thana / upazila, school, class, "
                "section, roll / student ID, phone, who filled in the form); a table in the HTML email",
     "gender": "gender",
     "guardian": "guardian's name and relation, e.g. Karim Uddin (Father)",
     "district": "district",
     "region": "region (may be empty)",
-    "thana": "thana",
+    "thana": "thana / upazila",
     "school": "school name",
     "current_class": "class, e.g. Class 8",
     "class_roll": "class roll (may be empty)",
@@ -47,7 +47,7 @@ def details_rows(s):
     """The registration summary as (label, value) pairs (s = registration.services.summary())."""
     district = s["district"] + (f" ({s['region']} region)" if s.get("region") else "")
     rows = [("Name", s["student_name"]), ("Guardian", s["guardian"]), ("District", district),
-            ("Thana", s["thana"]), ("School", s["school"]), ("Class", s["current_class"])]
+            ("Thana / Upazila", s["thana"]), ("School", s["school"]), ("Class", s["current_class"])]
     for label, key in (("Section", "section"), ("Class roll", "class_roll"), ("Student ID", "student_id_sid")):
         if s.get(key):
             rows.append((label, s[key]))

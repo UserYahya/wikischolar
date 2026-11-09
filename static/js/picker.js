@@ -40,7 +40,9 @@
     const title = select.dataset.pickerTitle || (label ? label.textContent.trim() : select.getAttribute("aria-label") || "");
     const trigger = el("button", { type: "button", class: "picker-trigger", "aria-haspopup": "dialog",
       "aria-expanded": "false", id: `${select.id || "picker" + id}-picker` });
-    const triggerText = el("span", { class: "picker-value" });
+    // Names (districts, thanas, upazilas) are never machine-translated: a browser's "Translate page"
+    // can turn a place name into ordinary words, so the chosen name would look like a different place.
+    const triggerText = el("span", { class: "picker-value", translate: "no" });
     trigger.append(triggerText, el("span", { class: "picker-caret", "aria-hidden": "true" }));
     if (label) { label.htmlFor = trigger.id; }
     else if (select.getAttribute("aria-label")) trigger.setAttribute("aria-label", select.getAttribute("aria-label"));
@@ -53,7 +55,7 @@
     const search = el("input", { type: "search", class: "picker-search", role: "combobox", "aria-expanded": "true",
       "aria-controls": listId, "aria-autocomplete": "list", autocomplete: "off", spellcheck: "false",
       placeholder: select.dataset.pickerSearch || "Type to search", "aria-label": select.dataset.pickerSearch || "Type to search" });
-    const list = el("ul", { class: "picker-list", role: "listbox", id: listId, "aria-label": title });
+    const list = el("ul", { class: "picker-list", role: "listbox", id: listId, "aria-label": title, translate: "no" });
     const empty = el("p", { class: "picker-empty", hidden: true }, select.dataset.pickerEmpty || "No match.");
     const close = el("button", { type: "button", class: "picker-close", "aria-label": select.dataset.pickerClose || "Close" }, "✕");
     const dialog = el("div", { class: "picker-dialog", role: "dialog", "aria-modal": "false", "aria-label": title, hidden: true },

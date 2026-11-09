@@ -51,7 +51,8 @@ class Thana(SoftDeleteModel):
     CANTONMENT = "Cantonment"
     OTHER = "Other"
     # Headings for the groups: (English, Bangla)
-    GROUP_LABELS = {"": ("Thanas", "থানা"), CANTONMENT: ("Cantonments", "সেনানিবাস"),
+    # The plain rows are metropolitan thanas in the cities and upazilas elsewhere, hence both words.
+    GROUP_LABELS = {"": ("Thanas & upazilas", "থানা ও উপজেলা"), CANTONMENT: ("Cantonments", "সেনানিবাস"),
                     OTHER: ("Not in the list", "তালিকায় নেই")}
 
     district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="thanas")

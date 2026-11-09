@@ -3,6 +3,28 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-11-05
+
+### Changed
+- **"Thana / Upazila"** (থানা / উপজেলা) instead of "Thana" on the registration form, the success summary and the
+  confirmation email, since outside the city corporations the list's areas are upazilas. The picker title, the
+  school box's "Choose the thana / upazila first" and the district-mismatch error say the same. The plain group
+  is headed "Thanas & upazilas" · "থানা ও উপজেলা" (public form, dashboard, and the Group column of the
+  district & thana list CSV). Labels only: no data, links or field names change; "Other thana (not listed)"
+  keeps its name.
+
+### Fixed
+- **Place names are no longer machine-translated.** A guardian reported choosing Jatrabari and then seeing a
+  different name. The live data (Jatrabari / যাত্রাবাড়ী) and the picker code are correct, and the saved
+  registration holds the right thana. The likely cause is the browser's "Translate page" rewriting the chosen
+  name. The pickers' chosen value and list, the region, the school suggestions, the WikiScholar ID and the
+  success summary now carry `translate="no"`.
+- 1 new test (286 in total).
+
+### Upgrade notes
+- No migrations, no settings. Template, script and wording changes only; Azure picks them up on deploy
+  (collectstatic runs automatically).
+
 ## 2026-10-17
 
 ### Added

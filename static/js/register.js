@@ -269,7 +269,7 @@
   function resetSchool(disable) {
     schoolIn.value = ""; schoolId.value = ""; setHint(""); closeList();
     schoolIn.disabled = disable;
-    schoolIn.placeholder = biText(disable ? "Choose the thana first" : "Type in English");
+    schoolIn.placeholder = biText(disable ? "Choose the thana / upazila first" : "Type in English");
   }
   function setHint(msg) { schoolHint.innerHTML = msg ? bi(msg) : ""; schoolHint.dataset.msg = msg; }
   function closeList() { list.hidden = true; schoolIn.setAttribute("aria-expanded", "false"); active = -1; }
@@ -567,7 +567,7 @@
     const rows = [
       ["Filled in by", s.filled_by],
       ["Name", s.student_name], ["Gender", s.gender], ["Guardian", s.guardian],
-      ["District", s.district], ["Region", s.region || "—"], ["Thana", s.thana],
+      ["District", s.district], ["Region", s.region || "—"], ["Thana / Upazila", s.thana],
       ["School", s.school + (s.school_pending ? " (being verified)" : "")], ["Class", s.current_class],
       ["Section", s.section || "—"], ["Class roll", s.class_roll || "—"], ["Student ID", s.student_id_sid || "—"],
       ["Mobile", s.phone], ["Heard about WikiScholar from", s.heard_from || "—"],
@@ -626,7 +626,7 @@
     regionOut.innerHTML = bi("Shown after you choose a district");
     thanaSel.innerHTML = `<option value="">${esc(biText("Choose a district first"))}</option>`;
     districtSel.innerHTML = `<option value="">${esc(biText("Loading…"))}</option>`;
-    schoolIn.placeholder = biText("Choose the thana first");
+    schoolIn.placeholder = biText("Choose the thana / upazila first");
     $("#resendOtp").innerHTML = biInline("Send a new code");
     await loadDistricts();
     const draft = loadDraft();
