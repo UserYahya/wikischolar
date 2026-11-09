@@ -4,7 +4,10 @@ from functools import wraps
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 
-VIEWER = {
+# Organiser: the Overview's statistics (counts and charts) only: no student records, names, contact
+# details, schools or messages.
+ORGANISER = {"stats.view"}
+VIEWER = ORGANISER | {
     "students.view", "reference.view", "schools.view", "messages.view",
 }
 ADMIN = VIEWER | {
@@ -14,7 +17,7 @@ ADMIN = VIEWER | {
 }
 SUPER_ADMIN = ADMIN | {"admins.manage", "settings.manage"}
 
-ROLE_PERMISSIONS = {"viewer": VIEWER, "admin": ADMIN, "super_admin": SUPER_ADMIN}
+ROLE_PERMISSIONS = {"organiser": ORGANISER, "viewer": VIEWER, "admin": ADMIN, "super_admin": SUPER_ADMIN}
 
 
 def role_has(role, code):

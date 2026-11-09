@@ -267,7 +267,8 @@ Analytics) will plug into the same app.
 ### Roles
 | Role | Can |
 |---|---|
-| **Viewer** | read and filter students, schools, locations, messages |
+| **Organiser** (statistics only) | the Overview only: totals, registrations per day, by region, top districts, "how they heard" (`stats.view`). No student records, names, contact details, schools, messages or settings; the Overview hides links and to-do notices for them, and every other page answers 403 |
+| **Viewer** | + read and filter students, schools, locations, messages |
 | **Admin** | + edit/archive/export students, edit schools & locations, merge schools, send messages, read audit log |
 | **Super Admin** | + manage admins, email & SMS settings, system email wording |
 
@@ -581,7 +582,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-286 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+291 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
