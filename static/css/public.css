@@ -201,8 +201,11 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 }
 
 [hidden] { display: none !important; }
-.rail li.complete { cursor: pointer; }
-.rail li.complete:hover .t { text-decoration: underline; }
+.rail li[role="button"] { cursor: pointer; }
+.rail li[role="button"]:not([aria-current]):hover .t { text-decoration: underline; }
+.rail li[role="button"]:not([aria-current]):hover .n { border-color: var(--green); }
+.rail li:focus { outline: none; }
+.rail li:focus-visible .n { box-shadow: 0 0 0 3px var(--tint); border-color: var(--green); }
 #otpHowTo { margin: 0 0 .8rem; }
 .declare { margin: 0 0 1.5rem; padding: .25rem 1rem .6rem; border: 1.5px solid var(--line); border-radius: var(--radius-field); background: var(--paper); }
 .declare legend { font-weight: 600; font-size: .95rem; padding: 0 .35rem; }

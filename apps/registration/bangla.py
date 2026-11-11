@@ -77,6 +77,7 @@ MESSAGES = {
     "Not in the list? Add it as new: “{name}”": "তালিকায় নেই? নতুন হিসেবে যোগ করুন: “{name}”",
     "Type at least 3 letters to see suggestions.": "পরামর্শ দেখতে অন্তত ৩টি অক্ষর লিখুন।",
     "Go back to this step": "এই ধাপে ফিরে যান",
+    "Go to this step": "এই ধাপে যান",
     # Summary after registering
     "Filled in by": "যিনি পূরণ করেছেন", "Name": "নাম", "Gender": "লিঙ্গ", "Guardian": "অভিভাবক",
     "District": "জেলা", "Region": "অঞ্চল", "Thana / Upazila": "থানা / উপজেলা", "School": "বিদ্যালয়", "Class": "শ্রেণি",

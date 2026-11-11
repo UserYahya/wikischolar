@@ -117,9 +117,12 @@
       if (k === n) li.setAttribute("aria-current", "step");
       li.classList.toggle("complete", k < n);
       $(".n", li).textContent = k < n ? "✓" : String(k);
-      // finished steps can be reopened by clicking them
-      if (k < n) { li.setAttribute("role", "button"); li.tabIndex = 0; li.title = biText("Go back to this step"); }
-      else { li.removeAttribute("role"); li.removeAttribute("tabindex"); li.removeAttribute("title"); }
+      // every step answers a click (see goToStep): back, re-show, or advance as far as the form is valid
+      li.setAttribute("role", "button");
+      li.tabIndex = 0;
+      if (k < n) li.title = biText("Go back to this step");
+      else if (k > n) li.title = biText("Go to this step");
+      else li.removeAttribute("title");
     });
     $("#back").hidden = n === 1;
     if (n === 3) renderTurnstile();
@@ -185,8 +188,20 @@
     }
     showStep(target, { push: false });
   });
+  // Clicking a step in the rail. Going forward checks each step on the way, like "Next step":
+  // an invalid current step shows its errors; an unvisited incomplete step opens clean.
+  function goToStep(target) {
+    if (target <= state.step) { showStep(target, { push: target < state.step }); return; }
+    for (let k = state.step; k < target; k += 1) {
+      if (!validateStep(k)) {
+        if (k > state.step) { showStep(k); clearErrors(STEP_FIELDS[k]); }
+        return;
+      }
+    }
+    showStep(target);
+  }
   $$("[data-step-tab]").forEach((li) => {
-    const go = () => { const k = Number(li.dataset.stepTab); if (k < state.step) showStep(k); };
+    const go = () => goToStep(Number(li.dataset.stepTab));
     li.addEventListener("click", go);
     li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
   });
