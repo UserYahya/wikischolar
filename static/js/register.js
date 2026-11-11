@@ -108,6 +108,7 @@
   }
 
   // ---------- step navigation (each step is a history entry) ----------
+  const railNote = $("#railNote");
   function showStep(n, { push = true, focus = true } = {}) {
     state.step = n;
     $$(".step").forEach((s) => (s.hidden = Number(s.dataset.step) !== n));
@@ -117,10 +118,12 @@
       if (k === n) li.setAttribute("aria-current", "step");
       li.classList.toggle("complete", k < n);
       $(".n", li).textContent = k < n ? "✓" : String(k);
-      // finished steps can be reopened by clicking them
-      if (k < n) { li.setAttribute("role", "button"); li.tabIndex = 0; li.title = biText("Go back to this step"); }
-      else { li.removeAttribute("role"); li.removeAttribute("tabindex"); li.removeAttribute("title"); }
+      // Every step number is a button, so a tap on the stepper always does something (goToStep).
+      li.setAttribute("role", "button");
+      li.tabIndex = 0;
+      li.title = biText(k < n ? "Go back to this step" : k > n ? "Go to this step" : "You are on this step");
     });
+    railNote.hidden = true;
     $("#back").hidden = n === 1;
     if (n === 3) renderTurnstile();
     syncNext();
@@ -185,8 +188,27 @@
     }
     showStep(target, { push: false });
   });
+  // A tap on a step number: reopen a finished step, show the current one again, or move forward as
+  // far as the steps before the target are complete (the same rule as browser Forward and Submit).
+  // A step that isn't complete stops the move and shows what is missing, like "Next step" does.
+  function goToStep(target) {
+    if (target <= state.step) { showStep(target); return; }
+    for (let k = state.step; k < target; k += 1) {
+      if (validateStep(k)) continue;
+      if (k !== state.step) {
+        for (let j = state.step + 1; j < k; j += 1) history.pushState({ wsStep: j }, "", `#step-${j}`);
+        showStep(k);
+        validateStep(k);  // mark the missing answers on the step now shown
+      }
+      railNote.hidden = false;
+      return;
+    }
+    // One history entry per step passed, so Back still goes one step at a time.
+    for (let j = state.step + 1; j < target; j += 1) history.pushState({ wsStep: j }, "", `#step-${j}`);
+    showStep(target);
+  }
   $$("[data-step-tab]").forEach((li) => {
-    const go = () => { const k = Number(li.dataset.stepTab); if (k < state.step) showStep(k); };
+    const go = () => goToStep(Number(li.dataset.stepTab));
     li.addEventListener("click", go);
     li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
   });

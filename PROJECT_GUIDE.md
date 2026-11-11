@@ -83,7 +83,7 @@ Analytics) will plug into the same app.
   `created_at__date` (Django converts to Dhaka time first). To get a datetime's date or format it,
   use `timezone.localdate(dt)` or `timezone.localtime(dt)`, never `dt.date()` or `dt.strftime(...)`.
 * **No data loss on Back.** Answers are kept as a draft in the browser tab (sessionStorage);
-  the browser/phone Back button moves between steps; finished steps can be clicked to reopen.
+  the browser/phone Back button moves between steps. **Every step number (1–4) is a button** (`goToStep` in `register.js`): a finished step reopens; a later step moves forward as far as the steps before it are complete, and otherwise shows what is missing on the incomplete step plus the note "Complete this step first, then you can move on."; the current step scrolls back to the form. (Before Nov 2026 only finished steps reacted, which caused many dead clicks.)
   The draft is cleared after a successful registration.
 * **Anti-abuse:** honeypot field, rate limits (OTP per email/IP, registrations per IP, logins),
   OTP stored only as an HMAC, 10-minute expiry, lockout after 5 wrong codes, and optionally
@@ -582,7 +582,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-291 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+293 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a

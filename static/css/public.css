@@ -201,8 +201,18 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 }
 
 [hidden] { display: none !important; }
-.rail li.complete { cursor: pointer; }
-.rail li.complete:hover .t { text-decoration: underline; }
+/* Every step number is a button (register.js goToStep): finished steps reopen, later ones move
+   forward when the steps before them are complete. Each tap gets a visible response. */
+.rail li { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.rail .n { transition: transform .08s ease-out; }
+.rail li:hover .n { border-color: var(--green); }
+.rail li[aria-current="step"]:hover .n { border-color: var(--marigold); }
+.rail li:active .n { transform: scale(.92); }
+.rail li:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 8px; }
+.rail li:hover .t { text-decoration: underline; }
+.rail li[aria-current="step"]:hover .t { text-decoration: none; }
+.rail-note { margin: .9rem 0 0; padding: .55rem .8rem; font-size: .9rem; color: var(--ink); background: var(--tint);
+  border-left: 3px solid var(--marigold); border-radius: 6px; }
 #otpHowTo { margin: 0 0 .8rem; }
 .declare { margin: 0 0 1.5rem; padding: .25rem 1rem .6rem; border: 1.5px solid var(--line); border-radius: var(--radius-field); background: var(--paper); }
 .declare legend { font-weight: 600; font-size: .95rem; padding: 0 .35rem; }
