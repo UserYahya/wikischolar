@@ -3,6 +3,24 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-11-11
+
+### Fixed
+- **Dead clicks on the step numbers (1–4)** above the registration form. Only finished steps reacted to a
+  click; the current step and later ones did nothing although every circle looks like a button. Now every
+  step number is a button:
+  - **Finished step:** reopens it, as before.
+  - **Later step:** moves forward as far as the steps before it are complete (the same rule as "Next step"
+    and Submit). If a step is incomplete, the form stays on it, marks what is missing and shows "Complete this
+    step first, then you can move on." (with Bangla).
+  - **Current step:** scrolls back to the top of the form.
+  - Hover, focus and press styles show the numbers are clickable; the Back button still moves one step at a
+    time.
+  - 2 new tests (293 in total).
+
+### Upgrade notes
+- No migrations, no settings: template, script, style and wording only (collectstatic runs on deploy).
+
 ## 2026-11-05
 
 ### Added
