@@ -124,6 +124,7 @@
       else if (k > n) li.title = biText("Go to this step");
       else li.removeAttribute("title");
     });
+    syncMeter(n);
     $("#back").hidden = n === 1;
     if (n === 3) renderTurnstile();
     syncNext();
@@ -136,6 +137,23 @@
     h.setAttribute("tabindex", "-1");
     h.focus({ preventScroll: true });
     form.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+
+  // Phone progress bar (mirrors the rail; the rail itself is hidden on small screens)
+  function syncMeter(n) {
+    const meter = $("#railMeter");
+    if (!meter) return;
+    const t = $(`[data-step-tab="${n}"] .t`);
+    const part = (k) => $(`[data-meter="${k}"]`, meter);
+    part("n").textContent = n;
+    part("bn-n").textContent = String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]);
+    part("t").textContent = t.firstChild.textContent.trim();
+    part("bn-t").textContent = $(".bn", t).textContent;
+    $(".meter-bar", meter).setAttribute("aria-valuenow", n);
+    $$("[data-seg]", meter).forEach((seg) => {
+      const k = Number(seg.dataset.seg);
+      seg.className = k < n ? "done" : k === n ? "now" : "";
+    });
   }
 
   function validateStep(n) {

@@ -54,6 +54,14 @@ a { color: var(--green); text-underline-offset: 3px; }
 .rail li[aria-current="step"] .t { font-weight: 600; }
 .rail li.complete .n { background: var(--green); border-color: var(--green); color: var(--white); }
 .rail li.complete { color: var(--ink); }
+/* Phone progress bar: hidden here, shown in the small-screen block below */
+.meter { display: none; }
+.meter-label { margin: 0 0 .55rem; font-size: .95rem; color: var(--ink); }
+.meter-label .bn { font-size: .85em; color: var(--muted); }
+.meter-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; pointer-events: none; }
+.meter-bar span { height: 6px; border-radius: 3px; background: var(--line); }
+.meter-bar span.done { background: var(--green); }
+.meter-bar span.now { background: var(--marigold); }
 .rail .contact { margin-top: 2rem; font-size: .9rem; color: var(--muted); }
 
 .sheet { grid-area: sheet; background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 2rem 2.25rem; }
@@ -184,11 +192,8 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 
 @media (max-width: 820px) {
   .reg { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "rail" "sheet"; gap: 1.25rem; padding-top: 1.5rem; }
-  .rail ol { display: grid; grid-template-columns: repeat(4, 1fr); }
-  .rail ol::before { left: 12%; right: 12%; top: 1.45rem; bottom: auto; width: auto; height: 2px; }
-  .rail li { flex-direction: column; gap: .3rem; text-align: center; padding: 0; }
-  .rail .t { font-size: .75rem; }
-  .rail li:not([aria-current="step"]) .t { display: none; }
+  .rail ol { display: none; }
+  .meter { display: block; }
   .rail .contact { margin-top: 1rem; }
   .sheet, .done { padding: 1.5rem 1.1rem; }
   .grid { grid-template-columns: 1fr; }
