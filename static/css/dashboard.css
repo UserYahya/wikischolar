@@ -181,7 +181,8 @@ details > summary { cursor: pointer; color: var(--green); font-weight: 500; }
 .login .btn { margin-top: 1rem; padding: .75rem; }
 
 @media (max-width: 900px) {
-  .shell { grid-template-columns: 1fr; }
+  /* Top bar keeps its own height; the page content takes any spare height on short pages */
+  .shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   /* Off-canvas menu: top bar + drawer sliding in from the left (js/dashboard-nav.js) */
   .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
     position: sticky; top: 0; z-index: 30; background: var(--deep); padding: .5rem 1rem; }
