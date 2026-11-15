@@ -20,6 +20,14 @@
       <li data-step-tab="3"><span class="n">3</span><span class="t">Contact &amp; email verification<span class="bn" lang="bn">যোগাযোগ ও ইমেইল যাচাই</span></span></li>
       <li data-step-tab="4"><span class="n">4</span><span class="t">Consent &amp; submit<span class="bn" lang="bn">সম্মতি ও জমা</span></span></li>
     </ol>
+    {# Phones only: a plain progress bar instead of the circles, which read as tappable tabs (Clarity dead clicks). #}
+    <div class="meter" id="railMeter">
+      <p class="meter-label"><strong>Step <span data-meter="n">1</span> of 4</strong> · <span data-meter="t">Student &amp; guardian</span>
+        <span class="bn" lang="bn">ধাপ <span data-meter="bn-n">১</span>/৪ · <span data-meter="bn-t">শিক্ষার্থী ও অভিভাবক</span></span></p>
+      <div class="meter-bar" role="progressbar" aria-label="Registration progress" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">
+        <span class="meter-fill" style="width: 25%"></span>
+      </div>
+    </div>
     <p class="contact">Questions? Contact us: <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a>
       <span class="bn" lang="bn">কোনো প্রশ্ন থাকলে এই ঠিকানায় যোগাযোগ করুন</span></p>
   </nav>

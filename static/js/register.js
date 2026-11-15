@@ -117,10 +117,14 @@
       if (k === n) li.setAttribute("aria-current", "step");
       li.classList.toggle("complete", k < n);
       $(".n", li).textContent = k < n ? "✓" : String(k);
-      // finished steps can be reopened by clicking them
-      if (k < n) { li.setAttribute("role", "button"); li.tabIndex = 0; li.title = biText("Go back to this step"); }
-      else { li.removeAttribute("role"); li.removeAttribute("tabindex"); li.removeAttribute("title"); }
+      // every step answers a click (see goToStep): back, re-show, or advance as far as the form is valid
+      li.setAttribute("role", "button");
+      li.tabIndex = 0;
+      if (k < n) li.title = biText("Go back to this step");
+      else if (k > n) li.title = biText("Go to this step");
+      else li.removeAttribute("title");
     });
+    syncMeter(n);
     $("#back").hidden = n === 1;
     if (n === 3) renderTurnstile();
     syncNext();
@@ -133,6 +137,20 @@
     h.setAttribute("tabindex", "-1");
     h.focus({ preventScroll: true });
     form.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+
+  // Phone progress bar (mirrors the rail; the rail itself is hidden on small screens)
+  function syncMeter(n) {
+    const meter = $("#railMeter");
+    if (!meter) return;
+    const t = $(`[data-step-tab="${n}"] .t`);
+    const part = (k) => $(`[data-meter="${k}"]`, meter);
+    part("n").textContent = n;
+    part("bn-n").textContent = String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[d]);
+    part("t").textContent = t.firstChild.textContent.trim();
+    part("bn-t").textContent = $(".bn", t).textContent;
+    $(".meter-bar", meter).setAttribute("aria-valuenow", n);
+    $(".meter-fill", meter).style.width = `${(n / 4) * 100}%`;
   }
 
   function validateStep(n) {
@@ -185,8 +203,20 @@
     }
     showStep(target, { push: false });
   });
+  // Clicking a step in the rail. Going forward checks each step on the way, like "Next step":
+  // an invalid current step shows its errors; an unvisited incomplete step opens clean.
+  function goToStep(target) {
+    if (target <= state.step) { showStep(target, { push: target < state.step }); return; }
+    for (let k = state.step; k < target; k += 1) {
+      if (!validateStep(k)) {
+        if (k > state.step) { showStep(k); clearErrors(STEP_FIELDS[k]); }
+        return;
+      }
+    }
+    showStep(target);
+  }
   $$("[data-step-tab]").forEach((li) => {
-    const go = () => { const k = Number(li.dataset.stepTab); if (k < state.step) showStep(k); };
+    const go = () => goToStep(Number(li.dataset.stepTab));
     li.addEventListener("click", go);
     li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
   });
