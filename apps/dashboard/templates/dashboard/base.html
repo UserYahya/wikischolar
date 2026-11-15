@@ -11,13 +11,23 @@
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
   <link rel="stylesheet" href="{% static 'css/picker.css' %}">
   <script src="{% static 'js/picker.js' %}" defer></script>
+  <script src="{% static 'js/dashboard-nav.js' %}" defer></script>
   {% include "_favicons.html" %}
   {% block head %}{% endblock %}
 </head>
 <body>
 {% if user.is_authenticated %}
 <div class="shell">
-  <aside class="side">
+  {# Phones/tablets (≤900px): a top bar with a Menu button; the sidebar below becomes an off-canvas drawer (js/dashboard-nav.js). #}
+  <header class="topbar">
+    <a class="topbar-logo" href="{% url 'dashboard:home' %}"><img src="{% static 'img/wikischolar-logo-en.png' %}" alt="WikiScholar" width="600" height="185"></a>
+    <button type="button" class="menu-btn" id="navOpen" aria-controls="sideNav" aria-expanded="false">
+      <span class="menu-icon" aria-hidden="true"></span>Menu
+    </button>
+  </header>
+  <div class="scrim" id="navScrim"></div>
+  <aside class="side" id="sideNav" aria-label="Dashboard menu">
+    <button type="button" class="nav-close" id="navClose" aria-label="Close menu">&times;</button>
     <a class="side-logo" href="{% url 'dashboard:home' %}"><img src="{% static 'img/wikischolar-logo-en.png' %}" alt="WikiScholar" width="600" height="185"></a>
     {# Related tools are grouped (apps.core.registry); a group opens by itself when it holds the current page. #}
     <nav aria-label="Dashboard">
