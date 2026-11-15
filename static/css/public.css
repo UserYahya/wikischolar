@@ -58,10 +58,9 @@ a { color: var(--green); text-underline-offset: 3px; }
 .meter { display: none; }
 .meter-label { margin: 0 0 .55rem; font-size: .95rem; color: var(--ink); }
 .meter-label .bn { font-size: .85em; color: var(--muted); }
-.meter-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; pointer-events: none; }
-.meter-bar span { height: 6px; border-radius: 3px; background: var(--line); }
-.meter-bar span.done { background: var(--green); }
-.meter-bar span.now { background: var(--marigold); }
+.meter-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; pointer-events: none; }
+.meter-fill { display: block; height: 100%; border-radius: 3px; background: var(--green); }
+@media (prefers-reduced-motion: no-preference) { .meter-fill { transition: width .3s ease-out; } }
 .rail .contact { margin-top: 2rem; font-size: .9rem; color: var(--muted); }
 
 .sheet { grid-area: sheet; background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 2rem 2.25rem; }

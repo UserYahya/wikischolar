@@ -150,10 +150,7 @@
     part("t").textContent = t.firstChild.textContent.trim();
     part("bn-t").textContent = $(".bn", t).textContent;
     $(".meter-bar", meter).setAttribute("aria-valuenow", n);
-    $$("[data-seg]", meter).forEach((seg) => {
-      const k = Number(seg.dataset.seg);
-      seg.className = k < n ? "done" : k === n ? "now" : "";
-    });
+    $(".meter-fill", meter).style.width = `${(n / 4) * 100}%`;
   }
 
   function validateStep(n) {
