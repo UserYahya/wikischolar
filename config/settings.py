@@ -187,6 +187,11 @@ WIKISCHOLAR = {
     # On only when both are set; get them from the Cloudflare dashboard → Turnstile → Add widget.
     "TURNSTILE_SITE_KEY": env("WS_TURNSTILE_SITE_KEY", ""),
     "TURNSTILE_SECRET_KEY": env("WS_TURNSTILE_SECRET_KEY", ""),
+    # Analytics on the public pages only (not the dashboard). Each is off while empty.
+    # Meta Pixel ID: Meta Events Manager -> Data sources -> the pixel's ID (digits only).
+    "META_PIXEL_ID": env("WS_META_PIXEL_ID", ""),
+    # Microsoft Clarity project ID: clarity.microsoft.com -> project -> Settings -> Overview.
+    "CLARITY_ID": env("WS_CLARITY_ID", ""),
     "OTP_TTL_MINUTES": int(env("WS_OTP_TTL_MINUTES", "10")),
     "OTP_MAX_ATTEMPTS": int(env("WS_OTP_MAX_ATTEMPTS", "5")),
     "OTP_VERIFIED_WINDOW_MINUTES": int(env("WS_OTP_VERIFIED_WINDOW_MINUTES", "60")),
