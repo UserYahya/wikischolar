@@ -1,6 +1,7 @@
 {% extends "public_base.html" %}{% load static %}
 {% block title %}WikiScholar Registration{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/picker.css' %}">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/picker.css' %}">
+{% if META_PIXEL_ID %}<script>fbq("track", "ViewContent");</script>{% endif %}{% endblock %}
 {% block content %}
 {# Every label, hint and message is English with a smaller Bangla line (class "bn"). Messages from Python and #}
 {# register.js get their Bangla from apps/registration/bangla.py, passed to the script below. #}

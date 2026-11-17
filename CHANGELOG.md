@@ -3,6 +3,25 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-11-18
+
+### Added
+- **Meta Pixel and Microsoft Clarity on the public form**, each on only when its ID is set
+  (`WS_META_PIXEL_ID`, `WS_CLARITY_ID`). Both load from `templates/_analytics.html` on the public pages only,
+  never the dashboard.
+  - **Meta events:** `PageView` on every public page, `ViewContent` when the registration form opens, and
+    `CompleteRegistration` once a registration is saved (in `register.js`, after the success screen shows).
+  - **No personal data:** no advanced matching. Names, email addresses and phone numbers are never sent to
+    Meta or Clarity.
+  - **Clarity:** was pasted into `public_base.html` by hand on the server; it now lives in the repo.
+  - 3 new tests (294 in total).
+
+### Upgrade notes
+- **Before `git pull` on the server:** discard the hand-made Clarity edit with
+  `git checkout templates/public_base.html`.
+- **Set in `.env`:** `WS_CLARITY_ID=yteui02fzf` and `WS_META_PIXEL_ID=2052258688818579`, then restart `web`.
+  No migration.
+
 ## 2026-11-05
 
 ### Added

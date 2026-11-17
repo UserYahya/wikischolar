@@ -608,6 +608,8 @@
     document.title = `WikiScholar registration ${s.wikischolar_id}`;
     $("#printNote").textContent = `WikiScholar registration ${s.wikischolar_id} · ${location.host} · ${s.registered_on || ""}`;
     const done = $("#done"); done.hidden = false; done.focus();
+    // Meta Pixel (only when WS_META_PIXEL_ID is set). No form data is sent with it.
+    if (window.fbq) window.fbq("track", "CompleteRegistration");
   }
 
   $("#printDone").addEventListener("click", () => window.print());
