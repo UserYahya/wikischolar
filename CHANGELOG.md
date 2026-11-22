@@ -35,6 +35,16 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
     and the page's period and filters (roles that can open the student list only).
   - 2 new tests.
 
+### Fixed
+- **Advanced search: text boxes missing for admins with an ad blocker.** With uBlock Origin, Adblock Plus or
+  any blocker using EasyList, text conditions ("is", "contains", …) showed no box to type in, and with two or
+  more groups the "Match ALL/ANY of these groups" line was hidden. EasyList hides any element with the class
+  `adv-text` or `adv-top` on every site, and the query builder used those names. Its classes and ids now use
+  `qb-…` ("query builder") instead of `adv-…`. Nothing else changes: the `adv` link parameter, old links and
+  saved searches work as before.
+  - A new test fails if a CSS class or id in the CSS, JS or templates starts with `adv` or is an ad-like word
+    (`ad`, `ads`, `banner`, `sponsor`, …), so it can't happen again. 3 new tests.
+
 ## 2026-11-18
 
 ### Added
