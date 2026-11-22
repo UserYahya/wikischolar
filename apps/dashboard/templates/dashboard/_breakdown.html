@@ -1,0 +1,17 @@
+{# One breakdown table. rows: stats.rows(); comparing: show the compare period's bar, count and change. #}
+{% if rows %}
+<table class="bars stat-bars">
+  <thead class="visually-hidden"><tr><th>{{ what|default:"Item" }}</th><th>Bar</th><th>Students</th><th>Share</th>{% if comparing %}<th>Change</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <th scope="row">{% if r.link %}<a href="{% url 'dashboard:students' %}?{{ r.link }}">{{ r.label }}</a>{% else %}{{ r.label }}{% endif %}</th>
+    <td class="barcell"><span style="--w: {{ r.bar }}%" title="{{ r.n }}"></span>{% if comparing %}<span class="prev" style="--w: {{ r.prev_bar }}%" title="Compare period: {{ r.prev }}"></span>{% endif %}</td>
+    <td class="num">{{ r.n }}{% if comparing %}<small class="prevnum" title="Compare period">{{ r.prev }}</small>{% endif %}</td>
+    <td class="num share">{{ r.share|floatformat:0 }}%</td>
+    {% if comparing %}<td class="num">{% include "dashboard/_delta.html" with c=r.change %}</td>{% endif %}
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">{{ empty|default:"No registrations in this period." }}</p>{% endif %}

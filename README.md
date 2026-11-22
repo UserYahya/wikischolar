@@ -187,7 +187,7 @@ spellings), upload, check the per-row preview, then confirm. The thana may be le
 column left out): such a school belongs to its whole district (suggested and duplicate-checked
 across all its thanas) until an admin sets its thana on the school page.
 
-**Dashboard** — Super Admin / Admin / Viewer / Organiser (statistics only); multi-select district, region, thana, school,
+**Dashboard** — Super Admin / Admin / Viewer / Organiser (statistics only); a **Statistics** page (any date range, compare with another period, breakdowns by region, district, gender, class, guardian and consent); multi-select district, region, thana, school,
 class, gender, date-range, opt-in and text search; **advanced search** on Students and Schools
 (conditions in ALL/ANY groups, including the schools' government data) with **shared saved
 searches** and CSV export of the results; CSV export; per-student edit history;

@@ -1,0 +1,16 @@
+{# Line chart from charts.line_chart(): the SVG stretches to the box; labels and dots are HTML. #}
+<figure class="chart" aria-label="{{ aria }}">
+  <div class="plot">
+    {% for t in c.yticks %}<span class="ytick" style="bottom: {{ t.bottom }}%">{{ t.text }}</span>{% endfor %}
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      {% for t in c.yticks %}<line class="grid" x1="0" x2="1000" y1="{{ t.y }}" y2="{{ t.y }}"/>{% endfor %}
+      {% if c.area %}<polygon class="area" points="{{ c.area }}"/>{% endif %}
+      {% if c.prev %}<polyline class="line prev" points="{{ c.prev }}"/>{% endif %}
+      <polyline class="line" points="{{ c.cur }}"/>
+      {% for col in c.columns %}<rect class="hit" x="{{ col.x }}" y="0" width="{{ col.w }}" height="100"><title>{{ col.title }}</title></rect>{% endfor %}
+    </svg>
+    {% for d in c.prev_dots %}<i class="dot prev" style="left: {{ d.left }}%; bottom: {{ d.bottom }}%"></i>{% endfor %}
+    {% for d in c.dots %}<i class="dot" style="left: {{ d.left }}%; bottom: {{ d.bottom }}%"></i>{% endfor %}
+    {% for l in c.xlabels %}<span class="xtick {{ l.edge }}{% if l.alt %} alt{% endif %}" style="left: {{ l.left }}%">{{ l.text }}</span>{% endfor %}
+  </div>
+</figure>
