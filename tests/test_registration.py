@@ -418,3 +418,26 @@ class EmailReminderTests(WSTestCase):
             self.register()
         self.assertIn(migration.LINE, mail.outbox[-1].body)
         self.assertTrue(mail.outbox[-1].body.startswith("Hello Rahim Uddin,"))
+
+
+class AnalyticsTagTests(WSTestCase):
+    def test_no_tags_without_ids(self):
+        html = self.client.get("/").content.decode()
+        self.assertNotIn("fbevents.js", html)
+        self.assertNotIn("ViewContent", html)
+        self.assertNotIn("clarity.ms", html)
+
+    @override_settings(WIKISCHOLAR={**settings.WIKISCHOLAR, "META_PIXEL_ID": "123456789", "CLARITY_ID": "abc123xyz"})
+    def test_tags_on_form_page_when_ids_set(self):
+        html = self.client.get("/").content.decode()
+        self.assertIn("fbq('init', '123456789')", html)
+        self.assertIn('fbq("track", "ViewContent")', html)
+        # the base code (which defines fbq) comes before the page's ViewContent call
+        self.assertLess(html.index("fbevents.js"), html.index("ViewContent"))
+        self.assertIn('"clarity", "script", "abc123xyz"', html)
+
+    @override_settings(WIKISCHOLAR={**settings.WIKISCHOLAR, "META_PIXEL_ID": "123456789", "CLARITY_ID": "abc123xyz"})
+    def test_no_tags_on_dashboard(self):
+        html = self.client.get("/dashboard/login/").content.decode()
+        self.assertNotIn("fbevents.js", html)
+        self.assertNotIn("clarity.ms", html)
