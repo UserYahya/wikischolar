@@ -208,8 +208,9 @@ Analytics) will plug into the same app.
     fields take yes or no.
   * **Groups:** each group matches ALL or ANY of its conditions, and the groups are combined with
     ALL or ANY.
-  * **Student fields:** student, guardian and contact details, place, registration date, the school
-    and the school's government data (EIIN, management, MPO, …).
+  * **Student fields:** student, guardian and contact details (including **Guardian relation (typed,
+    when “Other”)**, e.g. "is husband"), place, registration date, the school and the school's
+    government data (EIIN, management, MPO, …).
   * **School fields:** name and alias, status, source, number of students, date added, place,
     division, the government data, post office and email.
   * **It combines with everything else:** the other filters still apply. On Students the query is
