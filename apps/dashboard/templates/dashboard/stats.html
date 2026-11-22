@@ -1,0 +1,139 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Statistics{% endblock %}
+{% block head %}{% include "_datefield_assets.html" %}<script src="{% static 'js/stats.js' %}" defer></script>{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Statistics</h1>
+    <p class="lede"><strong>{{ range_text }}</strong>{% if p.comparing %} <span class="muted">compared with</span> <strong class="cmp-key">{{ cmp_text }}</strong>{% endif %}
+      {% if filter_count %}<span class="tag">{{ filter_count }} filter{{ filter_count|pluralize }}</span>{% endif %}</p>
+  </div>
+  {% if can_students %}<a class="btn" href="{% url 'dashboard:students' %}?{{ students_link }}">View these students</a>{% endif %}
+</header>
+
+<form class="stats-controls" method="get" id="statsForm">
+  <input type="hidden" name="by" value="{{ p.by_choice }}">
+  <div class="ctl">
+    <label for="range">Date range</label>
+    <select id="range" name="range">{% for k, l in ranges.items %}<option value="{{ k }}" {% if k == p.range %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  </div>
+  <div class="ctl" data-when="range" data-value="custom">
+    <span class="label">From – to</span>
+    <div class="row2"><input type="text" name="from" value="{{ from_value }}" aria-label="From" placeholder="dd/mm/yyyy" data-datefield data-max="today"><input type="text" name="to" value="{{ to_value }}" aria-label="To" placeholder="dd/mm/yyyy" data-datefield data-max="today"></div>
+  </div>
+  <div class="ctl">
+    <label for="cmp">Compare with</label>
+    <select id="cmp" name="cmp">{% for k, l in compares.items %}<option value="{{ k }}" {% if k == p.cmp %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  </div>
+  <div class="ctl" data-when="cmp" data-value="custom">
+    <span class="label">Compare from – to</span>
+    <div class="row2"><input type="text" name="cmp_from" value="{{ cmp_from_value }}" aria-label="Compare from" placeholder="dd/mm/yyyy" data-datefield data-max="today"><input type="text" name="cmp_to" value="{{ cmp_to_value }}" aria-label="Compare to" placeholder="dd/mm/yyyy" data-datefield data-max="today"></div>
+  </div>
+  <details class="ctl stat-filters" {% if filter_count %}open{% endif %}>
+    <summary>Region, district &amp; class{% if filter_count %} ({{ filter_count }}){% endif %}</summary>
+    <div class="stat-filter-body">
+      <fieldset>
+        <legend>Region &amp; district</legend>
+        {% for r in regions %}
+        <details {% if r.pk|stringformat:"s" in p.regions or r.pk|stringformat:"s" in open_regions %}open{% endif %}>
+          <summary><label class="inline"><input type="checkbox" name="region" value="{{ r.pk }}" {% if r.pk|stringformat:"s" in p.regions %}checked{% endif %}> {{ r.name }}</label></summary>
+          <div class="checks">{% for d in r.districts.all %}<label class="inline"><input type="checkbox" name="district" value="{{ d.pk }}" {% if d.pk|stringformat:"s" in p.districts %}checked{% endif %}> {{ d.name }}</label>{% endfor %}</div>
+        </details>
+        {% endfor %}
+        {% if unassigned_districts %}
+        <details><summary>No region</summary><div class="checks">
+          {% for d in unassigned_districts %}<label class="inline"><input type="checkbox" name="district" value="{{ d.pk }}" {% if d.pk|stringformat:"s" in p.districts %}checked{% endif %}> {{ d.name }}</label>{% endfor %}
+        </div></details>
+        {% endif %}
+        <p class="hint">A region and a district together count only students in both. Pick one district to see its thanas.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Class</legend>
+        <div class="checks cols3">{% for v, l in classes %}<label class="inline"><input type="checkbox" name="class" value="{{ v }}" {% if v in p.classes %}checked{% endif %}> {{ v }}</label>{% endfor %}</div>
+      </fieldset>
+    </div>
+  </details>
+  <div class="ctl actions"><button class="btn primary">Apply</button><a class="link" href="{% url 'dashboard:stats' %}">Reset</a></div>
+</form>
+
+<section class="figures kpis">
+  {% for t in tiles %}
+  <div>
+    <p class="fig">{{ t.value }}</p>
+    <p>{{ t.label }}{% if t.note %} <span class="muted">· {{ t.note }}</span>{% endif %}</p>
+    {% if p.comparing %}<p class="kpi-cmp">{% include "dashboard/_delta.html" with c=t.change %} <span class="muted">vs {{ t.prev }}</span></p>{% endif %}
+  </div>
+  {% endfor %}
+</section>
+
+<section>
+  <div class="chart-head">
+    <h2>Registrations over time</h2>
+    <nav class="seg" aria-label="Group by">{% for g in group_links %}<a href="?{{ g.qs }}" {% if g.on %}aria-current="true"{% endif %}>{{ g.text }}</a>{% endfor %}</nav>
+  </div>
+  {% if p.comparing %}<p class="legend"><span class="key cur"></span>{{ range_text }} <span class="key prev"></span>{{ cmp_text }}</p>{% endif %}
+  {% include "dashboard/_chart_line.html" with c=line aria="Registrations per "|add:p.by %}
+  <details class="chart-table">
+    <summary>Show as a table</summary>
+    <div class="scroll"><table class="data">
+      <thead><tr><th>{{ p.by|capfirst }}</th><th class="num">Students</th>{% if p.comparing %}<th>Compare {{ p.by }}</th><th class="num">Students</th><th class="num">Change</th>{% endif %}</tr></thead>
+      <tbody>{% for r in over_time %}<tr><td>{{ r.label|default:"—" }}</td><td class="num">{{ r.n|default_if_none:"—" }}</td>{% if p.comparing %}<td>{{ r.prev_label|default:"—" }}</td><td class="num">{{ r.prev|default_if_none:"—" }}</td><td class="num">{% include "dashboard/_delta.html" with c=r.change %}</td>{% endif %}</tr>{% endfor %}</tbody>
+      <tfoot><tr><th>Total</th><th class="num">{{ total }}</th>{% if p.comparing %}<th></th><th class="num">{{ prev_total }}</th><th></th>{% endif %}</tr></tfoot>
+    </table></div>
+  </details>
+</section>
+
+<div class="cols">
+  <section><h2>Gender</h2>{% include "dashboard/_breakdown.html" with rows=b.gender comparing=p.comparing %}</section>
+  <section><h2>Class</h2>{% include "dashboard/_breakdown.html" with rows=b.classes comparing=p.comparing %}</section>
+  <section><h2>By region</h2>{% include "dashboard/_breakdown.html" with rows=b.regions comparing=p.comparing %}</section>
+  <section><h2>Top districts</h2>{% include "dashboard/_breakdown.html" with rows=b.districts comparing=p.comparing %}</section>
+  {% if b.thanas is not None %}<section><h2>Thanas</h2>{% include "dashboard/_breakdown.html" with rows=b.thanas comparing=p.comparing %}</section>{% endif %}
+</div>
+
+<section>
+  <h2>Guardian &amp; consent</h2>
+  <div class="cols inner">
+    <div>
+      <h3>Guardian's relation</h3>
+      {% include "dashboard/_breakdown.html" with rows=b.relation comparing=p.comparing %}
+      {% if b.other_relations %}
+      <h4>“Other” relations typed in</h4>
+      {% include "dashboard/_breakdown.html" with rows=b.other_relations comparing=p.comparing %}
+      {% endif %}
+    </div>
+    <div><h3>Form filled in by</h3>{% include "dashboard/_breakdown.html" with rows=b.filled_by comparing=p.comparing %}</div>
+    <div><h3>Photos at offline events</h3>{% include "dashboard/_breakdown.html" with rows=b.photo comparing=p.comparing %}</div>
+    <div><h3>Email updates</h3>{% include "dashboard/_breakdown.html" with rows=b.opt_in comparing=p.comparing %}</div>
+  </div>
+</section>
+
+<section>
+  <h2>How they heard about WikiScholar</h2>
+  {% include "dashboard/_breakdown.html" with rows=b.heard_from comparing=p.comparing %}
+  {% if total %}<p class="hint">{{ heard }} of {{ total }} answered. Students who registered before this question was added are not counted.</p>{% endif %}
+</section>
+
+<div class="cols">
+  <section><h2>Day of the week</h2>{% include "dashboard/_breakdown.html" with rows=b.weekdays comparing=p.comparing %}</section>
+  <section>
+    <h2>Time of day</h2>
+    {% if total %}
+    <figure class="chart columns" aria-label="Registrations by hour of the day">
+      <div class="plot">
+        {% for t in hours_chart.yticks %}<span class="ytick" style="bottom: {{ t.bottom }}%">{{ t.text }}</span>{% endfor %}
+        <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          {% for t in hours_chart.yticks %}<line class="grid" x1="0" x2="1000" y1="{{ t.y }}" y2="{{ t.y }}"/>{% endfor %}
+          {% for r in hours_chart.prev_bars %}<rect class="bar prev" x="{{ r.x }}" y="{{ r.y }}" width="{{ r.w }}" height="{{ r.h }}"/>{% endfor %}
+          {% for r in hours_chart.bars %}<rect class="bar" x="{{ r.x }}" y="{{ r.y }}" width="{{ r.w }}" height="{{ r.h }}"/>{% endfor %}
+          {% for col in hours_chart.columns %}<rect class="hit" x="{{ col.x }}" y="0" width="{{ col.w }}" height="100"><title>{{ col.title }}</title></rect>{% endfor %}
+        </svg>
+        {% for l in hours_chart.xlabels %}<span class="xtick" style="left: {{ l.left }}%">{{ l.text }}</span>{% endfor %}
+      </div>
+    </figure>
+    <p class="hint">Bangladesh time, by the hour the registration was submitted.</p>
+    {% else %}<p class="empty">No registrations in this period.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

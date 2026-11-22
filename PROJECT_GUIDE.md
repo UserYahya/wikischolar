@@ -178,14 +178,25 @@ Analytics) will plug into the same app.
     thana already lists the name, in which case merge the two schools instead.
 
 ### Admin dashboard (`/dashboard/`)
-* **Sidebar**: the WikiScholar logo, then the tools in **collapsible groups** (*Overview*;
+* **Sidebar**: the WikiScholar logo, then the tools in **collapsible groups** (*Overview*; *Statistics*;
   *Students*: All students, Archived records; *Schools & places*: Schools, Duplicate schools,
   Regions & districts; *Messaging*: Messages, System emails, Email & SMS settings;
   *Administration*: Admins, Audit log). The group holding the current page opens by itself; a
   group the admin can open only one tool of shows as a plain link. Modules choose the group with
   `register_nav(..., group="…")` (`apps/core/registry.py`).
 * **Overview**: totals, daily registrations, students per region/district, **how students heard
-  about WikiScholar** (survey answers), warnings (e.g. "Emails are not being delivered").
+  about WikiScholar** (survey answers), warnings (e.g. "Emails are not being delivered"), and a
+  link to Statistics.
+* **Statistics** (`/dashboard/stats/`, `stats.view`): registrations for any **date range** (presets
+  from Today to All time, or custom dates) grouped by day, week or month (Auto picks one), with an
+  optional **comparison** (previous period, same period last year, or custom dates), narrowed by
+  region, district and class. Headline figures with changes; a line chart (compare period dashed);
+  breakdowns by gender, class, region, top districts (thanas when one district is picked),
+  guardian's relation (and the "other" relations typed in), who filled in the form, photo
+  permission, email updates, how they heard, day of the week and hour of the day. Counts only, so
+  Organisers can use it; links into the student list (same period and filters) only for roles that
+  can open it. Charts are server-drawn SVG (`apps/dashboard/charts.py`); numbers come from
+  `apps/dashboard/stats.py`. Days are Bangladesh time; archived students are not counted.
 * **Students**: filters (region, district, thana, **thana type** (thana, cantonment, "Other
   thana"), school, class, gender, date range, opt-in, text search, sort), **split into batches** of N students (view / CSV / message each batch),
   CSV export (Excel-friendly), student detail with full edit history, edit, archive/restore.
@@ -267,7 +278,7 @@ Analytics) will plug into the same app.
 ### Roles
 | Role | Can |
 |---|---|
-| **Organiser** (statistics only) | the Overview only: totals, registrations per day, by region, top districts, "how they heard" (`stats.view`). No student records, names, contact details, schools, messages or settings; the Overview hides links and to-do notices for them, and every other page answers 403 |
+| **Organiser** (statistics only) | the Overview and Statistics pages only: totals, registrations over time, breakdowns by region, district, gender, class, guardian and consent (`stats.view`). No student records, names, contact details, schools, messages or settings; the Overview hides links and to-do notices for them, and every other page answers 403 |
 | **Viewer** | + read and filter students, schools, locations, messages |
 | **Admin** | + edit/archive/export students, edit schools & locations, merge schools, send messages, read audit log |
 | **Super Admin** | + manage admins, email & SMS settings, system email wording |

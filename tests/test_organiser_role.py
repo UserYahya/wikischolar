@@ -25,8 +25,8 @@ class OrganiserRoleTests(WSTestCase):
             self.assertNotIn(private, page)
         for link in ("/dashboard/students/", "/dashboard/schools/", "/dashboard/locations/", "/dashboard/messages/"):
             self.assertNotIn(f'href="{link}', page)
-        # the menu offers the Overview and nothing else
-        self.assertEqual([i.url_name for i in r.context["NAV"]], ["dashboard:home"])
+        # the menu offers the Overview and Statistics and nothing else
+        self.assertEqual([i.url_name for i in r.context["NAV"]], ["dashboard:home", "dashboard:stats"])
 
     def test_every_other_page_is_refused(self):
         wsid = self.s["wikischolar_id"]

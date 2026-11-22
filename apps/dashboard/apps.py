@@ -9,6 +9,7 @@ class DashboardConfig(AppConfig):
     def ready(self):
         from apps.core.registry import register_nav as nav
         nav("Overview", "dashboard:home", "stats.view", 10, "dashboard")
+        nav("Statistics", "dashboard:stats", "stats.view", 11, "dashboard")
         nav("All students", "dashboard:students", "students.view", 20, "registration", group="Students")
         nav("Archived records", "dashboard:archived", "students.delete", 21, "registration", group="Students")
         nav("Saved searches", "dashboard:searches", "students.view", 22, "dashboard", group="Students")

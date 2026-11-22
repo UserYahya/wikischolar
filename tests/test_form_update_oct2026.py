@@ -171,7 +171,7 @@ class DashboardTests(WSTestCase):
     def test_nav_groups_related_tools(self):
         groups = nav_groups_for(self.super)
         labels = [g.label for g in groups]
-        self.assertEqual(labels, ["", "Students", "Schools & places", "Messaging", "Administration"])
+        self.assertEqual(labels, ["", "", "Students", "Schools & places", "Messaging", "Administration"])
         messaging = next(g for g in groups if g.label == "Messaging")
         self.assertEqual([i.label for i in messaging.items], ["Messages", "System emails", "Email & SMS settings"])
 

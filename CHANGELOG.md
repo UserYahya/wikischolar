@@ -3,6 +3,25 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-11-22
+
+### Added
+- **Statistics page** (Dashboard → Statistics, `/dashboard/stats/`), in the style of Google Analytics. Open to
+  every role with `stats.view`, Organisers included.
+  - **Date range:** Today, Yesterday, Last 7 / 28 / 30 / 90 days, This month, Last month, This year, All time,
+    or custom dates. Registrations are grouped by day, week or month (Auto picks one from the length).
+  - **Compare:** with the previous period, the same period last year, or custom dates. Every figure and
+    breakdown row shows the other period's number and the change; the chart draws it as a dashed line.
+  - **Filters:** region, district and class, applied to both periods.
+  - **Breakdowns:** gender, class, region, top districts (thanas when one district is picked), guardian's
+    relation (with the "other" relations typed in), who filled in the form, photo permission, email updates,
+    how they heard, day of the week and hour of the day.
+  - **Privacy:** counts only. Links into the student list (same period and filters) appear only for roles that
+    can open it. School names are never shown.
+  - Charts are SVG drawn on the server: no new libraries, and they work without JavaScript. The Overview links
+    to the new page.
+  - 19 new tests (310 in total).
+
 ## 2026-11-05
 
 ### Added

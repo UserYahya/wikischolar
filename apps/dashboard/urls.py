@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import accounts, home, messaging, reference, searches, settings, students
+from .views import accounts, home, messaging, reference, searches, settings, stats, students
 
 app_name = "dashboard"
 urlpatterns = [
@@ -8,6 +8,7 @@ urlpatterns = [
     path("logout/", accounts.logout_view, name="logout"),
     path("account/password/", accounts.password_change, name="password_change"),
     path("", home.home, name="home"),
+    path("stats/", stats.stats_page, name="stats"),
 
     path("searches/", searches.search_list, name="searches"),
     path("searches/save/", searches.search_save, name="search_save"),
