@@ -85,6 +85,11 @@ Analytics) will plug into the same app.
 * **No data loss on Back.** Answers are kept as a draft in the browser tab (sessionStorage);
   the browser/phone Back button moves between steps; finished steps can be clicked to reopen.
   The draft is cleared after a successful registration.
+* **No browser autofill.** The form and every field have `autocomplete="off"`, and the inputs carry
+  `data-1p-ignore`, `data-lpignore` and `data-form-type="other"` for password managers. The browser
+  never fills in a saved name, phone or email, and on a shared phone or tablet it doesn't offer
+  earlier students' details. Only the email code keeps `one-time-code`, so a phone can fill it from
+  the message that just arrived. `tests/test_registration.py` (`AutofillOffTests`) keeps it that way.
 * **Anti-abuse:** honeypot field, rate limits (OTP per email/IP, registrations per IP, logins),
   OTP stored only as an HMAC, 10-minute expiry, lockout after 5 wrong codes, and optionally
   **Cloudflare Turnstile** (`apps/core/turnstile.py`): when `WS_TURNSTILE_SITE_KEY` and
