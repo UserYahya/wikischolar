@@ -6,6 +6,7 @@ Days and hours are Bangladesh time (Asia/Dhaka, UTC+6, no daylight saving), set 
 date boundary, Trunc* and Extract* so it doesn't depend on the active timezone.
 Archived students are never counted (Student.objects hides them).
 """
+import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -398,7 +399,8 @@ def breakdowns(p, cur_qs, prev_qs, link):
 
     cur, prev = both(other_relation_counts)
     labels = [(k, k.capitalize() or "(blank)") for k in dict.fromkeys([*cur, *(prev or {})])]
-    out["other_relations"] = rows(labels, cur, prev, keep_empty=False, limit=TOP_OTHER_RELATIONS)
+    out["other_relations"] = rows(labels, cur, prev, keep_empty=False, limit=TOP_OTHER_RELATIONS,
+                                  link=lambda k: link(adv=typed_relation_query(k)) if k else None)
 
     cur, prev = both(region_counts)
     labels = [(r.pk, r.name) for r in Region.objects.all()] + [(NO_REGION, "No region")]
@@ -425,6 +427,13 @@ def breakdowns(p, cur_qs, prev_qs, link):
     cur, prev = both(lambda qs: counts_by(qs, ExtractHour("created_at", tzinfo=DHAKA)))
     out["hours"] = rows([(h, f"{h:02d}:00") for h in range(24)], cur, prev, sort=False)
     return out
+
+
+def typed_relation_query(text):
+    """Advanced-search JSON for students whose typed "other" relation is `text` (any case)."""
+    cond = {"field": "guardian_relation_other", "op": "eq", "value": text}
+    return json.dumps({"match": "all", "groups": [{"match": "all", "conditions": [cond]}]},
+                      separators=(",", ":"), ensure_ascii=False)
 
 
 # ---- Links into the student list --------------------------------------------------------------- #

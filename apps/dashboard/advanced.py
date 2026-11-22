@@ -101,6 +101,8 @@ FIELDS = {
         Field("guardian_name", "Guardian name", "text", "guardian_name", group="Guardian & contact"),
         Field("guardian_relation", "Guardian relation", "choice", "guardian_relation", GuardianRelation.choices,
               "Guardian & contact"),
+        Field("guardian_relation_other", "Guardian relation (typed, when “Other”)", "text",
+              "guardian_relation_other", group="Guardian & contact"),
         Field("filled_by", "Form filled in by", "choice", "filled_by", FilledBy.choices, "Guardian & contact"),
         Field("phone", "Phone", "text", "phone", group="Guardian & contact"),
         Field("email", "Email", "text", "email", group="Guardian & contact"),

@@ -220,6 +220,20 @@ class PageTests(WSTestCase):
         r = self.client.get("/dashboard/stats/?range=90d")
         self.assertNotIn("hour", [g["key"] for g in r.context["group_links"]])
 
+    def test_typed_relation_row_links_to_those_students(self):
+        husband = self.register("h@gmail.com", phone="01712345671", guardian_relation="other",
+                                guardian_relation_other="Husband", student_name="Shirin Akter")
+        self.register()
+        self.client.force_login(self.viewer)
+        r = self.client.get("/dashboard/stats/?range=7d")
+        row = r.context["b"]["other_relations"][0]
+        self.assertEqual((row["label"], row["n"]), ("Husband", 1))
+        self.assertIn("adv=", row["link"])
+        self.assertIn("guardian_relation_other", row["link"])
+        page = self.client.get("/dashboard/students/?" + row["link"])
+        self.assertContains(page, husband["wikischolar_id"])
+        self.assertNotContains(page, "Rahim Uddin")
+
     def test_organiser_gets_no_student_links(self):
         self.register()
         organiser = Admin.objects.create_user(email="org@ws.test", password="x-Strong-pass-123",

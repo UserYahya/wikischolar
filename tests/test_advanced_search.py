@@ -46,6 +46,16 @@ class EngineTests(WSTestCase):
         self.assertEqual(self.ids(adv(("all", [cond("created_at", "between", [today, today])])))[0], {self.a.pk, self.b.pk})
         self.assertEqual(self.ids(adv(("all", [cond("created_at", "lt", today)])))[0], set())
 
+    def test_typed_other_relation(self):
+        c = Student.objects.get(wikischolar_id=self.register(email="c@gmail.com", phone="01712345670",
+                                                               guardian_relation="other",
+                                                               guardian_relation_other="Husband")["wikischolar_id"])
+        self.assertEqual(self.ids(adv(("all", [cond("guardian_relation_other", "eq", "husband")])))[0], {c.pk})
+        self.assertEqual(self.ids(adv(("all", [cond("guardian_relation_other", "contains", "HUS")])))[0], {c.pk})
+        self.assertEqual(self.ids(adv(("all", [cond("guardian_relation_other", "empty")])))[0], {self.a.pk, self.b.pk})
+        self.assertIn("Guardian relation (typed",
+                      advanced.describe("students", adv(("all", [cond("guardian_relation_other", "eq", "husband")]))))
+
     def test_dates_are_local_dhaka_days(self):
         # 00:30 on 10 March in Dhaka is still 9 March in UTC; it must count as 10/03/2026.
         dhaka = timezone.get_default_timezone()

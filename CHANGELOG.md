@@ -25,6 +25,16 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
     options work here too: the previous day, the same day last year, or any other day. The headline tiles then
     show the busiest hour and an hourly average. "Hour" can also be picked for ranges of up to 7 days.
   - 23 new tests (314 in total).
+
+### Changed
+- **Advanced search: "Guardian relation (typed, when “Other”)".** A new student field: the text a guardian types
+  after choosing Relation = Other, for example "Guardian relation (typed, when “Other”) is husband". Matching
+  ignores case. Before, the only option was "Guardian relation is any of Other", which lists every "Other"
+  guardian.
+  - On Statistics, each row of "“Other” relations typed in" now links to those students, using this condition
+    and the page's period and filters (roles that can open the student list only).
+  - 2 new tests.
+
 ## 2026-11-18
 
 ### Added
