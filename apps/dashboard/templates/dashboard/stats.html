@@ -70,10 +70,11 @@
 <section>
   <div class="chart-head">
     <h2>Registrations over time</h2>
-    <nav class="seg" aria-label="Group by">{% for g in group_links %}<a href="?{{ g.qs }}" {% if g.on %}aria-current="true"{% endif %}>{{ g.text }}</a>{% endfor %}</nav>
+    <nav class="seg" aria-label="Group by" title="{% if p.days > 7 %}Hour is available for ranges of up to 7 days{% endif %}">{% for g in group_links %}<a href="?{{ g.qs }}" {% if g.on %}aria-current="true"{% endif %}>{{ g.text }}</a>{% endfor %}</nav>
   </div>
   {% if p.comparing %}<p class="legend"><span class="key cur"></span>{{ range_text }} <span class="key prev"></span>{{ cmp_text }}</p>{% endif %}
   {% include "dashboard/_chart_line.html" with c=line aria="Registrations per "|add:p.by %}
+  {% if hourly %}<p class="hint">Bangladesh time (UTC+6). Each point is the registrations in that hour, e.g. 14:00 = 14:00–14:59.{% if p.end == p.start and p.range == "today" %} Today's line stops at the current hour.{% endif %}</p>{% endif %}
   <details class="chart-table">
     <summary>Show as a table</summary>
     <div class="scroll"><table class="data">
@@ -132,7 +133,7 @@
         {% for l in hours_chart.xlabels %}<span class="xtick" style="left: {{ l.left }}%">{{ l.text }}</span>{% endfor %}
       </div>
     </figure>
-    <p class="hint">Bangladesh time, by the hour the registration was submitted.</p>
+    <p class="hint">Bangladesh time (UTC+6), by the hour the registration was submitted, added up over every day in the range. For one day hour by hour, pick a single day above (e.g. Today or Yesterday).</p>
     {% else %}<p class="empty">No registrations in this period.</p>{% endif %}
   </section>
 </div>

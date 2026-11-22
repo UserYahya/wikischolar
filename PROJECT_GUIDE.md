@@ -188,7 +188,8 @@ Analytics) will plug into the same app.
   about WikiScholar** (survey answers), warnings (e.g. "Emails are not being delivered"), and a
   link to Statistics.
 * **Statistics** (`/dashboard/stats/`, `stats.view`): registrations for any **date range** (presets
-  from Today to All time, or custom dates) grouped by day, week or month (Auto picks one), with an
+  from Today to All time, or custom dates) grouped by hour, day, week or month (Auto picks one; a
+  single day is shown hour by hour, and Hour is offered for ranges of up to 7 days), with an
   optional **comparison** (previous period, same period last year, or custom dates), narrowed by
   region, district and class. Headline figures with changes; a line chart (compare period dashed);
   breakdowns by gender, class, region, top districts (thanas when one district is picked),
@@ -196,7 +197,8 @@ Analytics) will plug into the same app.
   permission, email updates, how they heard, day of the week and hour of the day. Counts only, so
   Organisers can use it; links into the student list (same period and filters) only for roles that
   can open it. Charts are server-drawn SVG (`apps/dashboard/charts.py`); numbers come from
-  `apps/dashboard/stats.py`. Days are Bangladesh time; archived students are not counted.
+  `apps/dashboard/stats.py`. Days and hours are Bangladesh time (Asia/Dhaka, UTC+6, set explicitly
+  in every query); archived students are not counted.
 * **Students**: filters (region, district, thana, **thana type** (thana, cantonment, "Other
   thana"), school, class, gender, date range, opt-in, text search, sort), **split into batches** of N students (view / CSV / message each batch),
   CSV export (Excel-friendly), student detail with full edit history, edit, archive/restore.

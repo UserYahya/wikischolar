@@ -62,7 +62,8 @@ def line_chart(cur, prev=None, label=str, short_label=None):
         "dots": dots(cur), "prev_dots": dots(prev),
         "yticks": [{"bottom": round(100 * t / top, 2), "y": _y(t, top), "text": f"{t:,}"} for t in ticks],
         "xlabels": [{"left": round(100 * x(i) / W, 2), "text": short_label(cur[i][0] if i < len(cur) else prev[i][0]),
-                     "edge": "start" if i == 0 and n > 1 else ""} for i in _thin(n)],
+                     "edge": "start" if i == 0 and n > 1 else "", "alt": j % 2 == 1}
+                    for j, i in enumerate(_thin(n))],
     }
 
 

@@ -11,6 +11,6 @@
     </svg>
     {% for d in c.prev_dots %}<i class="dot prev" style="left: {{ d.left }}%; bottom: {{ d.bottom }}%"></i>{% endfor %}
     {% for d in c.dots %}<i class="dot" style="left: {{ d.left }}%; bottom: {{ d.bottom }}%"></i>{% endfor %}
-    {% for l in c.xlabels %}<span class="xtick {{ l.edge }}" style="left: {{ l.left }}%">{{ l.text }}</span>{% endfor %}
+    {% for l in c.xlabels %}<span class="xtick {{ l.edge }}{% if l.alt %} alt{% endif %}" style="left: {{ l.left }}%">{{ l.text }}</span>{% endfor %}
   </div>
 </figure>

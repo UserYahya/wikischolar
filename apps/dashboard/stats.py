@@ -2,16 +2,18 @@
 region/district/class filters, and grouped counts of the students who registered in it.
 
 Everything here is counts only (no names, contact details or schools), so an Organiser can see it.
-Days are local (TIME_ZONE): `created_at__date`, Trunc* and Extract* all use the current timezone.
+Days and hours are Bangladesh time (Asia/Dhaka, UTC+6, no daylight saving), set explicitly on every
+date boundary, Trunc* and Extract* so it doesn't depend on the active timezone.
 Archived students are never counted (Student.objects hides them).
 """
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 from urllib.parse import urlencode
 
 from django.db.models import Count, Q
-from django.db.models.functions import (ExtractHour, ExtractIsoWeekDay, Lower, Trim, TruncDate, TruncMonth,
-                                        TruncWeek)
+from django.db.models.functions import (ExtractHour, ExtractIsoWeekDay, Lower, Trim, TruncDate, TruncHour,
+                                        TruncMonth, TruncWeek)
 from django.utils import timezone
 
 from apps.core.utils import DATE_FORMAT, parse_date
@@ -27,7 +29,9 @@ RANGES = {
 }
 COMPARES = {"": "Don't compare", "prev": "Previous period", "year": "Same period last year",
             "custom": "Custom period"}
-GROUPINGS = {"": "Auto", "day": "Day", "week": "Week", "month": "Month"}
+DHAKA = ZoneInfo("Asia/Dhaka")
+GROUPINGS = {"": "Auto", "hour": "Hour", "day": "Day", "week": "Week", "month": "Month"}
+MAX_HOURLY_DAYS = 7  # longer ranges have too many hours to chart
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 TOP_DISTRICTS = 15
 TOP_OTHER_RELATIONS = 10
@@ -95,7 +99,7 @@ def _preset(key, today, first_day):
 
 
 def auto_grouping(days):
-    return "day" if days <= 62 else "week" if days <= 26 * 7 else "month"
+    return "hour" if days == 1 else "day" if days <= 62 else "week" if days <= 26 * 7 else "month"
 
 
 def resolve(get, today, first_day=None):
@@ -113,6 +117,8 @@ def resolve(get, today, first_day=None):
 
     by_choice = get.get("by", "").strip()
     by_choice = by_choice if by_choice in GROUPINGS else ""
+    if by_choice == "hour" and (end - start).days + 1 > MAX_HOURLY_DAYS:
+        by_choice = ""
     p = Period(start, end, rng, by_choice or auto_grouping((end - start).days + 1), by_choice)
 
     cmp = get.get("cmp", "").strip()
@@ -135,7 +141,7 @@ def resolve(get, today, first_day=None):
 
 def first_registration_day():
     first = Student.objects.order_by("created_at").values_list("created_at", flat=True).first()
-    return timezone.localdate(first) if first else None
+    return timezone.localdate(first, DHAKA) if first else None
 
 
 def filtered(p):
@@ -151,12 +157,19 @@ def filtered(p):
     return qs
 
 
+def day_start(d):
+    """Midnight at the start of a Bangladesh day, as an aware datetime."""
+    return datetime.combine(d, time(), tzinfo=DHAKA)
+
+
 def in_period(qs, start, end):
-    return qs.filter(created_at__date__gte=start, created_at__date__lte=end)
+    return qs.filter(created_at__gte=day_start(start), created_at__lt=day_start(end + timedelta(days=1)))
 
 
 # ---- Over time ----------------------------------------------------------------------------- #
 def _bucket_start(d, by):
+    if by == "hour":
+        return datetime.combine(d, time())  # naive Bangladesh time
     if by == "week":
         return d - timedelta(days=d.weekday())
     if by == "month":
@@ -165,6 +178,8 @@ def _bucket_start(d, by):
 
 
 def _next_bucket(d, by):
+    if by == "hour":
+        return d + timedelta(hours=1)
     if by == "week":
         return d + timedelta(days=7)
     if by == "month":
@@ -172,30 +187,48 @@ def _next_bucket(d, by):
     return d + timedelta(days=1)
 
 
-def bucket_label(d, by, short=False):
+def bucket_label(d, by, short=False, one_day=True):
+    """Text for a bucket. Hours: "14:00" on the axis ("22 Nov" at midnight when the range has several
+    days); the tooltip/table text names the hour range, e.g. "22 Nov, 14:00–15:00"."""
+    if by == "hour":
+        if short:
+            return f"{d:%H}:00" if one_day or d.hour else f"{d.day} {d:%b}"
+        return f"{d.day} {d:%b}, {d:%H}:00–{(d + timedelta(hours=1)):%H}:00"
     if by == "month":
         return d.strftime("%b %Y") if not short else d.strftime("%b %y")
     label = f"{d.day} {d.strftime('%b')}"
     return f"w/c {label}" if by == "week" and not short else label
 
 
-def timeseries(qs, start, end, by):
-    """[(bucket start date, count)] covering start..end, empty buckets included. The first and last
-    week/month may be partial (only the days inside the range are counted)."""
-    trunc = {"day": TruncDate, "week": TruncWeek, "month": TruncMonth}[by]("created_at")
+def timeseries(qs, start, end, by, until=None):
+    """[(bucket start, count)] covering start..end, empty buckets included. Buckets are dates, or
+    naive Bangladesh-time datetimes for hours. The first and last week/month may be partial (only the
+    days inside the range are counted). `until` (a naive Bangladesh datetime) stops the series at that
+    moment, so today's hours end at the current hour instead of showing the rest of the day as 0."""
+    trunc = {"hour": TruncHour, "day": TruncDate, "week": TruncWeek, "month": TruncMonth}[by]("created_at", tzinfo=DHAKA)
     counts = {}
     for k, n in in_period(qs, start, end).annotate(b=trunc).values_list("b").annotate(n=Count("id")):
-        k = k.date() if isinstance(k, datetime) else k
+        if by == "hour":
+            k = k.astimezone(DHAKA).replace(tzinfo=None)
+        elif isinstance(k, datetime):
+            k = k.date()
         counts[k] = counts.get(k, 0) + n
     out, b = [], _bucket_start(start, by)
-    while b <= end:
+    last = datetime.combine(end, time(23)) if by == "hour" else end
+    while b <= last and (until is None or by != "hour" or b <= until):
         out.append((b, counts.get(b, 0)))
         b = _next_bucket(b, by)
     return out
 
 
+def busiest(series):
+    """(bucket, count) of the busiest bucket (the earliest on a tie), or (None, 0)."""
+    best = max(series, key=lambda r: r[1], default=(None, 0))
+    return best if best[1] else (None, 0)
+
+
 def daily_peak(qs, start, end):
-    row = (in_period(qs, start, end).annotate(d=TruncDate("created_at")).values_list("d")
+    row = (in_period(qs, start, end).annotate(d=TruncDate("created_at", tzinfo=DHAKA)).values_list("d")
            .annotate(n=Count("id")).order_by("-n", "d").first())
     return row if row else (None, 0)
 
@@ -249,17 +282,40 @@ KPI_TILES = [  # (key, label, kind): kind "count" shows the number, "pct" a shar
 FORMATS = {"count": "{:,}".format, "avg": "{:,.1f}".format, "pct": "{:.0f}%".format}
 
 
-def kpi_tiles(cur, prev):
+def _hour_note(when, hours):
+    """The busiest hour's text: just "14:00–15:00" when the range is one day, with the date otherwise."""
+    text = bucket_label(when, "hour")
+    one_day = hours[0][0].date() == hours[-1][0].date()
+    return text.split(", ", 1)[1] if one_day else text
+
+
+def kpi_tiles(cur, prev, hours=None, prev_hours=None):
+    """The headline tiles. With an hourly timeline (`hours`/`prev_hours`: hourly series) the average
+    is per hour and the peak is the busiest hour instead of the best day."""
+    if hours is not None:
+        for k, series in ((cur, hours), (prev, prev_hours)):
+            if k is not None:
+                k["per_hour"] = k["total"] / max(len(series or []), 1)
+                k["peak_hour"], k["peak_hour_n"] = busiest(series or [])
     tiles = []
     for key, label, kind in KPI_TILES:
+        if key == "per_day" and hours is not None:
+            key, label = "per_hour", "an hour on average"
         value, before = cur[key], prev[key] if prev else None
         fmt = FORMATS[kind]
         tiles.append({"label": label, "value": fmt(value), "prev": fmt(before) if prev else "",
                       "change": change(value, before, points=kind == "pct") if prev else None})
-    peak = {"label": "best day", "value": f"{cur['peak']:,}",
-            "note": f"{cur['peak_day'].day} {cur['peak_day']:%b %Y}" if cur["peak_day"] else "no registrations"}
-    if prev:
-        peak.update(prev=f"{prev['peak']:,}", change=change(cur["peak"], prev["peak"]))
+    if hours is not None:
+        when = cur["peak_hour"]
+        peak = {"label": "busiest hour", "value": f"{cur['peak_hour_n']:,}",
+                "note": _hour_note(when, hours) if when else "no registrations"}
+        if prev:
+            peak.update(prev=f"{prev['peak_hour_n']:,}", change=change(cur["peak_hour_n"], prev["peak_hour_n"]))
+    else:
+        peak = {"label": "best day", "value": f"{cur['peak']:,}",
+                "note": f"{cur['peak_day'].day} {cur['peak_day']:%b %Y}" if cur["peak_day"] else "no registrations"}
+        if prev:
+            peak.update(prev=f"{prev['peak']:,}", change=change(cur["peak"], prev["peak"]))
     tiles.insert(2, peak)
     return tiles
 
@@ -363,10 +419,10 @@ def breakdowns(p, cur_qs, prev_qs, link):
         out["thanas"] = rows(labels, cur, prev, keep_empty=False,
                              link=lambda k: link(thana=k))
 
-    cur, prev = both(lambda qs: counts_by(qs, ExtractIsoWeekDay("created_at")))
+    cur, prev = both(lambda qs: counts_by(qs, ExtractIsoWeekDay("created_at", tzinfo=DHAKA)))
     out["weekdays"] = rows(list(enumerate(WEEKDAYS, start=1)), cur, prev, sort=False)
 
-    cur, prev = both(lambda qs: counts_by(qs, ExtractHour("created_at")))
+    cur, prev = both(lambda qs: counts_by(qs, ExtractHour("created_at", tzinfo=DHAKA)))
     out["hours"] = rows([(h, f"{h:02d}:00") for h in range(24)], cur, prev, sort=False)
     return out
 

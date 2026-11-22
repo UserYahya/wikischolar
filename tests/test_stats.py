@@ -16,8 +16,8 @@ def q(s=""):
     return QueryDict(s)
 
 
-def at(d, hour=10):
-    return datetime(d.year, d.month, d.day, hour, 0, tzinfo=timezone.get_default_timezone())
+def at(d, hour=10, minute=0):
+    return datetime(d.year, d.month, d.day, hour, minute, tzinfo=timezone.get_default_timezone())
 
 
 class ResolveTests(WSTestCase):
@@ -52,6 +52,18 @@ class ResolveTests(WSTestCase):
         self.assertEqual(stats.resolve(q("range=90d&by=day"), TODAY).by, "day")
         self.assertEqual(stats.resolve(q("by=bogus"), TODAY).by_choice, "")
 
+    def test_one_day_is_hourly(self):
+        for rng in ("today", "yesterday"):
+            self.assertEqual(stats.resolve(q(f"range={rng}"), TODAY).by, "hour", rng)
+        self.assertEqual(stats.resolve(q("from=05/11/2026&to=05/11/2026"), TODAY).by, "hour")
+        self.assertEqual(stats.resolve(q("range=7d&by=hour"), TODAY).by, "hour")
+        self.assertEqual(stats.resolve(q("range=7d&by=day"), TODAY).by, "day")
+        # too many hours to chart: falls back to the automatic grouping
+        p = stats.resolve(q("range=28d&by=hour"), TODAY)
+        self.assertEqual((p.by, p.by_choice), ("day", ""))
+        p = stats.resolve(q("range=yesterday&cmp=prev"), TODAY)
+        self.assertEqual((p.cmp_start, p.cmp_end), (date(2026, 11, 20),) * 2)
+
     def test_compare_periods(self):
         p = stats.resolve(q("range=7d&cmp=prev"), TODAY)
         self.assertEqual((p.cmp_start, p.cmp_end), (date(2026, 11, 9), date(2026, 11, 15)))
@@ -84,8 +96,8 @@ class CountingTests(WSTestCase):
         self.date(self.b, date(2026, 11, 20), hour=23)
         self.date(self.c, date(2026, 11, 2))    # Monday, two weeks before
 
-    def date(self, summary, d, hour=10):
-        Student.objects.filter(wikischolar_id=summary["wikischolar_id"]).update(created_at=at(d, hour))
+    def date(self, summary, d, hour=10, minute=0):
+        Student.objects.filter(wikischolar_id=summary["wikischolar_id"]).update(created_at=at(d, hour, minute))
 
     def test_timeseries_fills_empty_buckets(self):
         qs = stats.filtered(stats.resolve(q(), TODAY))
@@ -97,6 +109,38 @@ class CountingTests(WSTestCase):
                                  (date(2026, 11, 16), 2)])
         months = stats.timeseries(qs, date(2026, 10, 1), TODAY, "month")
         self.assertEqual(months, [(date(2026, 10, 1), 0), (date(2026, 11, 1), 3)])
+
+    def test_hourly_timeseries_in_bangladesh_time(self):
+        # 00:30 on the 21st in Dhaka is 18:30 UTC on the 20th: it belongs to the 21st, hour 0
+        late = self.register("d@gmail.com", phone="01712345671")
+        self.date(late, date(2026, 11, 21), hour=0, minute=30)
+        qs = stats.filtered(stats.resolve(q(), TODAY))
+        day = stats.timeseries(qs, date(2026, 11, 20), date(2026, 11, 20), "hour")
+        self.assertEqual(len(day), 24)
+        self.assertEqual(day[0][0], datetime(2026, 11, 20, 0, 0))
+        self.assertEqual({b.hour: n for b, n in day if n}, {10: 1, 23: 1})
+        next_day = stats.timeseries(qs, date(2026, 11, 21), date(2026, 11, 21), "hour")
+        self.assertEqual({b.hour: n for b, n in next_day if n}, {0: 1})
+        # today stops at the current hour
+        partial = stats.timeseries(qs, date(2026, 11, 20), date(2026, 11, 20), "hour",
+                                   until=datetime(2026, 11, 20, 11, 15))
+        self.assertEqual([b.hour for b, _ in partial], list(range(12)))
+        self.assertEqual(stats.busiest(day), (datetime(2026, 11, 20, 10, 0), 1))
+        self.assertEqual(stats.bucket_label(datetime(2026, 11, 20, 23, 0), "hour"), "20 Nov, 23:00–00:00")
+        self.assertEqual(stats.bucket_label(datetime(2026, 11, 20, 9, 0), "hour", short=True), "09:00")
+
+    def test_hourly_tiles(self):
+        p = stats.resolve(q("from=20/11/2026&to=20/11/2026&cmp=prev"), TODAY)
+        base = stats.filtered(p)
+        hours = stats.timeseries(base, p.start, p.end, "hour")
+        prev_hours = stats.timeseries(base, p.cmp_start, p.cmp_end, "hour")
+        tiles = stats.kpi_tiles(stats.kpis(base, p.start, p.end), stats.kpis(base, p.cmp_start, p.cmp_end),
+                                hours, prev_hours)
+        by_label = {t["label"]: t for t in tiles}
+        self.assertEqual(by_label["busiest hour"]["value"], "1")
+        self.assertEqual(by_label["busiest hour"]["note"], "10:00–11:00")
+        self.assertEqual(by_label["an hour on average"]["value"], f"{2 / 24:.1f}")
+        self.assertEqual(by_label["busiest hour"]["change"], {"text": "new", "dir": "new"})
 
     def test_local_day_boundary(self):
         # 23:00 Dhaka time on the 20th is still the 20th
@@ -162,6 +206,19 @@ class PageTests(WSTestCase):
         r = self.client.get("/dashboard/stats/?range=this_year&cmp=custom&cmp_from=01/01/2025&cmp_to=31/12/2025")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Registrations over time")
+
+    def test_hourly_page_with_compare(self):
+        self.register()
+        self.client.force_login(self.viewer)
+        r = self.client.get("/dashboard/stats/?range=yesterday&cmp=prev")
+        self.assertEqual(r.context["p"].by, "hour")
+        self.assertEqual(len(r.context["over_time"]), 24)
+        self.assertContains(r, "busiest hour")
+        self.assertContains(r, "UTC+6")
+        r = self.client.get("/dashboard/stats/?range=today&cmp=prev")
+        self.assertEqual(len(r.context["over_time"]), 24)  # the compare day is always whole
+        r = self.client.get("/dashboard/stats/?range=90d")
+        self.assertNotIn("hour", [g["key"] for g in r.context["group_links"]])
 
     def test_organiser_gets_no_student_links(self):
         self.register()

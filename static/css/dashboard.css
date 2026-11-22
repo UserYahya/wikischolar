@@ -374,6 +374,7 @@ td.nowrap { white-space: nowrap; }
   .stat-filter-body { grid-template-columns: 1fr; }
   .chart { padding-left: 2.25rem; }
   .chart .plot { height: 180px; }
+  .chart .xtick.alt { display: none; }  /* every other date/hour label, so they don't overlap */
   .chart .ytick { left: -2.25rem; width: 1.95rem; }
   .stat-bars th { width: 36%; max-width: none; white-space: normal; overflow-wrap: break-word; }
   .stat-bars td.share { display: none; }

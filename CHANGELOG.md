@@ -20,7 +20,11 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
     can open it. School names are never shown.
   - Charts are SVG drawn on the server: no new libraries, and they work without JavaScript. The Overview links
     to the new page.
-  - 19 new tests (310 in total).
+  - **Hour by hour:** a single day (Today, Yesterday or one custom date) is charted per hour, in Bangladesh time
+    (UTC+6), to show when in the day people register. Today's line stops at the current hour. The compare
+    options work here too: the previous day, the same day last year, or any other day. The headline tiles then
+    show the busiest hour and an hourly average. "Hour" can also be picked for ranges of up to 7 days.
+  - 23 new tests (314 in total).
 
 ## 2026-11-05
 

@@ -21,7 +21,8 @@ def stats_page(request):
     """Registration statistics for any date range, optionally compared with another period, and
     narrowed by region, district and class. Counts only, so an Organiser can use it too; links into
     the student list are shown only to roles that can open it."""
-    today = timezone.localdate()
+    now = timezone.localtime(timezone=stats.DHAKA)
+    today = now.date()
     p = stats.resolve(request.GET, today, stats.first_registration_day())
     base = stats.filtered(p)
     cur_qs = stats.in_period(base, p.start, p.end)
@@ -30,14 +31,16 @@ def stats_page(request):
     cur_k = stats.kpis(base, p.start, p.end)
     prev_k = stats.kpis(base, p.cmp_start, p.cmp_end) if p.comparing else None
 
-    series = stats.timeseries(base, p.start, p.end, p.by)
+    hourly = p.by == "hour"
+    # Today's hours stop at the current hour; the compare period always shows its whole days.
+    series = stats.timeseries(base, p.start, p.end, p.by, until=now.replace(tzinfo=None))
     prev_series = stats.timeseries(base, p.cmp_start, p.cmp_end, p.by) if p.comparing else None
-    if prev_series and p.cmp in ("prev", "year"):
+    if prev_series and p.cmp in ("prev", "year") and not hourly:
         # Same length as the period, but the weeks/months can fall differently and leave the compare
         # period one extra, nearly empty bucket at the end; drop it so the lines end together.
         prev_series = prev_series[:len(series)]
     label = partial(stats.bucket_label, by=p.by)
-    short = partial(stats.bucket_label, by=p.by, short=True)
+    short = partial(stats.bucket_label, by=p.by, short=True, one_day=p.days == 1)
 
     can_students = request.user.has_perm_code("students.view")
     link = stats.student_link_maker(p) if can_students else (lambda **kw: None)
@@ -55,6 +58,8 @@ def stats_page(request):
     query = request.GET.copy()
     group_links = []
     for key, text in stats.GROUPINGS.items():
+        if key == "hour" and p.days > stats.MAX_HOURLY_DAYS:
+            continue
         query["by"] = key
         group_links.append({"key": key, "text": text, "qs": query.urlencode(), "on": key == p.by_choice})
 
@@ -71,7 +76,8 @@ def stats_page(request):
         "open_regions": {str(r) for r in District.objects.filter(pk__in=p.districts).values_list("region_id", flat=True)},
         "classes": CLASS_CHOICES,
         "filter_count": len(p.regions) + len(p.districts) + len(p.classes),
-        "tiles": stats.kpi_tiles(cur_k, prev_k),
+        "tiles": stats.kpi_tiles(cur_k, prev_k, *((series, prev_series) if hourly else ())),
+        "hourly": hourly,
         "total": cur_k["total"], "prev_total": prev_k["total"] if prev_k else None,
         "heard": cur_k["heard"],
         "line": charts.line_chart(series, prev_series, label, short),
