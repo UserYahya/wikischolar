@@ -5,13 +5,13 @@
    checks every field, operator and value again (apps/dashboard/advanced.py). */
 (function () {
   "use strict";
-  const root = document.getElementById("advBuilder");
-  const input = document.getElementById("advInput");
+  const root = document.getElementById("qbBuilder");
+  const input = document.getElementById("qbInput");
   if (!root || !input) return;
-  const meta = JSON.parse(document.getElementById("advMeta").textContent);
+  const meta = JSON.parse(document.getElementById("qbMeta").textContent);
   const fields = Object.fromEntries(meta.fields.map((f) => [f.key, f]));
   const form = document.getElementById(input.getAttribute("form"));
-  let query = JSON.parse(document.getElementById("advQuery").textContent || "{}");
+  let query = JSON.parse(document.getElementById("qbQuery").textContent || "{}");
   if (!query || !Array.isArray(query.groups) || !query.groups.length) {
     query = { match: "all", groups: [newGroup()] };
   }
@@ -43,7 +43,7 @@
   }
 
   function fieldSelect(c) {
-    const s = el("select", { "aria-label": "Field", class: "adv-field" });
+    const s = el("select", { "aria-label": "Field", class: "qb-field" });
     let group = null;
     meta.fields.forEach((f) => {
       if (!group || group.label !== f.group) { group = el("optgroup", { label: f.group }); s.append(group); }
@@ -59,7 +59,7 @@
   }
 
   function opSelect(c, f) {
-    const s = el("select", { "aria-label": "Condition", class: "adv-op" },
+    const s = el("select", { "aria-label": "Condition", class: "qb-op" },
       f.ops.map((o) => el("option", { value: o.key }, o.label)));
     s.value = c.op;
     s.addEventListener("change", () => {
@@ -73,13 +73,13 @@
 
   function valueInput(f, value, set, label) {
     const attrs = { "aria-label": label, value: value ?? "", oninput: (e) => set(e.target.value) };
-    if (f.type === "number") return el("input", { ...attrs, type: "number", inputmode: "numeric", class: "adv-num" });
+    if (f.type === "number") return el("input", { ...attrs, type: "number", inputmode: "numeric", class: "qb-num" });
     if (f.type === "date") {
-      const i = el("input", { ...attrs, type: "text", placeholder: "dd/mm/yyyy", "data-datefield": true, class: "adv-date" });
+      const i = el("input", { ...attrs, type: "text", placeholder: "dd/mm/yyyy", "data-datefield": true, class: "qb-date" });
       i.addEventListener("change", (e) => set(e.target.value));
       return i;
     }
-    return el("input", { ...attrs, type: "text", maxlength: 200, class: "adv-text" });
+    return el("input", { ...attrs, type: "text", maxlength: 200, class: "qb-text" });
   }
 
   function valueWidget(c, f) {
@@ -87,7 +87,7 @@
     if (op.takes === "none") return [];
     if (op.takes === "list") {
       const chosen = new Set((Array.isArray(c.value) ? c.value : []).map(String));
-      const s = el("select", { multiple: true, "aria-label": `${f.label}: choose one or more`, class: "adv-list",
+      const s = el("select", { multiple: true, "aria-label": `${f.label}: choose one or more`, class: "qb-list",
         size: Math.min(6, Math.max(3, f.choices.length)) },
         f.choices.map(([v, l]) => el("option", { value: v, selected: chosen.has(String(v)) }, l || "(blank)")));
       s.addEventListener("change", () => { c.value = [...s.selectedOptions].map((o) => o.value); });
@@ -105,17 +105,17 @@
   function render() {
     root.replaceChildren();
     if (query.groups.length > 1) {
-      root.append(el("p", { class: "adv-top" }, "Match ",
+      root.append(el("p", { class: "qb-top" }, "Match ",
         matchSelect(query.match, (v) => { query.match = v; }, "Combine the groups with"), " of these groups:"));
     }
     query.groups.forEach((g, gi) => {
-      const box = el("fieldset", { class: "adv-group" },
+      const box = el("fieldset", { class: "qb-group" },
         el("legend", {}, `Group ${gi + 1}`),
-        el("p", { class: "adv-match" }, "Match ", matchSelect(g.match, (v) => { g.match = v; }, `Group ${gi + 1} matches`),
+        el("p", { class: "qb-match" }, "Match ", matchSelect(g.match, (v) => { g.match = v; }, `Group ${gi + 1} matches`),
           " of these conditions:"));
       g.conditions.forEach((c, ci) => {
         const f = fields[c.field] || meta.fields[0];
-        box.append(el("div", { class: "adv-cond" }, fieldSelect(c), opSelect(c, f), valueWidget(c, f),
+        box.append(el("div", { class: "qb-cond" }, fieldSelect(c), opSelect(c, f), valueWidget(c, f),
           el("button", { type: "button", class: "btn small", "aria-label": "Remove this condition",
             onclick: () => { g.conditions.splice(ci, 1); if (!g.conditions.length) query.groups.splice(gi, 1);
               if (!query.groups.length) query.groups.push(newGroup()); render(); } }, "×")));
@@ -147,21 +147,21 @@
     input.value = groups.length ? JSON.stringify({ match: query.match, groups }) : "";
   }
 
-  document.getElementById("advAddGroup")?.addEventListener("click", () => { query.groups.push(newGroup()); render(); });
-  document.getElementById("advRun")?.addEventListener("click", () => {
+  document.getElementById("qbAddGroup")?.addEventListener("click", () => { query.groups.push(newGroup()); render(); });
+  document.getElementById("qbRun")?.addEventListener("click", () => {
     serialize();
     if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
   });
   if (form) form.addEventListener("submit", serialize);
   // Saving copies the conditions currently in the builder (even before "Search" is pressed).
-  document.querySelectorAll("form.adv-save-form").forEach((f) => f.addEventListener("submit", (e) => {
+  document.querySelectorAll("form.qb-save-form").forEach((f) => f.addEventListener("submit", (e) => {
     serialize();
     if (!input.value) { e.preventDefault(); alertBox("Add at least one complete condition first."); return; }
     f.querySelector('input[name="adv"]').value = input.value;
   }));
   function alertBox(text) {
-    let p = document.getElementById("advMsg");
-    if (!p) { p = el("p", { id: "advMsg", class: "notice", role: "alert" }); root.before(p); }
+    let p = document.getElementById("qbMsg");
+    if (!p) { p = el("p", { id: "qbMsg", class: "notice", role: "alert" }); root.before(p); }
     p.textContent = text;
   }
   window.WSAdvanced = { serialize, get query() { return query; } };  // saved searches read the current query
