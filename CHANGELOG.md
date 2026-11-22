@@ -44,6 +44,14 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   saved searches work as before.
   - A new test fails if a CSS class or id in the CSS, JS or templates starts with `adv` or is an ad-like word
     (`ad`, `ads`, `banner`, `sponsor`, …), so it can't happen again. 3 new tests.
+- **Registration form: browser autofill turned off.**
+  - "Student's full name" was marked as the device owner's own name, so the browser put the guardian's saved
+    name there.
+  - On shared phones and tablets, browsers offered earlier students' names, rolls, schools, phones and emails.
+  - Now the form and every field have `autocomplete="off"`, and the inputs tell password managers (1Password,
+    LastPass, Dashlane) to stay out. Only the 6-digit email code keeps `one-time-code`, so a phone can still
+    fill it from the message that just arrived.
+  - No field names, ids or API changes. 1 new test.
 
 ## 2026-11-18
 

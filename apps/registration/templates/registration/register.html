@@ -33,7 +33,7 @@
       <span class="bn" lang="bn">কোনো প্রশ্ন থাকলে এই ঠিকানায় যোগাযোগ করুন</span></p>
   </nav>
 
-  <form class="sheet" id="regForm" novalidate autocomplete="on" lang="en">
+  <form class="sheet" id="regForm" novalidate autocomplete="off" lang="en">
     {% csrf_token %}
     <div class="hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
 
@@ -57,7 +57,7 @@
       <div class="grid">
         <div class="field span2">
           <label for="student_name">Student's full name <span class="bn" lang="bn">শিক্ষার্থীর পুরো নাম</span></label>
-          <input id="student_name" name="student_name" required maxlength="150" autocomplete="name" data-english placeholder="e.g. Rahim Uddin">
+          <input id="student_name" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="student_name" required maxlength="150" data-english placeholder="e.g. Rahim Uddin">
           <p class="err" data-err="student_name"></p>
         </div>
         <fieldset class="field span2">
@@ -69,7 +69,7 @@
         </fieldset>
         <div class="field span2">
           <label for="guardian_name">Guardian's name (your name) <span class="bn" lang="bn">অভিভাবকের নাম (আপনার নাম)</span></label>
-          <input id="guardian_name" name="guardian_name" required maxlength="150" data-english>
+          <input id="guardian_name" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="guardian_name" required maxlength="150" data-english>
           <p class="err" data-err="guardian_name"></p>
         </div>
         <fieldset class="field span2">
@@ -81,7 +81,7 @@
         </fieldset>
         <div class="field" id="relationOtherField" hidden>
           <label for="guardian_relation_other">Write the relation <span class="bn" lang="bn">সম্পর্কটি লিখুন</span></label>
-          <input id="guardian_relation_other" name="guardian_relation_other" maxlength="60" data-english placeholder="e.g. Uncle, Aunt">
+          <input id="guardian_relation_other" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="guardian_relation_other" maxlength="60" data-english placeholder="e.g. Uncle, Aunt">
           <p class="err" data-err="guardian_relation_other"></p>
         </div>
       </div>
@@ -93,7 +93,7 @@
       <div class="grid">
         <div class="field">
           <label for="district">District <span class="bn" lang="bn">জেলা</span></label>
-          <select id="district" name="district" required translate="no" data-picker data-picker-search="Type to search · খুঁজতে লিখুন" data-picker-close="Close · বন্ধ করুন" data-picker-title="Choose district · জেলা বেছে নিন"
+          <select id="district" autocomplete="off" name="district" required translate="no" data-picker data-picker-search="Type to search · খুঁজতে লিখুন" data-picker-close="Close · বন্ধ করুন" data-picker-title="Choose district · জেলা বেছে নিন"
                   data-picker-empty="No district matches. Try the English or Bangla name. · কোনো জেলা মেলেনি। ইংরেজি বা বাংলা নাম লিখে দেখুন।"><option value="">Loading…</option></select>
           <p class="err" data-err="district"></p>
         </div>
@@ -103,7 +103,7 @@
         </div>
         <div class="field span2">
           <label for="thana">Thana / Upazila <span class="bn" lang="bn">থানা / উপজেলা</span></label>
-          <select id="thana" name="thana" required disabled aria-describedby="areaHelp" data-picker data-picker-search="Type to search · খুঁজতে লিখুন" data-picker-close="Close · বন্ধ করুন"
+          <select id="thana" autocomplete="off" name="thana" required disabled aria-describedby="areaHelp" data-picker data-picker-search="Type to search · খুঁজতে লিখুন" data-picker-close="Close · বন্ধ করুন"
                   data-picker-title="Choose thana / upazila · থানা / উপজেলা বেছে নিন" translate="no"
                   data-picker-empty="No match. Choose “Other thana (not listed)”. · কোনো থানা বা উপজেলা মেলেনি। “Other thana (not listed)” বেছে নিন।"><option value="">Choose a district first</option></select>
           <p class="hint" id="areaHelp">Not listed? Choose “Other thana (not listed)” at the end.
@@ -112,9 +112,9 @@
         </div>
         <div class="field span2 combo">
           <label for="school_name">School name <span class="bn" lang="bn">বিদ্যালয়ের নাম</span></label>
-          <input id="school_name" name="school_name" required maxlength="255" disabled data-english
+          <input id="school_name" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="school_name" required maxlength="255" disabled data-english
                  role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="schoolList"
-                 aria-describedby="schoolHelp" placeholder="Choose the thana / upazila first" autocomplete="off">
+                 aria-describedby="schoolHelp" placeholder="Choose the thana / upazila first">
           <input type="hidden" name="school_id" id="school_id">
           <ul id="schoolList" role="listbox" hidden translate="no"></ul>
           <p class="hint" id="schoolHint"></p>
@@ -124,7 +124,7 @@
         </div>
         <div class="field">
           <label for="current_class">Current class <span class="bn" lang="bn">বর্তমান শ্রেণি</span></label>
-          <select id="current_class" name="current_class" required>
+          <select id="current_class" autocomplete="off" name="current_class" required>
             <option value="">Choose · বেছে নিন</option>
             {% for v, l, bn in classes %}<option value="{{ v }}">{{ l }} · {{ bn }}</option>{% endfor %}
           </select>
@@ -133,20 +133,20 @@
         <div class="field">
           <label for="section">Section <span class="label-note">(if any)</span>
             <span class="bn" lang="bn">শাখা (যদি থাকে)</span></label>
-          <input id="section" name="section" maxlength="20" aria-describedby="sectionHelp" data-english placeholder="e.g. A">
+          <input id="section" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="section" maxlength="20" aria-describedby="sectionHelp" data-english placeholder="e.g. A">
           <p class="err" data-err="section"></p>
         </div>
         <p class="hint span2 grid-hint" id="sectionHelp">Write the section only if the class has sections (for example A, B, Day, Morning). Otherwise leave it empty.
           <span class="bn" lang="bn">শ্রেণিতে শাখা থাকলে তবেই শাখার নাম ইংরেজিতে লিখুন (যেমন A, B, Day, Morning)। না থাকলে ঘরটি খালি রাখুন।</span></p>
         <div class="field">
           <label for="class_roll">Class roll <span class="bn" lang="bn">রোল নম্বর</span></label>
-          <input id="class_roll" name="class_roll" inputmode="numeric" pattern="[0-9]*" maxlength="20" aria-describedby="rollHelp" data-digits placeholder="e.g. 12">
+          <input id="class_roll" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="class_roll" inputmode="numeric" pattern="[0-9]*" maxlength="20" aria-describedby="rollHelp" data-digits placeholder="e.g. 12">
           <p class="err" data-err="class_roll"></p>
         </div>
         <div class="field">
           <label for="student_id_sid">Student ID (SID) <span class="label-note">(if any)</span>
             <span class="bn" lang="bn">শিক্ষার্থী আইডি (যদি থাকে)</span></label>
-          <input id="student_id_sid" name="student_id_sid" maxlength="40" aria-describedby="rollHelp" data-english>
+          <input id="student_id_sid" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="student_id_sid" maxlength="40" aria-describedby="rollHelp" data-english>
           <p class="err" data-err="student_id_sid"></p>
         </div>
         <p class="hint span2 grid-hint" id="rollHelp">Fill in at least one of class roll and student ID. The class roll is numbers only. If the school hasn't given the student an ID, the class roll is enough.
@@ -160,12 +160,12 @@
       <div class="grid">
         <div class="field">
           <label for="phone">Mobile number <span class="bn" lang="bn">মোবাইল নম্বর</span></label>
-          <input id="phone" name="phone" type="tel" inputmode="tel" required placeholder="01XXXXXXXXX" autocomplete="tel">
+          <input id="phone" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="phone" type="tel" inputmode="tel" required placeholder="01XXXXXXXXX">
           <p class="err" data-err="phone"></p>
         </div>
         <div class="field">
           <label for="email">Email <span class="bn" lang="bn">ইমেইল</span></label>
-          <input id="email" name="email" type="email" required autocomplete="email" spellcheck="false" placeholder="name@gmail.com">
+          <input id="email" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="email" type="email" required spellcheck="false" placeholder="name@gmail.com">
           <p class="err" data-err="email"></p>
         </div>
         <div class="typo span2" id="typoBox" hidden role="alert">
@@ -206,7 +206,7 @@
       <h2>Consent &amp; submit <span class="bn" lang="bn">সম্মতি ও জমা</span></h2>
       <div class="field survey">
         <label for="heard_from">How did you hear about WikiScholar? <span class="bn" lang="bn">উইকিস্কলারের কথা আপনি কোথা থেকে জানলেন?</span></label>
-        <select id="heard_from" name="heard_from" required>
+        <select id="heard_from" autocomplete="off" name="heard_from" required>
           <option value="">Choose · বেছে নিন</option>
           {% for v, l, bn in heard_from %}<option value="{{ v }}">{{ l }} · {{ bn }}</option>{% endfor %}
         </select>

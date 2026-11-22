@@ -441,3 +441,30 @@ class AnalyticsTagTests(WSTestCase):
         html = self.client.get("/dashboard/login/").content.decode()
         self.assertNotIn("fbevents.js", html)
         self.assertNotIn("clarity.ms", html)
+
+
+class AutofillOffTests(WSTestCase):
+    """Browser autofill put the guardian's saved name into the student's name and offered earlier
+    students' details on shared devices, so the form turns it off everywhere (Nov 2026)."""
+
+    def test_every_field_has_autofill_off(self):
+        import re
+        page = self.client.get("/").content.decode()
+        form = re.search(r'<form[^>]*id="regForm"[^>]*>', page).group(0)
+        self.assertIn('autocomplete="off"', form)
+        fields = re.findall(r'<(?:input|select|textarea)\b[^>]*>', page[page.index(form):])
+        checked = 0
+        for tag in fields:
+            kind = (re.search(r'type="([^"]+)"', tag) or [None, "text"])[1]
+            if kind in ("hidden", "checkbox", "radio", "submit", "button"):
+                continue
+            name = re.search(r'name="([^"]+)"', tag)[1]
+            want = "one-time-code" if name == "email_otp" else "off"
+            self.assertIn(f'autocomplete="{want}"', tag, name)
+            if name not in ("email_otp", "website") and tag.startswith("<input"):
+                self.assertIn("data-1p-ignore", tag, name)
+                self.assertIn('data-lpignore="true"', tag, name)
+            checked += 1
+        self.assertGreaterEqual(checked, 14)
+        for token in ("name", "tel", "email", "on"):
+            self.assertNotIn(f'autocomplete="{token}"', page)
