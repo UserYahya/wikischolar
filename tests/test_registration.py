@@ -459,7 +459,8 @@ class AutofillOffTests(WSTestCase):
             if kind in ("hidden", "checkbox", "radio", "submit", "button"):
                 continue
             name = re.search(r'name="([^"]+)"', tag)[1]
-            want = "one-time-code" if name == "email_otp" else "off"
+            want = {"email_otp": "one-time-code", "student_name": "ws-student-name",
+                    "guardian_name": "ws-guardian-name"}.get(name, "off")
             self.assertIn(f'autocomplete="{want}"', tag, name)
             if name not in ("email_otp", "website") and tag.startswith("<input"):
                 self.assertIn("data-1p-ignore", tag, name)
@@ -482,3 +483,32 @@ class ContactLineTests(WSTestCase):
         self.assertEqual(page.count(f'href="mailto:{settings.WIKISCHOLAR["CONTACT_EMAIL"]}"'), 2)
         self.assertNotIn("Questions? Contact us", page)
 
+class GuardianNameMixupTests(WSTestCase):
+    """About 1 in 10 guardians typed their own name as the student's, with or without autofill
+    (Nov 2026), so the guardian's name is asked first and an identical student name is refused."""
+
+    def test_guardian_name_comes_before_student_name(self):
+        page = self.client.get("/").content.decode()
+        self.assertLess(page.index('id="guardian_name"'), page.index('id="student_name"'))
+        self.assertIn("not your own name", page)
+        self.assertIn('placeholder="এখানে আপনার নাম (অভিভাবক) ইংরেজিতে লিখুন"', page)
+        self.assertIn('placeholder="এখানে শিক্ষার্থীর নাম ইংরেজিতে লিখুন"', page)
+        self.assertNotIn("your child", page[:page.index('id="student_name"')][-600:])
+        self.assertIn('id="reviewList"', page)
+
+    def test_same_name_is_refused(self):
+        for student in ("Karim Uddin", "karim  uddin", "KARIM UDDIN.", "Karim-Uddin"):
+            vid = self.verify_email("rahim@gmail.com")
+            r = self.post_json("/api/registration/submit/", self.payload(vid, student_name=student))
+            self.assertEqual(r.status_code, 400, student)
+            self.assertIn("same as your name", r.json()["errors"]["student_name"][0])
+        self.assertFalse(Student.objects.exists())
+
+    def test_different_names_pass(self):
+        s = self.register(student_name="Rahim Uddin", guardian_name="Karim Uddin")
+        self.assertTrue(Student.objects.filter(wikischolar_id=s["wikischolar_id"]).exists())
+
+    def test_same_name_message_has_bangla(self):
+        from apps.registration import bangla
+        from apps.registration.forms import SAME_NAME_ERROR
+        self.assertIn(SAME_NAME_ERROR, bangla.MESSAGES)

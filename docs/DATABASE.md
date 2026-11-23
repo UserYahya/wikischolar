@@ -147,7 +147,7 @@ erDiagram
     notification_logs {
       bigint id PK
       text channel "email|sms"
-      text kind "otp|confirmation|bulk"
+      text kind "otp|confirmation|change|bulk"
       bigint email_batch_id FK
       bigint sms_batch_id FK
       bigint student_id FK
@@ -167,7 +167,7 @@ erDiagram
     }
     email_templates {
       bigint id PK
-      text key UK "registration.otp, registration.confirmation"
+      text key UK "registration.otp, registration.confirmation, registration.changed"
       text subject
       text body "with {placeholders}"
       bool is_customized "false = code default in use"
@@ -232,7 +232,7 @@ Redis; its rows are disposable).
 | | `edit_history` | One row per changed field; rows from one save share `change_set`. Append-only. |
 | Dashboard | `saved_searches` | Advanced searches saved by admins and shared with everyone who can see that list: `entity` (students / schools), `name` (unique per entity among live rows), `description`, `query` (JSON, re-checked whenever it runs), `created_by`, `updated_by`. Archived, never deleted. |
 | Notification | `email_batches`, `sms_batches` | One per bulk send, with an admin-chosen `name` (indexed, for search and the Students "Message history" filter); the filter used is stored as JSON. |
-| | `notification_logs` | One row per recipient per attempt (also OTP and confirmation emails, and the confirmation SMS). `status` queued → sent → delivered, or failed / bounced ("not delivered"); `provider_message_id` is what delivery webhooks match (our Message-ID for SMTP, Brevo's `messageId` for the Brevo API). Queued rows are claimed with `SELECT … FOR UPDATE SKIP LOCKED`, so parallel senders never send one twice. |
+| | `notification_logs` | One row per recipient per attempt (also OTP and confirmation emails, the confirmation SMS, and the change notice an admin can send after editing a student, `kind = 'change'`). `status` queued → sent → delivered, or failed / bounced ("not delivered"); `provider_message_id` is what delivery webhooks match (our Message-ID for SMTP, Brevo's `messageId` for the Brevo API). Queued rows are claimed with `SELECT … FOR UPDATE SKIP LOCKED`, so parallel senders never send one twice. |
 | | `email_templates` | Super Admin wording of system emails, one row per registered key. "Reset to default" sets `is_customized=false` (no delete); changes are audited with before/after text. |
 | | `email_settings`, `sms_settings` | One row each (pk 1): provider credentials entered by a Super Admin. Secrets are Fernet-encrypted and never audited; `is_active` decides whether they override the env settings. |
 

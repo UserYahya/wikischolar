@@ -111,6 +111,12 @@ input:disabled, select:disabled { background: #EEF1EE; color: var(--muted); curs
 .derived .bn { display: inline; margin: 0 0 0 .4rem; }
 .done dt .bn { font-size: .8em; }
 .survey { margin: 0 0 .5rem; }
+.review { margin: 0 0 1.25rem; padding: .9rem 1rem; background: var(--tint); border-left: 3px solid var(--green); border-radius: 6px; }
+.review-lead { margin: 0 0 .5rem; }
+.review dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.25rem; margin: 0 0 .5rem; }
+.review dt { color: var(--muted); }
+.review dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+@media (max-width: 820px) { .review dl { grid-template-columns: 1fr; gap: 0; } .review dd { margin-bottom: .4rem; } }
 .label-note { font-weight: 400; font-size: .85em; color: var(--muted); }
 .err { margin: .3rem 0 0; font-size: .88rem; color: var(--error); }
 .err:empty { display: none; }

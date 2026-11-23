@@ -19,6 +19,7 @@
 | Student batches (split a filtered list into groups of N) | **Built** (added later, 10.2) |
 | Email & SMS credentials managed from the dashboard | **Built** (added later, 10.3) |
 | Guardian declaration on the form; OTP/confirmation wording editable by a Super Admin | **Built** (added later, 10.1 / 10.3) |
+| Optional email to the student when an admin edits their record | **Built** (2026-11-23, 10.2) |
 | October 2026 form update: Bangla beside every English text, section, numbers-only roll, "how did you hear" survey, **date of birth removed**, HTML emails, grouped dashboard menu | **Built** (10.1 / 10.2) |
 | City-corporation thanas, cantonments and "Other area" in the upazila list ("Upazila / Area") | **Built** (10.1): no area of Bangladesh is left out |
 | Government district and thana lists (BANBEIS e-survey 2024): "Upazila / Area" becomes **"Thana"**, districts in the government's spelling | **Built** (10.1, 2026-10-12): replaces the city-corporation grouping above |
@@ -408,6 +409,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | Change | Why |
 |---|---|
 | **Organiser** role (statistics only): sees the Overview's counts and charts, nothing personal | event organisers need numbers, not registrants' data |
+| **Email the student about this change** on the student editor: an optional notice listing what changed (old → new) and the details as they are now, to the address as saved; logged as a *Change notice* and audited | students and guardians should know when their record is corrected |
 | **Student batches**: split the filtered list into batches of N (oldest first by default, so batches stay stable), each viewable / exportable / messageable; message batches record which student batch they went to | run activities in fixed-size groups |
 | Warning banners when email or SMS is **not really being delivered** (console backend) | a registration "sent" email that reached nobody |
 | **Named message batches**; Messages list search / channel / "undelivered" filter with per-status counts | track what was sent to whom |
@@ -427,7 +429,7 @@ Features and decisions added while building and testing the MVP. Each is live an
 | **Email providers** from the dashboard: Brevo SMTP relay, **Brevo HTTPS API** (port 443, for hosts that block SMTP), Google Mail/Workspace (App password), any SMTP, console | vendor chosen per installation; shared hosts often block SMTP |
 | **Reply-to** on every email (OTP, confirmation, bulk, test), default `info@wikischolar.bd` (`WS_REPLY_TO`), editable in Email settings | replies go to the programme's inbox |
 | **Brevo delivery webhook** (`/notifications/webhook/email/?token=…`): delivered / bounced per message | know which emails really arrived |
-| **System emails** page: a Super Admin edits the OTP and confirmation email subject/text with placeholders, preview, test send, reset to default | wording changes without a code release |
+| **System emails** page: a Super Admin edits the OTP, confirmation and "registration details changed" email subject/text with placeholders, preview, test send, reset to default | wording changes without a code release |
 | **MiM SMS** credentials (API username, API key, Sender ID), test SMS, balance check | SMS vendor decided |
 | Secrets stored **encrypted** (`WS_CREDENTIALS_KEY`), never shown again, never in the audit log | minors' data platform, least exposure |
 | Test email / test SMS before activating | avoid silently broken delivery |

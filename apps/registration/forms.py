@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 
 from apps.reference.models import District, Thana
@@ -6,6 +8,13 @@ from .choices import CLASS_CHOICES, Gender, GuardianRelation, HeardFrom
 from .validators import english_text, normalize_phone, roll_number, validate_phone
 
 ROLL_OR_SID_ERROR = "Fill in either the class roll or the student ID."
+SAME_NAME_ERROR = "The student's name is the same as your name. Write the student's own name here."
+
+
+def same_person_name(a, b):
+    """Names compared case-, space- and punctuation-blind. Must match normName in static/js/register.js."""
+    norm = lambda s: " ".join(re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).split())
+    return bool(norm(a)) and norm(a) == norm(b)
 REQUIRED = {"required": "This field is required."}
 
 
@@ -87,6 +96,14 @@ class RegistrationForm(StudentCoreFields):
     guardian_declaration = forms.BooleanField(error_messages={
         "required": "Tick the guardian declaration: the form must be filled in by the student's guardian."})
     website = forms.CharField(required=False)  # honeypot; real users never see it
+
+    def clean(self):
+        # Public form only: guardians often typed their own name as the student's (Nov 2026).
+        # Admin edits (StudentCoreFields) don't get this, so existing records stay editable.
+        data = super().clean()
+        if "student_name" not in self.errors and same_person_name(data.get("student_name"), data.get("guardian_name")):
+            self.add_error("student_name", SAME_NAME_ERROR)
+        return data
 
     def clean_school_name(self):
         return english_text(self.cleaned_data["school_name"])

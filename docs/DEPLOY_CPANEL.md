@@ -148,7 +148,7 @@ Dashboard → **Email & SMS settings**:
   Shared IP Address*) and your domain in sms.mimsms.com → Utility → Developer, or every SMS is
   rejected. Every registration sends a confirmation SMS (ID + contact address).
 
-* **Wording of the OTP and confirmation emails**: Dashboard → **System emails** (Super Admin).
+* **Wording of the OTP, confirmation and "details changed" emails**: Dashboard → **System emails** (Super Admin).
 
 ### Cloudflare Turnstile (optional bot protection)
 

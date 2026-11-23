@@ -13,6 +13,7 @@ from apps.registration.validators import normalize_phone, validate_phone
 class StudentEditForm(StudentCoreFields):
     school = forms.ModelChoiceField(queryset=School.objects.filter(merged_into__isnull=True))
     reason = forms.CharField(max_length=255, required=False, label="Reason for change")
+    notify_student = forms.BooleanField(required=False, label="Email the student about this change")
 
     def clean(self):
         data = super().clean()
