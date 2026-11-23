@@ -54,24 +54,28 @@
         </label>
         <p class="err" data-err="guardian_declaration"></p>
       </fieldset>
+      {# Guardian's own name comes first: the guardian has just ticked "I am the guardian", and when the #}
+      {# student's name was the first box about 1 in 10 typed their own name there (Nov 2026). #}
+      {# The autocomplete tokens are deliberately not standard ones, so Chrome won't put the profile name in. #}
       <div class="grid">
         <div class="field span2">
-          <label for="student_name">Student's full name <span class="bn" lang="bn">শিক্ষার্থীর পুরো নাম</span></label>
-          <input id="student_name" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="student_name" required maxlength="150" data-english placeholder="e.g. Rahim Uddin">
+          <label for="guardian_name">Your name (guardian) <span class="bn" lang="bn">আপনার নাম (অভিভাবক)</span></label>
+          <input id="guardian_name" autocomplete="ws-guardian-name" autocorrect="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" name="guardian_name" required maxlength="150" data-english>
+          <p class="err" data-err="guardian_name"></p>
+        </div>
+        <div class="field span2">
+          <label for="student_name">Student's full name (your child) <span class="label-note">— not your name</span>
+            <span class="bn" lang="bn">শিক্ষার্থীর (আপনার সন্তানের) পুরো নাম — আপনার নাম নয়</span></label>
+          <input id="student_name" autocomplete="ws-student-name" autocorrect="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" name="student_name" required maxlength="150" data-english placeholder="e.g. Rahim Uddin">
           <p class="err" data-err="student_name"></p>
         </div>
         <fieldset class="field span2">
-          <legend>Gender <span class="bn" lang="bn">লিঙ্গ</span></legend>
+          <legend>Student's gender <span class="bn" lang="bn">শিক্ষার্থীর লিঙ্গ</span></legend>
           <div class="choices">
             {% for v, l, bn in genders %}<label class="chip"><input type="radio" name="gender" value="{{ v }}" required><span>{{ l }} <span class="bn-inline" lang="bn">{{ bn }}</span></span></label>{% endfor %}
           </div>
           <p class="err" data-err="gender"></p>
         </fieldset>
-        <div class="field span2">
-          <label for="guardian_name">Guardian's name (your name) <span class="bn" lang="bn">অভিভাবকের নাম (আপনার নাম)</span></label>
-          <input id="guardian_name" autocomplete="off" data-1p-ignore data-lpignore="true" data-form-type="other" name="guardian_name" required maxlength="150" data-english>
-          <p class="err" data-err="guardian_name"></p>
-        </div>
         <fieldset class="field span2">
           <legend>Relation to guardian <span class="bn" lang="bn">অভিভাবকের সাথে সম্পর্ক</span></legend>
           <div class="choices">
@@ -204,6 +208,12 @@
     <!-- Step 4 -->
     <section class="step" data-step="4" hidden>
       <h2>Consent &amp; submit <span class="bn" lang="bn">সম্মতি ও জমা</span></h2>
+      <div class="review" id="review">
+        <p class="review-lead"><strong>Check the names before you submit.</strong> They go on the student's records and certificates.
+          <span class="bn" lang="bn">জমা দেওয়ার আগে নামগুলো মিলিয়ে নিন। এগুলো শিক্ষার্থীর রেকর্ড ও সনদে থাকবে।</span></p>
+        <dl id="reviewList" translate="no"></dl>
+        <button type="button" class="link" id="reviewEdit">Change these details <span class="bn-inline" lang="bn">তথ্য বদলান</span></button>
+      </div>
       <div class="field survey">
         <label for="heard_from">How did you hear about WikiScholar? <span class="bn" lang="bn">উইকিস্কলারের কথা আপনি কোথা থেকে জানলেন?</span></label>
         <select id="heard_from" autocomplete="off" name="heard_from" required>

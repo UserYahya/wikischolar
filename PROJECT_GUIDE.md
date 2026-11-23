@@ -90,6 +90,12 @@ Analytics) will plug into the same app.
   never fills in a saved name, phone or email, and on a shared phone or tablet it doesn't offer
   earlier students' details. Only the email code keeps `one-time-code`, so a phone can fill it from
   the message that just arrived. `tests/test_registration.py` (`AutofillOffTests`) keeps it that way.
+* **Guardian's name first.** Step 1 asks for the guardian's own name before the student's, because about 1 in
+  10 guardians typed their own name as the student's when the student's box came first. The two name boxes
+  use the tokens `autocomplete="ws-guardian-name"` and `"ws-student-name"`. A student name equal to the
+  guardian's name (ignoring case, spaces and punctuation) is refused in `register.js` (`normName`) and in
+  `RegistrationForm.clean` (`same_person_name` in `forms.py`); keep the two in step. Step 4 shows the names
+  again to check before submitting. Tests: `GuardianNameMixupTests`.
 * **Anti-abuse:** honeypot field, rate limits (OTP per email/IP, registrations per IP, logins),
   OTP stored only as an HMAC, 10-minute expiry, lockout after 5 wrong codes, and optionally
   **Cloudflare Turnstile** (`apps/core/turnstile.py`): when `WS_TURNSTILE_SITE_KEY` and
