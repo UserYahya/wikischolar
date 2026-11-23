@@ -525,6 +525,7 @@ The app reads real environment variables first, then a `.env` file next to `mana
 | `DB_DISABLE_SERVER_SIDE_CURSORS` | on when `DB_HOST` contains `pooler` | needed behind PgBouncer-style pooled connections |
 | `WS_ID_PREFIX` / `WS_ID_YEAR` | `WS` / `2027` | student ID format `WS-2027-000001` |
 | `WS_CONTACT_EMAIL`, `WS_POLICY_URL`, `WS_POLICY_VERSION` | `info@wikischolar.bd`, `https://wikischolar.bd/youth-policy`, `2026-01` | shown on the form / stored with consent |
+| `WS_INFO_URL` | `https://wikischolar.bd/wikischolar-2027/` | programme page with common answers; the form's "Have a question?" line (side column and success screen) links here before the contact email. Change it for a new programme year |
 | `WS_REPLY_TO` | `info@wikischolar.bd` | Reply-to of every email when Email settings has none |
 | `WS_SITE_URL` | `https://wikischolar.bd` | target of the form's "Back to …" link |
 | `WS_TURNSTILE_SITE_KEY` / `WS_TURNSTILE_SECRET_KEY` | *(empty: off)* | Cloudflare Turnstile on "Send verification code" and the dashboard sign-in; both needed. Cloudflare's always-pass test keys `1x00000000000000000000AA` / `1x0000000000000000000000000000000AA` work on localhost |

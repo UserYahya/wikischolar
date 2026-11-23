@@ -3,6 +3,17 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-11-23
+
+### Changed
+- **Registration form: "Have a question?" points to the WikiScholar 2027 page first.**
+  - Families were emailing questions that the programme page already answers. The line under the form and on
+    the success screen now reads "Have a question? Most answers are on the WikiScholar 2027 page. Still need
+    help? Email info@wikischolar.bd", with a Bangla line.
+  - The link is the new setting `WS_INFO_URL` (default `https://wikischolar.bd/wikischolar-2027/`), so a new
+    programme year only needs a `.env` change. The confirmation email and the SMS are unchanged.
+  - 1 new test.
+
 ## 2026-11-22
 
 ### Added

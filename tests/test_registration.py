@@ -468,3 +468,17 @@ class AutofillOffTests(WSTestCase):
         self.assertGreaterEqual(checked, 14)
         for token in ("name", "tel", "email", "on"):
             self.assertNotIn(f'autocomplete="{token}"', page)
+
+
+class ContactLineTests(WSTestCase):
+    """Families emailed questions the programme page already answers (Nov 2026), so the contact
+    line links to that page before giving the email address."""
+
+    def test_contact_line_links_info_page_then_email(self):
+        page = self.client.get("/").content.decode()
+        url = settings.WIKISCHOLAR["INFO_URL"]
+        self.assertEqual(url, "https://wikischolar.bd/wikischolar-2027/")
+        self.assertEqual(page.count(f'<a href="{url}" target="_blank" rel="noopener">WikiScholar 2027 page</a>'), 2)
+        self.assertEqual(page.count(f'href="mailto:{settings.WIKISCHOLAR["CONTACT_EMAIL"]}"'), 2)
+        self.assertNotIn("Questions? Contact us", page)
+
