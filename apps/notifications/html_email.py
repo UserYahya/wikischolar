@@ -102,3 +102,16 @@ def details_table(rows):
         for k, v in rows)
     return ('<table role="presentation" cellpadding="0" cellspacing="0" '
             f'style="width:100%;border-collapse:collapse;font-size:15px;">{cells}</table>')
+
+
+def changes_table(rows):
+    """rows: [(label, old, new), ...] -> like details_table, with the old value in small grey type under the
+    new one (stacked rather than a third column, so long school names still fit on a phone)."""
+    cells = "".join(
+        '<tr><td style="padding:7px 14px 7px 0;color:#56635C;white-space:nowrap;vertical-align:top;'
+        f'border-bottom:1px solid #E8ECE9;">{escape(label)}</td>'
+        f'<td style="padding:7px 0;border-bottom:1px solid #E8ECE9;"><strong>{escape(new)}</strong><br>'
+        f'<span style="color:#7A8780;font-size:13px;">was: {escape(old)}</span></td></tr>'
+        for label, old, new in rows)
+    return ('<table role="presentation" cellpadding="0" cellspacing="0" '
+            f'style="width:100%;border-collapse:collapse;font-size:15px;">{cells}</table>')

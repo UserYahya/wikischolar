@@ -116,9 +116,13 @@ The form starts with a **required** guardian declaration (Youth Safety Policy): 
 of the student named below and I am filling in this form on their behalf". It is stored per student (`filled_by`,
 `guardian_declared_at`), shown on the dashboard, filterable and exported.
 
-A Super Admin can change the wording of the **OTP email** and the **registration confirmation** on
-**Dashboard → System emails** (placeholders such as `{code}`, `{student_name}`, `{wikischolar_id}`,
-`{details}`; preview, test send, reset to default).
+A Super Admin can change the wording of the **OTP email**, the **registration confirmation** and the
+**registration details changed** notice on **Dashboard → System emails** (placeholders such as `{code}`,
+`{student_name}`, `{wikischolar_id}`, `{details}`, `{changes}`; preview, test send, reset to default).
+
+When an admin edits a student, ticking **Email the student about this change** (above *Save changes*)
+sends that notice to the student's email address as saved: what changed, old and new, then all their
+details. The reason for the change stays internal.
 
 ## Student IDs
 
@@ -152,7 +156,7 @@ record which student batch they were sent to.
 DJANGO_DEBUG=1 python manage.py test tests
 ```
 
-291 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
+337 tests, run against real PostgreSQL (the integrity rules live in the database, so SQLite
 would not exercise them). They cover: the full register flow over HTTP; WS ID sequencing;
 roll-or-SID, phone, thana-in-district and consent rules; honeypot; OTP typo warning,
 hashing, lockout and rate limits; school resolution (exact / abbreviation / alias / new

@@ -7,6 +7,7 @@ from apps.notifications import services as notify
 
 OTP = "registration.otp"
 CONFIRMATION = "registration.confirmation"
+CHANGED = "registration.changed"
 
 # Exam announcements are sent by email, so the confirmation asks students to keep checking it.
 # (Migration 0010 adds the same line to a customised confirmation saved before it existed.)
@@ -59,6 +60,22 @@ def details_block(s):
     return "\n".join(f"{label}: {value}" for label, value in details_rows(s))
 
 
+# The change notice uses the student placeholders too, plus {changes}.
+_CHANGE_PLACEHOLDERS = {
+    **_STUDENT_PLACEHOLDERS,
+    "wikischolar_id": "the student's WikiScholar ID, e.g. WS-2027-000001",
+    "details": "all registration details after the change, one per line; a table in the HTML email",
+    "changes": "what changed, one per line, e.g. \"Class: Class 8 (was: Class 7)\"; a table in the HTML email",
+}
+
+_SAMPLE_CHANGES = [("Class", "Class 7", "Class 8"), ("Section", "not given", "B")]
+
+
+def changes_block(rows):
+    """[(label, old, new), ...] as plain-text lines (the table in the HTML email)."""
+    return "\n".join(f"{label}: {new} (was: {old})" for label, old, new in rows)
+
+
 def confirmation_values(s):
     """Placeholder values for the confirmation email, from registration.services.summary()."""
     keys = set(_STUDENT_PLACEHOLDERS) - {"details", "contact_email"}
@@ -69,12 +86,24 @@ def confirmation_values(s):
     return values
 
 
+def change_values(s, rows):
+    """Placeholder values for the change notice: the confirmation's values plus the changes."""
+    values = confirmation_values(s)
+    values.update(changes=changes_block(rows), _changes=rows)
+    return values
+
+
 def _otp_html(values):
     return {"code": html_email.code_box(values.get("code", ""))}
 
 
 def _confirmation_html(values):
     return {"wikischolar_id": html_email.highlight(values.get("wikischolar_id", "")),
+            "details": html_email.details_table(values.get("_rows", []))}
+
+
+def _change_html(values):
+    return {"changes": html_email.changes_table(values.get("_changes", [])),
             "details": html_email.details_table(values.get("_rows", []))}
 
 
@@ -108,4 +137,22 @@ def register():
         required=("wikischolar_id",),
         sample=confirmation_values(_SAMPLE_SUMMARY),
         html_values=_confirmation_html,
+    ))
+    notify.register_system_email(notify.SystemEmail(
+        key=CHANGED,
+        label="Registration details changed",
+        description="Sent when an admin edits a student on the dashboard and ticks “Email the student about this "
+                    "change”. Goes to the student's email address as saved (the new one, if it was changed).",
+        subject="Your WikiScholar details were updated: {wikischolar_id}",
+        body=("Dear {student_name},\n\n"
+              "We have updated your WikiScholar registration (WikiScholar ID: {wikischolar_id}).\n\n"
+              "What changed:\n\n"
+              "{changes}\n\n"
+              "Your registration details now:\n\n"
+              "{details}\n\n"
+              "If anything here is wrong, please reply to this email or contact us: {contact_email}\n"),
+        placeholders=_CHANGE_PLACEHOLDERS,
+        required=("changes",),
+        sample=change_values(_SAMPLE_SUMMARY, _SAMPLE_CHANGES),
+        html_values=_change_html,
     ))

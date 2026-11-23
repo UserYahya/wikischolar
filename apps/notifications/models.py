@@ -69,6 +69,7 @@ class NotificationLog(models.Model):
     class Kind(models.TextChoices):
         OTP = "otp", "Email verification code"
         CONFIRMATION = "confirmation", "Registration confirmation"
+        CHANGE = "change", "Change notice"  # an admin changed the record and chose to tell the student
         BULK = "bulk", "Bulk message"
 
     class Status(models.TextChoices):
