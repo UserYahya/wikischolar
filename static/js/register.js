@@ -38,6 +38,7 @@
     rollOrSid: "Fill in either the class roll or the student ID.",
     relationOther: "Write the student's relation to the guardian.",
     declaration: "Tick the guardian declaration: the form must be filled in by the student's guardian.",
+    sameName: "The student's name is the same as your name. Write the student's own name here.",
     verify: "Verify your email address to continue.",
     consent: "Agree to the Youth Safety Policy to complete registration.",
     network: "Couldn't reach the server. Check your internet connection and try again.",
@@ -46,7 +47,7 @@
     schoolMinChars: "Type at least 3 letters to see suggestions.",
   };
   const STEP_FIELDS = {
-    1: ["guardian_declaration", "student_name", "gender", "guardian_name", "guardian_relation",
+    1: ["guardian_declaration", "guardian_name", "student_name", "gender", "guardian_relation",
         "guardian_relation_other"],
     2: ["district", "thana", "school_name", "current_class", "class_roll", "student_id_sid", "section"],
     3: ["phone", "email", "email_otp"],
@@ -127,6 +128,7 @@
     syncMeter(n);
     $("#back").hidden = n === 1;
     if (n === 3) renderTurnstile();
+    if (n === 4) renderReview();
     syncNext();
     $("#submit").hidden = n !== 4;
     updateSubmit();
@@ -169,6 +171,10 @@
       if (el && el.value && !ENGLISH.test(en(el.value))) fail(name, MSG.english);
     });
     if (n === 1 && !val("guardian_declaration")) fail("guardian_declaration", MSG.declaration);
+    // Guardians often typed their own name as the student's (Nov 2026). Must match forms.py (same_person_name).
+    if (n === 1 && val("student_name") && normName(val("student_name")) === normName(val("guardian_name"))) {
+      fail("student_name", MSG.sameName);
+    }
     if (n === 2 && val("class_roll") && !/^\d+$/.test(en(val("class_roll")))) fail("class_roll", MSG.roll);
     if (n === 2 && !val("class_roll") && !val("student_id_sid")) {
       fail("class_roll", MSG.rollOrSid); fail("student_id_sid", MSG.rollOrSid);
@@ -220,6 +226,24 @@
     li.addEventListener("click", go);
     li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
   });
+
+  // Names compared case-, space- and punctuation-blind ("Md. Karim" = "md karim").
+  const normName = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+  // ---------- step 4: names to check before submitting ----------
+  function renderReview() {
+    const relation = val("guardian_relation") === "other" ? val("guardian_relation_other")
+      : ($(`[name="guardian_relation"]:checked`)?.nextElementSibling?.firstChild?.textContent || "").trim();
+    const cls = $("#current_class");
+    const rows = [
+      ["Student's name", val("student_name")],
+      ["Guardian's name", val("guardian_name") + (relation ? ` (${relation})` : "")],
+      ["School", val("school_name")],
+      ["Class", cls.value ? cls.options[cls.selectedIndex].text.split(" · ")[0] : ""],
+    ];
+    $("#reviewList").innerHTML = rows.map(([k, v]) => `<dt>${bi(k)}</dt><dd>${esc(v || "—")}</dd>`).join("");
+  }
+  $("#reviewEdit").addEventListener("click", () => showStep(1));
 
   // ---------- English only ----------
   // Bangla digits become 0-9 as you type; any other non-English character is flagged at once.

@@ -52,6 +52,22 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
     LastPass, Dashlane) to stay out. Only the 6-digit email code keeps `one-time-code`, so a phone can still
     fill it from the message that just arrived.
   - No field names, ids or API changes. 1 new test.
+- **Registration form: guardian's name asked first, same name refused.**
+  - Turning off autofill didn't help. In the 172 registrations after it went live, the student's name was still
+    exactly the guardian's name in 9.9% of them, against 9.4% the week before. The cause was the layout: the
+    guardian ticks "I am the guardian", and the very next box was "Student's full name".
+  - Step 1 now asks "Your name (guardian)" first, then "Student's full name — not your own name"
+    (also in Bangla), then the student's gender and the relation.
+    The two name boxes have Bangla placeholders ("এখানে আপনার নাম (অভিভাবক) ইংরেজিতে লিখুন",
+    "এখানে শিক্ষার্থীর নাম ইংরেজিতে লিখুন").
+  - If the student's name is the same as the guardian's name (ignoring case, spaces and punctuation), step 1
+    won't continue, and the server refuses it too, with an English and Bangla message. This applies only to the
+    public form; admin edits are not affected.
+  - Step 4 shows the student's name, the guardian's name, the school and the class to check before submitting,
+    with a link back to change them.
+  - The two name boxes use non-standard `autocomplete` tokens (`ws-student-name`, `ws-guardian-name`), which
+    Chrome on Android doesn't map to the owner's saved name the way it sometimes did with `off`.
+  - No field name or API changes. 4 new tests.
 
 ## 2026-11-18
 

@@ -29,6 +29,8 @@ MESSAGES = {
     "Fill in either the class roll or the student ID.": "রোল নম্বর অথবা শিক্ষার্থী আইডি, অন্তত একটি লিখুন।",
     "Write the class roll in numbers only (for example 12).": "রোল নম্বর শুধু সংখ্যায় লিখুন (যেমন 12)।",
     "Write the student's relation to the guardian.": "অভিভাবকের সাথে শিক্ষার্থীর সম্পর্ক লিখুন।",
+    "The student's name is the same as your name. Write the student's own name here.":
+        "শিক্ষার্থীর নাম আর আপনার নাম একই হয়েছে। এখানে শিক্ষার্থীর নিজের নাম লিখুন।",
     "Choose a thana / upazila in the selected district.": "বেছে নেওয়া জেলার মধ্যে একটি থানা / উপজেলা বেছে নিন।",
     "Choose how you heard about WikiScholar.": "উইকিস্কলারের কথা কোথা থেকে জেনেছেন, তা বেছে নিন।",
     "Tick the guardian declaration: the form must be filled in by the student's guardian.":
@@ -79,6 +81,7 @@ MESSAGES = {
     "Go back to this step": "এই ধাপে ফিরে যান",
     "Go to this step": "এই ধাপে যান",
     # Summary after registering
+    "Student's name": "শিক্ষার্থীর নাম", "Guardian's name": "অভিভাবকের নাম",
     "Filled in by": "যিনি পূরণ করেছেন", "Name": "নাম", "Gender": "লিঙ্গ", "Guardian": "অভিভাবক",
     "District": "জেলা", "Region": "অঞ্চল", "Thana / Upazila": "থানা / উপজেলা", "School": "বিদ্যালয়", "Class": "শ্রেণি",
     "Section": "শাখা", "Class roll": "রোল নম্বর", "Student ID": "শিক্ষার্থী আইডি", "Mobile": "মোবাইল",
