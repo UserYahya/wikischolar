@@ -6,7 +6,7 @@ from . import turnstile
 def platform(request):
     ws = settings.WIKISCHOLAR
     site = ws["SITE_URL"].rstrip("/")
-    ctx = {"CONTACT_EMAIL": ws["CONTACT_EMAIL"], "POLICY_URL": ws["POLICY_URL"],
+    ctx = {"CONTACT_EMAIL": ws["CONTACT_EMAIL"], "POLICY_URL": ws["POLICY_URL"], "INFO_URL": ws["INFO_URL"],
            "SITE_URL": site, "SITE_HOST": site.split("://", 1)[-1],
            "TURNSTILE_SITE_KEY": turnstile.site_key(), "TURNSTILE_SCRIPT": turnstile.SCRIPT_URL,
            "META_PIXEL_ID": ws["META_PIXEL_ID"], "CLARITY_ID": ws["CLARITY_ID"]}

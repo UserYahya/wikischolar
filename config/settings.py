@@ -183,6 +183,9 @@ WIKISCHOLAR = {
     "PUBLIC_URL": env("WS_PUBLIC_URL", "https://registration.wikischolar.bd"),
     "POLICY_VERSION": env("WS_POLICY_VERSION", "2026-01"),
     "POLICY_URL": env("WS_POLICY_URL", "https://wikischolar.bd/youth-policy"),
+    # The programme page that answers common questions; the form's "Have a question?" line links here
+    # before giving CONTACT_EMAIL. Change it when a new programme year gets its own page.
+    "INFO_URL": env("WS_INFO_URL", "https://wikischolar.bd/wikischolar-2027/"),
     # Cloudflare Turnstile (anti-bot check on "Send verification code" and the dashboard sign-in).
     # On only when both are set; get them from the Cloudflare dashboard → Turnstile → Add widget.
     "TURNSTILE_SITE_KEY": env("WS_TURNSTILE_SITE_KEY", ""),
