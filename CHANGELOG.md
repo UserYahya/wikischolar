@@ -58,6 +58,8 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
     guardian ticks "I am the guardian", and the very next box was "Student's full name".
   - Step 1 now asks "Your name (guardian)" first, then "Student's full name — not your own name"
     (also in Bangla), then the student's gender and the relation.
+    The two name boxes have Bangla placeholders ("এখানে আপনার নাম (অভিভাবক) ইংরেজিতে লিখুন",
+    "এখানে শিক্ষার্থীর নাম ইংরেজিতে লিখুন").
   - If the student's name is the same as the guardian's name (ignoring case, spaces and punctuation), step 1
     won't continue, and the server refuses it too, with an English and Bangla message. This applies only to the
     public form; admin edits are not affected.

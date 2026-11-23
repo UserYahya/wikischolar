@@ -479,6 +479,8 @@ class GuardianNameMixupTests(WSTestCase):
         page = self.client.get("/").content.decode()
         self.assertLess(page.index('id="guardian_name"'), page.index('id="student_name"'))
         self.assertIn("not your own name", page)
+        self.assertIn('placeholder="এখানে আপনার নাম (অভিভাবক) ইংরেজিতে লিখুন"', page)
+        self.assertIn('placeholder="এখানে শিক্ষার্থীর নাম ইংরেজিতে লিখুন"', page)
         self.assertNotIn("your child", page[:page.index('id="student_name"')][-600:])
         self.assertIn('id="reviewList"', page)
 
