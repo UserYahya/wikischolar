@@ -478,7 +478,8 @@ class GuardianNameMixupTests(WSTestCase):
     def test_guardian_name_comes_before_student_name(self):
         page = self.client.get("/").content.decode()
         self.assertLess(page.index('id="guardian_name"'), page.index('id="student_name"'))
-        self.assertIn("not your name", page)
+        self.assertIn("not your own name", page)
+        self.assertNotIn("your child", page[:page.index('id="student_name"')][-600:])
         self.assertIn('id="reviewList"', page)
 
     def test_same_name_is_refused(self):

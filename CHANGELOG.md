@@ -56,7 +56,7 @@ affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md
   - Turning off autofill didn't help. In the 172 registrations after it went live, the student's name was still
     exactly the guardian's name in 9.9% of them, against 9.4% the week before. The cause was the layout: the
     guardian ticks "I am the guardian", and the very next box was "Student's full name".
-  - Step 1 now asks "Your name (guardian)" first, then "Student's full name (your child) — not your name"
+  - Step 1 now asks "Your name (guardian)" first, then "Student's full name — not your own name"
     (also in Bangla), then the student's gender and the relation.
   - If the student's name is the same as the guardian's name (ignoring case, spaces and punctuation), step 1
     won't continue, and the server refuses it too, with an English and Bangla message. This applies only to the
