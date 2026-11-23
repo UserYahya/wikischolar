@@ -3,6 +3,25 @@
 What changed, newest first. Every improvement adds an entry here and updates the documents it
 affects (see "Keeping the docs current" in [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md)).
 
+## 2026-11-23
+
+### Added
+- **Email the student about a change.** The dashboard's student editor has an **Email the student about this
+  change** box, unticked by default, just above *Save changes*. When ticked and something changed:
+  - **What the student gets:** the new **Registration details changed** system email. It lists each change as
+    "Class: Class 9 (was: Class 8)", with names rather than IDs (a table in the HTML email), then all their
+    details as they are now.
+  - **Editable:** a Super Admin can change the wording on Dashboard → System emails (`{changes}` is required).
+  - **Address:** the email address as saved, so after an email correction the new address gets it and the old
+    one does not.
+  - **Not included:** the *Reason for change* (staff only).
+  - **Nothing changed:** nothing is sent.
+  - **Records:** a *Change notice* under the student's messages (new `notification_logs.kind` value `change`,
+    migration `notifications.0009`) and an audit entry `student.notified`.
+  - **If sending fails:** the edit is still saved, and the dashboard shows a warning with the reason.
+  - `registration.services.update_student` now returns the list of changes instead of a count.
+  - Tests: `tests/test_change_notice.py` (13 tests). Test count in the docs updated to 337.
+
 ## 2026-11-22
 
 ### Added

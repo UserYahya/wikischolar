@@ -1,9 +1,11 @@
 """Public interface of the Registration module."""
 import hashlib
 import hmac
+import logging
 import secrets
 import uuid
 from datetime import timedelta
+from typing import NamedTuple
 
 from django.conf import settings
 from django.db import transaction
@@ -19,6 +21,7 @@ from .choices import FilledBy
 from .models import EditHistory, EmailVerification, Student
 
 CFG = settings.WIKISCHOLAR
+logger = logging.getLogger(__name__)
 
 
 # ---- Email OTP -------------------------------------------------------------- #
@@ -172,23 +175,58 @@ EDITABLE_FIELDS = ["student_name", "gender", "guardian_name", "guardian_relation
                    "guardian_relation_other", "district", "thana", "school", "current_class", "class_roll",
                    "student_id_sid", "section", "phone", "email", "updates_opt_in", "photo_consent"]
 
+# How each editable field is named in the change notice sent to the student.
+FIELD_LABELS = {
+    "student_name": "Name", "gender": "Gender", "guardian_name": "Guardian's name",
+    "guardian_relation": "Guardian's relation", "guardian_relation_other": "Guardian's relation",
+    "district": "District", "thana": "Thana / Upazila", "school": "School", "current_class": "Class",
+    "class_roll": "Class roll", "student_id_sid": "Student ID", "section": "Section", "phone": "Phone",
+    "email": "Email", "updates_opt_in": "Email updates", "photo_consent": "Photos at offline events allowed",
+}
+
+
+class Change(NamedTuple):
+    """One changed field, with its old and new value as the student would read them."""
+    field: str
+    label: str
+    old: str
+    new: str
+
 
 def _value(student, field):
     v = getattr(student, field)
     return v.pk if hasattr(v, "pk") else v
 
 
+def _shown(student, field):
+    """A field's value in words: names instead of IDs, labels instead of codes, Yes/No."""
+    if field in ("guardian_relation", "guardian_relation_other"):
+        return student.guardian_relation_label  # "Father", or what was typed for "other"
+    value = getattr(student, field)
+    if field == "thana":
+        value = value.display_name
+    elif hasattr(value, "pk"):
+        value = value.name
+    elif isinstance(value, bool):
+        value = "Yes" if value else "No"
+    elif hasattr(student, f"get_{field}_display"):
+        value = getattr(student, f"get_{field}_display")()
+    return str(value) if value not in ("", None) else "not given"
+
+
 @transaction.atomic
 def update_student(student, changes, *, request, reason=""):
+    """Apply an admin's edits. Returns the list of Change (empty if nothing changed)."""
     student = Student.objects.select_for_update().get(pk=student.pk)
+    fields = [f for f in EDITABLE_FIELDS
+              if f in changes and _value(student, f) != getattr(changes[f], "pk", changes[f])]
+    if not fields:
+        return []
+    old_shown = {f: _shown(student, f) for f in fields}  # before any change: one field's words can use another
     change_set, before, after, rows = uuid.uuid4(), {}, {}, []
-    for field in EDITABLE_FIELDS:
-        if field not in changes:
-            continue
+    for field in fields:
         old, new = _value(student, field), changes[field]
-        new_cmp = new.pk if hasattr(new, "pk") else new
-        if old == new_cmp:
-            continue
+        new_cmp = getattr(new, "pk", new)
         before[field], after[field] = old, new_cmp
         rows.append(EditHistory(student=student, change_set=change_set, field_name=field, old_value=old,
                                 new_value=new_cmp, reason=reason, changed_by=request.user))
@@ -197,13 +235,31 @@ def update_student(student, changes, *, request, reason=""):
             student.school_resolution = Student.SchoolResolution.ADMIN
         if field == "photo_consent":  # e.g. a guardian gives or withdraws photo permission later
             student.photo_consent_at = timezone.now() if new else None
-    if not rows:
-        return 0
     student.save()
     EditHistory.objects.bulk_create(rows)
     audit.record("student.updated", request=request, entity=student, before=before, after=after,
                  meta={"change_set": str(change_set), "reason": reason})
-    return len(rows)
+    return [Change(f, FIELD_LABELS[f], old_shown[f], _shown(student, f)) for f in fields]
+
+
+def send_change_notice(student, changes, *, request):
+    """Email the student what an admin changed (the "Registration details changed" system email), to the
+    address now saved. Call it after update_student() has committed. Returns the NotificationLog, or None
+    if the email could not even be attempted (e.g. saved email settings that can't be read)."""
+    student = Student.objects.select_related("district__region", "thana", "school").get(pk=student.pk)
+    # Changing the relation to "other" changes two fields that read as one line ("Guardian's relation").
+    rows = list(dict.fromkeys((c.label, c.old, c.new) for c in changes))
+    try:
+        log = notify.send_system_email(emails.CHANGED, NotificationLog.Kind.CHANGE, student.email,
+                                       emails.change_values(summary(student), rows), student=student)
+    except Exception:
+        logger.exception("Change notice for %s not sent", student.wikischolar_id)
+        log = None
+    audit.record("student.notified", request=request, entity=student,
+                 meta={"to": student.email, "fields": [c.field for c in changes],
+                       "status": log.status if log else NotificationLog.Status.FAILED,
+                       "error": log.error if log else "not attempted (see the server log)"})
+    return log
 
 
 def reassign_school(*, from_school, to_school, request, reason):

@@ -33,6 +33,8 @@
     <div class="span2"><label class="inline">{{ form.photo_consent }} Guardian allows photos at offline events (Youth Safety Policy 4.5)</label>
       <p class="hint">Untick if the guardian withdraws permission; the change and its date are recorded.</p></div>
     <div class="span2"><label for="id_reason">Reason for change</label>{{ form.reason }}<p class="hint">Stored with each changed field in the edit history.</p></div>
+    <div class="span2"><label class="inline">{{ form.notify_student }} Email the student about this change</label>
+      <p class="hint">Sends the “Registration details changed” email (wording on System emails) listing what changed, to the email address above (the new one, if you change it). The reason is not included. Nothing is sent if nothing changed.</p></div>
   </div>
   <div class="row"><button class="btn primary">Save changes</button><a class="link" href="{% url 'dashboard:student' s.wikischolar_id %}">Cancel</a></div>
 </form>

@@ -130,7 +130,10 @@ services, `register_nav(...)` in `AppConfig.ready()`, and permission codes added
 Modules register the emails they send by themselves in `AppConfig.ready()`
 (`notifications.services.register_system_email`): a key, a default subject/body with
 `{placeholders}`, which placeholders are required, and sample values. Registration registers
-`registration.otp` and `registration.confirmation` (`apps/registration/emails.py`). Sending code
+`registration.otp`, `registration.confirmation` and `registration.changed` (`apps/registration/emails.py`).
+The last is the change notice: the dashboard's student editor calls `registration.services.update_student`,
+which returns the changes (field, label, old and new value in words), and, when the admin ticked *Email the
+student about this change*, `send_change_notice` after the edit has committed. Sending code
 calls `render_system_email(key, values)`, which uses the Super Admin's saved wording from
 `email_templates` when customised, else the default, and fills placeholders by plain replacement
 (no template language, so the text can't run code). Dashboard → System emails lists every
@@ -142,7 +145,7 @@ registered email, validates placeholders, previews with the sample values and ca
 `render_system_email_html` swaps each placeholder for a token, turns the text into paragraphs
 (escaped, links clickable) and puts the values back, using ready-made HTML for the placeholders
 named in the email's `html_values` (registration: the OTP code box, the highlighted ID, the
-details table). Bulk messages and other emails get the same layout from
+details table, the table of changes). Bulk messages and other emails get the same layout from
 `DjangoMailProvider`, which builds the HTML from the text when none is given. Layout:
 `apps/notifications/html_email.py` + `templates/notifications/email.html` (tables and inline
 styles only, for mail apps); the logo URL comes from `WS_PUBLIC_URL`.

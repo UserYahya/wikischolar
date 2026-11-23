@@ -213,6 +213,20 @@ Analytics) will plug into the same app.
 * **Students**: filters (region, district, thana, **thana type** (thana, cantonment, "Other
   thana"), school, class, gender, date range, opt-in, text search, sort), **split into batches** of N students (view / CSV / message each batch),
   CSV export (Excel-friendly), student detail with full edit history, edit, archive/restore.
+* **Telling the student about an edit**: the edit page has **Email the student about this change**
+  (unticked by default) just above *Save changes*. When ticked and something changed, the student gets
+  the *Registration details changed* system email: each change as "Class: Class 9 (was: Class 8)",
+  with names rather than IDs (a table in the HTML email), then all their details as they are now.
+  * **Address:** the email address as saved, so a corrected address gets it and the old one does not
+    (an old address may be a typo that belongs to someone else).
+  * **Not included:** the *Reason for change*, which is for staff only.
+  * **Nothing changed:** no email.
+  * **Records:** it shows as a *Change notice* under the student's messages, and is audited as
+    `student.notified` (fields, address, status).
+  * **If sending fails:** the edit is still saved, and the dashboard says the email was not sent and
+    why.
+  * Code: `registration.services.update_student` returns the changes and `send_change_notice` sends
+    them.
 * **Advanced search** (Students and Schools lists, above the results): a query builder.
   * **Conditions:** field → operator → value. Text fields take is / contains / starts with / is
     empty; lists take is any of / is none of; numbers and dates take = / < / > / between; yes/no
@@ -269,9 +283,10 @@ Analytics) will plug into the same app.
   `/dashboard/account/password/`): current password plus the new one twice, checked by the
   password rules (12+ characters, not common, not all digits, not like the name or email). Other
   sessions of that account are signed out; audited as `admin.password_changed`.
-* **System emails** (Super Admin): edit the subject and text of the **OTP email** and the
-  **registration confirmation** with placeholders (`{code}`, `{student_name}`, `{wikischolar_id}`,
-  `{details}`, …); refuses text without required placeholders (`{code}`, `{wikischolar_id}`) or
+* **System emails** (Super Admin): edit the subject and text of the **OTP email**, the
+  **registration confirmation** and the **registration details changed** notice, with placeholders
+  (`{code}`, `{student_name}`, `{wikischolar_id}`, `{details}`, `{changes}`, …); refuses text without
+  required placeholders (`{code}`, `{wikischolar_id}`, `{changes}`) or
   with unknown ones; live preview with sample data (the designed HTML email, plain text below);
   *Send test to me*; *Reset to default* (nothing deleted). Changes are audited. Any language is
   allowed in this text.
@@ -607,7 +622,7 @@ requirements changed), `migrate`, `collectstatic --noinput`, then Restart.
 ```sh
 DJANGO_DEBUG=1 python manage.py test tests
 ```
-291 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
+337 tests in `tests/`, run against **real PostgreSQL** (the integrity rules live in the
 database). They cover the full registration flow, OTP, typo hints, English-only rules, school
 resolution, DB constraints and triggers, permissions on every page, edits and history,
 archive/restore, filters, batches, CSV export, bulk email/SMS, email & SMS settings (with a
@@ -637,7 +652,10 @@ the typeahead and list search, editing government data, and the capitals migrati
 invalid conditions and limits, the plain-English description, the Students list, export and
 message composer following the search, the Schools list by government data and student count, and
 saved searches (save, load, update, delete, shared visibility, owner / Super Admin rights, stale
-fields). External calls (SMTP,
+fields). `tests/test_change_notice.py` covers the *Email the student about this change* box (unticked:
+no email; ticked: what changed with names, sent to the new address after an email change, one line for a
+relation changed to "other", no reason in the email, nothing when nothing changed, failures keep the edit
+and warn, audit) and the notice's editable wording. External calls (SMTP,
 MiM SMS) are mocked; no real messages are sent.
 
 ---

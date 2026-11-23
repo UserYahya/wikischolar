@@ -10,6 +10,7 @@ from apps.core import audit
 from apps.core.models import AuditLog
 from apps.core.permissions import require_perm
 from apps.notifications import services as notify
+from apps.notifications.models import NotificationLog
 from apps.reference import services as ref
 from apps.reference.models import District, Region, School, Thana
 from apps.registration import services
@@ -144,9 +145,20 @@ def student_edit(request, wsid):
     form = StudentEditForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
-        changed = services.update_student(student, {f: d[f] for f in services.EDITABLE_FIELDS if f in d},
+        changes = services.update_student(student, {f: d[f] for f in services.EDITABLE_FIELDS if f in d},
                                           request=request, reason=d.get("reason", ""))
-        messages.success(request, f"Saved {changed} change(s)." if changed else "Nothing changed.")
+        if not changes:
+            messages.success(request, "Nothing changed." + (" No email was sent." if d["notify_student"] else ""))
+        elif not d["notify_student"]:
+            messages.success(request, f"Saved {len(changes)} change(s).")
+        else:
+            log = services.send_change_notice(student, changes, request=request)
+            if log and log.status != NotificationLog.Status.FAILED:
+                messages.success(request, f"Saved {len(changes)} change(s) and emailed the student at {log.destination}.")
+            else:
+                messages.warning(request, f"Saved {len(changes)} change(s), but the email to the student could not be "
+                                          f"sent{': ' + log.error if log and log.error else ''}. "
+                                          "Tell the student another way, and check Email & SMS settings.")
         return redirect("dashboard:student", wsid=wsid)
     district_id = form.data.get("district") if form.is_bound else student.district_id
     thana_id = form.data.get("thana") if form.is_bound else student.thana_id

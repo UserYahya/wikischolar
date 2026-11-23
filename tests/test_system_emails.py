@@ -86,10 +86,11 @@ class SystemEmailTests(WSTestCase):
             self.client.force_login(user)
             self.assertEqual(self.client.get(self.url).status_code, code)
 
-    def test_page_lists_both_emails_with_defaults_and_preview(self):
+    def test_page_lists_the_emails_with_defaults_and_preview(self):
         self.client.force_login(self.super)
         r = self.client.get(self.url)
-        self.assertEqual([c["email"].key for c in r.context["cards"]], [OTP_FIELDS, CONF_FIELDS])
+        self.assertEqual([c["email"].key for c in r.context["cards"]],
+                         [OTP_FIELDS, CONF_FIELDS, "registration.changed"])
         self.assertContains(r, "Your WikiScholar verification code is:")  # preview with sample data
         self.assertContains(r, "123456")
         self.assertContains(r, 'class="email-preview"')
